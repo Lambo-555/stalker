@@ -16,14 +16,40 @@ exports.AppService = void 0;
 const common_1 = require("@nestjs/common");
 const telegraf_1 = require("telegraf");
 const nestjs_telegraf_1 = require("nestjs-telegraf");
+const crypto_1 = require("crypto");
 let AppService = class AppService {
     constructor(bot) {
         this.bot = bot;
+        this.algorithm = 'aes-256-ctr';
+        this.secretKey = 'vOVH6sdmpNWjRRIqCc7rdxs01lwHzfr3';
+    }
+    encrypt(text) {
+        const iv = crypto_1.default.randomBytes(16);
+        const cipher = crypto_1.default.createCipheriv(this.algorithm, this.secretKey, iv);
+        const encrypted = Buffer.concat([cipher.update(text), cipher.final()]);
+        return {
+            iv: iv.toString('hex'),
+            content: encrypted.toString('hex'),
+        };
+    }
+    decrypt(hash) {
+        try {
+            console.log('hashhashhashhash', hash);
+            const decipher = crypto_1.default.createDecipheriv(this.algorithm, this.secretKey, Buffer.from(hash.iv, 'hex'));
+            console.log('decipherdecipher', decipher);
+            const decrpyted = Buffer.concat([
+                decipher.update(Buffer.from(hash.content, 'hex')),
+                decipher.final(),
+            ]);
+            return decrpyted.toString();
+        }
+        catch (error) {
+            console.error(error);
+        }
     }
     async commandListInit() {
         await this.bot.telegram.setMyCommands([
-            { command: 'start', description: 'Главное меню' },
-            { command: 'registration', description: 'Регистрация' },
+            { command: 'menu', description: 'Главное меню' },
         ]);
     }
     sleep(ms) {

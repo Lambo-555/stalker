@@ -18,9 +18,9 @@ __decorate([
     __metadata("design:type", Number)
 ], Chapters.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ default: 'title', nullable: true }),
+    (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
-], Chapters.prototype, "title", void 0);
+], Chapters.prototype, "character", void 0);
 __decorate([
     (0, typeorm_1.Column)({ default: 'default', nullable: true }),
     __metadata("design:type", String)

@@ -19,6 +19,10 @@ const choices_entity_1 = require("./user/entities/choices.entity");
 const inventory_items_entity_1 = require("./user/entities/inventory_items.entity");
 const users_entity_1 = require("./user/entities/users.entity");
 const user_module_1 = require("./user/user.module");
+const registration_wizzard_1 = require("./scenes/registration.wizzard");
+const anomaly_scene_1 = require("./scenes/anomaly.scene");
+const mutant_scene_1 = require("./scenes/mutant.scene");
+const scenes = [registration_wizzard_1.TestWizard, anomaly_scene_1.AnomalyRoadScene, mutant_scene_1.MutantScene];
 let AppModule = class AppModule {
 };
 AppModule = __decorate([
@@ -47,7 +51,7 @@ AppModule = __decorate([
                 middlewares: [(0, telegraf_1.session)()],
             }),
         ],
-        providers: [app_update_1.default, app_service_1.AppService],
+        providers: [app_update_1.default, app_service_1.AppService, ...scenes],
     })
 ], AppModule);
 exports.AppModule = AppModule;

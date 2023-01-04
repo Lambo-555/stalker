@@ -8,23 +8,28 @@ import {
   Next,
   Action,
   Message,
+  Start,
+  SceneEnter,
 } from 'nestjs-telegraf';
 import { Markup, Scenes } from 'telegraf';
 import { NextFunction } from 'express';
 import { TelegrafContext } from 'src/interfaces/telegraf-context.interface';
 import { Users } from './user/entities/users.entity';
 import { AppService } from './app.service';
-import { Repository } from 'typeorm';
+import { Like, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Chapters } from './user/entities/chapters.entity';
 import { Choices } from './user/entities/choices.entity';
 import { Progress } from './user/entities/progress.entity';
 import { InventoryItems } from './user/entities/inventory_items.entity';
+import crypto from 'crypto';
+import { ScenesEnum } from './scenes/enums/scenes.enum';
 
 @Update()
 @Injectable()
 export default class AppUpdate {
   private readonly logger = new Logger(AppUpdate.name);
+  private readonly secret = 'bcryptersss';
 
   constructor(
     private readonly appService: AppService,
@@ -44,75 +49,6 @@ export default class AppUpdate {
     this.appService.commandListInit();
   }
 
-  async getCurrentChapter(userId: number): Promise<Chapters> {
-    // Query the progress table to find the current chapter for the user
-    const progress = await this.progressRepository.findOne({
-      where: { user_id: userId },
-    });
-    // If the user has no progress, return the first chapter
-    if (!progress) {
-      return this.chaptersRepository.findOne({ where: { id: 1 } });
-    }
-    // Otherwise, return the current chapter
-    return this.chaptersRepository.findOne({
-      where: { id: progress?.chapter_id },
-    });
-  }
-
-  async getChoices(telegram_id: number): Promise<Choices[]> {
-    // Get the current chapter for the user
-    const currentChapter = await this.getCurrentChapter(telegram_id);
-    // Get the user's inventory
-    const user = await this.usersRepository.findOne({
-      where: { telegram_id: telegram_id },
-    });
-    const inventory = new Set(user.inventory.split(','));
-    // Get the choices for the current chapter
-    const choices = await this.choicesRepository.find({
-      where: { chapter_id: currentChapter?.id },
-    });
-    // Filter the choices based on the user's inventory
-    return choices.filter((choice) => {
-      const choiceInventory = new Set(choice.inventory_required.split(','));
-      return [...inventory].every((item) => choiceInventory.has(item));
-    });
-  }
-
-  async makeChoice(userId: number, choiceId: number): Promise<Chapters> {
-    // Get the chosen choice
-    const choice: Choices = await this.choicesRepository.findOne({
-      where: { id: choiceId },
-    });
-    // Update the user's progress
-    await this.progressRepository.update(
-      { user_id: userId },
-      { chapter_id: choice.next_chapter_id },
-    );
-    // Return the next chapter
-    return this.chaptersRepository.findOne({
-      where: { id: choice?.next_chapter_id },
-    });
-  }
-
-  async buyItem(telegram_id: number, itemId: number): Promise<void> {
-    // Get the chosen item
-    const item = await this.inventoryItemsRepository.findOne({
-      where: { id: itemId },
-    });
-    // Get the user's inventory
-    const user = await this.usersRepository.findOne({
-      where: { telegram_id: telegram_id },
-    });
-    // Check if the user has enough funds to purchase the item
-    if (user.funds < item?.price) {
-      // return 'Нет денег'; // TODO
-    }
-    // Update the user's inventory and funds
-    user.inventory = `${user?.inventory},${item?.name}`;
-    user.funds -= item?.price || 0;
-    await this.usersRepository.save(user);
-  }
-
   @Use()
   async onRegister(@Ctx() ctx: TelegrafContext, @Next() next: NextFunction) {
     const telegram_id: number =
@@ -121,71 +57,194 @@ export default class AppUpdate {
       where: { telegram_id: telegram_id },
     });
     if (user) {
+      const progress = await this.progressRepository.findOne({
+        where: { user_id: user.id },
+      });
+      if (!progress) {
+        const lastChapter = await this.chaptersRepository.findOne({
+          order: { id: 1 },
+          where: { content: Like('💭%') },
+        });
+        await this.progressRepository.save({
+          user_id: user.id,
+          chapter_id: lastChapter.id,
+        });
+      }
     } else {
       const userRegistered: Users = await this.usersRepository.save({
         telegram_id: telegram_id,
+      });
+      const lastChapter = await this.chaptersRepository.findOne({
+        order: { id: 1 },
+        where: { content: Like('💭') },
+      });
+      await this.progressRepository.save({
+        user_id: userRegistered.id,
+        chapter_id: lastChapter.id,
       });
       this.logger.debug(JSON.stringify(userRegistered, null, 2));
     }
     next();
   }
 
+  @Start()
   @Action('menu')
+  @Command('menu')
   async onMenu(@Ctx() ctx: TelegrafContext) {
-    const helloText = 'МЕНЮ!'
-      ? 'Для вас открыты дополнительные меню'
-      : 'Зарегистируйтесь, чтобы получить все возможности бота /registration';
-    await ctx.reply(
-      helloText,
-      Markup.inlineKeyboard(
-        [
-          Markup.button.callback('🎲 Крутить!', 'game'),
-          Markup.button.callback('💰 Пополнить!', 'bank'),
-          Markup.button.callback('🔼 Ставка + 50', 'setbetup'),
-          Markup.button.callback('🔽 Ставка - 50', 'setbetdown'),
-          Markup.button.callback('Регистрация', 'registration'),
-        ],
-        {
-          columns: 2,
-        },
-      ),
-    );
-  }
-
-  @Command('chapter')
-  @Action('chapter')
-  async onChapter(@Ctx() ctx: TelegrafContext) {
     const telegram_id: number =
       ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
     const user: Users = await this.usersRepository.findOne({
       where: { telegram_id: telegram_id },
     });
-    if (!user) {
-      ctx.reply('WHAAAT!');
-    } else {
-      const chapter: Chapters = await this.getCurrentChapter(user.telegram_id);
-      const choises: Choices[] = await this.choicesRepository.find({
-        where: { chapter_id: chapter.id },
-      });
-      // ctx.reply(JSON.stringify(choises));
-      await ctx.reply(
-        'Choooose',
-        Markup.inlineKeyboard(
-          [
-            ...choises.map((item) =>
-              Markup.button.callback(
-                item.description?.toString() || 'hello',
-                'chapter ' + item?.next_chapter_id, // TODO not number, but hash what encrypt and decript
-              ),
-            ),
-            Markup.button.callback('Menu', 'menu'),
-          ],
-          {
-            columns: 2,
-          },
-        ),
-      );
+
+    const userProgress: Progress = await this.progressRepository.findOne({
+      where: { user_id: user.id },
+    });
+    const userChapterId = userProgress.chapter_id;
+    let userChapter: Chapters = await this.chaptersRepository.findOne({
+      where: { id: userChapterId },
+    });
+    const nextChoices: Choices[] = await this.choicesRepository.find({
+      where: { chapter_id: userChapter.id },
+    });
+
+    const firstChapter = await this.chaptersRepository.findOne({
+      order: { id: 1 },
+      where: { content: Like('💭%') },
+    });
+    if (!userChapter && firstChapter) {
+      userChapter = firstChapter;
     }
+
+    await ctx.replyWithHTML(
+      `<b>${userChapter.character}:</b> ${userChapter.content}`,
+      Markup.inlineKeyboard(
+        [
+          ...nextChoices.map((item) =>
+            Markup.button.callback(
+              item?.description || 'neeext',
+              'chapterXXX' + item.next_chapter_id.toString(),
+            ),
+          ),
+          // Markup.button.callback('Инвентарь', 'inventory'),
+          Markup.button.callback('Сброс', 'chapterXXX' + firstChapter.id),
+          Markup.button.callback('🍔Меню', 'menu'),
+          Markup.button.callback('🔸Обход аномалий', ScenesEnum.ANOMALY_ROAD),
+          Markup.button.callback('🔸Встреча с мутантом', ScenesEnum.MUTANT),
+        ],
+        {
+          columns: 1,
+        },
+      ),
+    );
+  }
+
+  @Action(ScenesEnum.ANOMALY_ROAD)
+  @Command(ScenesEnum.ANOMALY_ROAD)
+  async enterAnomalyRoadScene(@Ctx() ctx: Scenes.SceneContext) {
+    await ctx.scene.enter(ScenesEnum.ANOMALY_ROAD);
+  }
+
+  @Action(ScenesEnum.MUTANT)
+  @Command(ScenesEnum.MUTANT)
+  async enterMutantScene(@Ctx() ctx: Scenes.SceneContext) {
+    await ctx.scene.enter(ScenesEnum.MUTANT);
+  }
+
+  @Command('inventory')
+  @Action('inventory')
+  async onInventory(@Ctx() ctx: TelegrafContext) {
+    const telegram_id: number =
+      ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
+    const user: Users = await this.usersRepository.findOne({
+      where: { telegram_id: telegram_id },
+    });
+    const inventoryText = JSON.parse(user?.inventory.toString() || '')
+      .map((item) => ` ${item} `)
+      .join('');
+    await ctx.reply(inventoryText);
+  }
+
+  @Action(/chapterXXX.*/gim)
+  async onChoose(@Ctx() ctx: TelegrafContext, @Next() next: NextFunction) {
+    const match = ctx.match[0];
+    if (!match) next();
+    console.log('match', match);
+    const selectedChapterId = +match.split('XXX')[1]; // chapterXXX1
+    console.log('choiseId', selectedChapterId);
+    const telegram_id: number =
+      ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
+    const user: Users = await this.usersRepository.findOne({
+      where: { telegram_id: telegram_id },
+    });
+
+    let progress: Progress = await this.progressRepository.findOne({
+      where: {
+        user_id: user.id,
+      },
+    });
+    console.log('progress1', progress);
+
+    // if (progress.chapter_id > nextChapterId) {
+    //   await ctx.reply(
+    //     'Этот выбор вы уже сделали',
+    //     Markup.inlineKeyboard([Markup.button.callback('Menu', 'menu')], {
+    //       columns: 2,
+    //     }),
+    //   );
+    //   return;
+    // }
+
+    await this.progressRepository.update(progress.progress_id, {
+      chapter_id: selectedChapterId,
+    });
+
+    progress = await this.progressRepository.findOne({
+      where: {
+        user_id: user.id,
+      },
+    });
+    console.log('progress2', progress);
+
+    const newChapter: Chapters = await this.chaptersRepository.findOne({
+      where: { id: progress.chapter_id },
+    });
+    console.log('newChapter', newChapter);
+
+    const choises: Choices[] = await this.choicesRepository.find({
+      where: { chapter_id: newChapter.id },
+    });
+    console.log('choiseschoises', choises);
+
+    choises.forEach(async (item) => {
+      const chapter = await this.chaptersRepository.findOne({
+        where: { id: item.chapter_id },
+      });
+      return {
+        ...item,
+        description: chapter.character,
+      };
+    });
+
+    await ctx.replyWithHTML(
+      `<b>${newChapter.character}:</b> ${newChapter.content}`,
+      Markup.inlineKeyboard(
+        [
+          ...choises.map((item) =>
+            Markup.button.callback(
+              item?.description || 'neeext',
+              'chapterXXX' + item.next_chapter_id.toString(),
+            ),
+          ),
+          Markup.button.callback('🍔Меню', 'menu'),
+          Markup.button.callback('🔸Обход аномалий', ScenesEnum.ANOMALY_ROAD),
+          Markup.button.callback('🔸Встреча с мутантом', ScenesEnum.MUTANT),
+        ],
+        {
+          columns: 1,
+        },
+      ),
+    );
   }
 
   /**

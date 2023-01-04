@@ -5,8 +5,8 @@ export class Chapters {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ default: 'title', nullable: true })
-  title?: string;
+  @Column({ nullable: true })
+  character?: string;
 
   @Column({ default: 'default', nullable: true })
   content?: string;

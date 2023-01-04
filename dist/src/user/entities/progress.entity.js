@@ -16,6 +16,10 @@ let Progress = class Progress {
 __decorate([
     (0, typeorm_1.PrimaryGeneratedColumn)(),
     __metadata("design:type", Number)
+], Progress.prototype, "progress_id", void 0);
+__decorate([
+    (0, typeorm_1.Column)(),
+    __metadata("design:type", Number)
 ], Progress.prototype, "user_id", void 0);
 __decorate([
     (0, typeorm_1.Column)(),

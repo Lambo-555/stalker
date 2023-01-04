@@ -1,3 +1,4 @@
+import { Scenes } from 'telegraf';
 import { NextFunction } from 'express';
 import { TelegrafContext } from 'src/interfaces/telegraf-context.interface';
 import { Users } from './user/entities/users.entity';
@@ -15,13 +16,13 @@ export default class AppUpdate {
     private readonly progressRepository;
     private readonly inventoryItemsRepository;
     private readonly logger;
+    private readonly secret;
     constructor(appService: AppService, usersRepository: Repository<Users>, chaptersRepository: Repository<Chapters>, choicesRepository: Repository<Choices>, progressRepository: Repository<Progress>, inventoryItemsRepository: Repository<InventoryItems>);
     onApplicationBootstrap(): void;
-    getCurrentChapter(userId: number): Promise<Chapters>;
-    getChoices(telegram_id: number): Promise<Choices[]>;
-    makeChoice(userId: number, choiceId: number): Promise<Chapters>;
-    buyItem(telegram_id: number, itemId: number): Promise<void>;
     onRegister(ctx: TelegrafContext, next: NextFunction): Promise<void>;
     onMenu(ctx: TelegrafContext): Promise<void>;
-    onChapter(ctx: TelegrafContext): Promise<void>;
+    enterAnomalyRoadScene(ctx: Scenes.SceneContext): Promise<void>;
+    enterMutantScene(ctx: Scenes.SceneContext): Promise<void>;
+    onInventory(ctx: TelegrafContext): Promise<void>;
+    onChoose(ctx: TelegrafContext, next: NextFunction): Promise<void>;
 }

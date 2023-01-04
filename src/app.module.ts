@@ -10,6 +10,12 @@ import { Choices } from './user/entities/choices.entity';
 import { InventoryItems } from './user/entities/inventory_items.entity';
 import { Users } from './user/entities/users.entity';
 import { UserModule } from './user/user.module';
+import { TestWizard } from './scenes/registration.wizzard';
+import { AnomalyRoadScene } from './scenes/anomaly.scene';
+import { MutantScene } from './scenes/mutant.scene';
+
+const scenes = [TestWizard, AnomalyRoadScene, MutantScene];
+
 
 @Module({
   imports: [
@@ -36,6 +42,6 @@ import { UserModule } from './user/user.module';
       middlewares: [session()],
     }),
   ],
-  providers: [AppUpdate, AppService],
+  providers: [AppUpdate, AppService, ...scenes],
 })
 export class AppModule {}

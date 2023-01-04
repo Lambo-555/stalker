@@ -1,6 +1,6 @@
 export declare class Chapters {
     id: number;
-    title?: string;
+    character?: string;
     content?: string;
     inventory_required?: string;
 }
