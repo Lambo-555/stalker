@@ -101,11 +101,12 @@ let AppUpdate = AppUpdate_1 = class AppUpdate {
         }
         await ctx.replyWithHTML(`<b>${userChapter.character}:</b> ${userChapter.content}`, telegraf_1.Markup.inlineKeyboard([
             ...nextChoices.map((item) => telegraf_1.Markup.button.callback((item === null || item === void 0 ? void 0 : item.description) || 'neeext', 'chapterXXX' + item.next_chapter_id.toString())),
-            telegraf_1.Markup.button.callback('Сброс', 'chapterXXX' + firstChapter.id),
+            telegraf_1.Markup.button.callback('⚽️Сброс', 'chapterXXX' + firstChapter.id),
             telegraf_1.Markup.button.callback('🍔Меню', 'menu'),
-            telegraf_1.Markup.button.callback('🔸Обход аномалий', scenes_enum_1.ScenesEnum.ANOMALY_ROAD),
-            telegraf_1.Markup.button.callback('🔸Встреча с мутантом', scenes_enum_1.ScenesEnum.MUTANT),
-            telegraf_1.Markup.button.callback('🔸Поиск артефактов', scenes_enum_1.ScenesEnum.ARTIFACT),
+            telegraf_1.Markup.button.callback('♻️Обход аномалий', scenes_enum_1.ScenesEnum.ANOMALY_ROAD),
+            telegraf_1.Markup.button.callback('🐫Встреча с мутантом', scenes_enum_1.ScenesEnum.MUTANT),
+            telegraf_1.Markup.button.callback('🥦Поиск артефактов', scenes_enum_1.ScenesEnum.ARTIFACT),
+            telegraf_1.Markup.button.callback('📍Перемещение', scenes_enum_1.ScenesEnum.LOCATION),
         ], {
             columns: 1,
         }));
@@ -118,6 +119,9 @@ let AppUpdate = AppUpdate_1 = class AppUpdate {
     }
     async enterArtefactScene(ctx) {
         await ctx.scene.enter(scenes_enum_1.ScenesEnum.ARTIFACT);
+    }
+    async enterLocationScene(ctx) {
+        await ctx.scene.enter(scenes_enum_1.ScenesEnum.LOCATION);
     }
     async onInventory(ctx) {
         var _a, _b, _c;
@@ -174,9 +178,10 @@ let AppUpdate = AppUpdate_1 = class AppUpdate {
         await ctx.replyWithHTML(`<b>${newChapter.character}:</b> ${newChapter.content}`, telegraf_1.Markup.inlineKeyboard([
             ...choises.map((item) => telegraf_1.Markup.button.callback((item === null || item === void 0 ? void 0 : item.description) || 'neeext', 'chapterXXX' + item.next_chapter_id.toString())),
             telegraf_1.Markup.button.callback('🍔Меню', 'menu'),
-            telegraf_1.Markup.button.callback('🔸Обход аномалий', scenes_enum_1.ScenesEnum.ANOMALY_ROAD),
-            telegraf_1.Markup.button.callback('🔸Встреча с мутантом', scenes_enum_1.ScenesEnum.MUTANT),
-            telegraf_1.Markup.button.callback('🔸Поиск артефактов', scenes_enum_1.ScenesEnum.ARTIFACT),
+            telegraf_1.Markup.button.callback('♻️Обход аномалий', scenes_enum_1.ScenesEnum.ANOMALY_ROAD),
+            telegraf_1.Markup.button.callback('🐫Встреча с мутантом', scenes_enum_1.ScenesEnum.MUTANT),
+            telegraf_1.Markup.button.callback('🥦Поиск артефактов', scenes_enum_1.ScenesEnum.ARTIFACT),
+            telegraf_1.Markup.button.callback('📍Перемещение', scenes_enum_1.ScenesEnum.LOCATION),
         ], {
             columns: 1,
         }));
@@ -223,6 +228,14 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AppUpdate.prototype, "enterArtefactScene", null);
+__decorate([
+    (0, nestjs_telegraf_1.Action)(scenes_enum_1.ScenesEnum.LOCATION),
+    (0, nestjs_telegraf_1.Command)(scenes_enum_1.ScenesEnum.LOCATION),
+    __param(0, (0, nestjs_telegraf_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AppUpdate.prototype, "enterLocationScene", null);
 __decorate([
     (0, nestjs_telegraf_1.Command)('inventory'),
     (0, nestjs_telegraf_1.Action)('inventory'),

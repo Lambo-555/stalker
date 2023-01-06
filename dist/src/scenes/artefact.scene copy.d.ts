@@ -10,7 +10,7 @@ import { Users } from 'src/user/entities/users.entity';
 import { Scenes } from 'telegraf';
 import { Repository } from 'typeorm';
 import { TelegrafContext } from '../interfaces/telegraf-context.interface';
-export declare class AnomalyRoadScene {
+export declare class ArtefactScene {
     private readonly appService;
     private readonly usersRepository;
     private readonly chaptersRepository;
@@ -23,13 +23,9 @@ export declare class AnomalyRoadScene {
     constructor(appService: AppService, usersRepository: Repository<Users>, chaptersRepository: Repository<Chapters>, choicesRepository: Repository<Choices>, progressRepository: Repository<Progress>, inventoryItemsRepository: Repository<InventoryItems>, artifactsRepository: Repository<Artifacts>, anomaliesRepository: Repository<Anomalies>);
     onRegister(ctx: TelegrafContext, next: NextFunction): Promise<void>;
     onSceneEnter(ctx: TelegrafContext): Promise<void>;
-    anomalyWays(ctx: TelegrafContext): Promise<void>;
     onChoose(ctx: TelegrafContext, next: NextFunction): Promise<void>;
-    enterQuestScene(ctx: Scenes.SceneContext): Promise<void>;
-    market(ctx: Scenes.SceneContext): Promise<void>;
-    mystats(ctx: Scenes.SceneContext): Promise<void>;
-    mission(ctx: Scenes.SceneContext): Promise<void>;
-    job(ctx: Scenes.SceneContext, next: any): Promise<void>;
+    anomalyTrue(ctx: TelegrafContext): Promise<void>;
+    anomalyFalse(ctx: TelegrafContext): Promise<void>;
     onLeaveCommand(ctx: Scenes.SceneContext): Promise<void>;
     onSceneLeave(ctx: Scenes.SceneContext): Promise<void>;
 }

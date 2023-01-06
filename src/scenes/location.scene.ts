@@ -19,7 +19,9 @@ import { Artifacts } from 'src/user/entities/artifacts.entity';
 import { Chapters } from 'src/user/entities/chapters.entity';
 import { Choices } from 'src/user/entities/choices.entity';
 import { InventoryItems } from 'src/user/entities/inventory_items.entity';
+import { Maps } from 'src/user/entities/maps.entity';
 import { Progress } from 'src/user/entities/progress.entity';
+import { Roads } from 'src/user/entities/roads.entity';
 import { Users } from 'src/user/entities/users.entity';
 import { Markup, Scenes } from 'telegraf';
 import { InlineKeyboardButton } from 'telegraf/typings/core/types/typegram';
@@ -36,9 +38,9 @@ import { ScenesEnum } from './enums/scenes.enum';
 // сделать район богаче - новая миссия
 // чем богаче и умнее район, тем больше примочек на автоматы
 
-@Scene(ScenesEnum.ARTIFACT)
-export class ArtefactScene {
-  private readonly logger = new Logger(ArtefactScene.name);
+@Scene(ScenesEnum.LOCATION)
+export class LocationScene {
+  private readonly logger = new Logger(LocationScene.name);
 
   constructor(
     private readonly appService: AppService,
@@ -56,6 +58,10 @@ export class ArtefactScene {
     private readonly artifactsRepository: Repository<Artifacts>,
     @InjectRepository(Anomalies)
     private readonly anomaliesRepository: Repository<Anomalies>,
+    @InjectRepository(Maps)
+    private readonly mapsRepository: Repository<Maps>,
+    @InjectRepository(Roads)
+    private readonly roadsRepository: Repository<Roads>,
   ) {}
 
   @Use()
@@ -98,55 +104,36 @@ export class ArtefactScene {
 
   @SceneEnter()
   async onSceneEnter(@Ctx() ctx: TelegrafContext) {
-    // TODO use right Tactics to avoid damage from anomaly
-    // Если это кисель, то надо тихо идти и не плескаться
-    // если это жарка, то лучше пробежать быстрее
-    // если то электра, то надо чаще разряжать аномалию болтами
-    // если это телепорт, то надо идти компактее
-    // если это жгучий пух, то идти надо медленно
-    const artList: Artifacts[] = await this.artifactsRepository.find();
-    const randArt: Artifacts = this.appService.getRandomElInArr(artList);
+    const telegram_id: number =
+      ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
+    const user: Users = await this.usersRepository.findOne({
+      where: { telegram_id: telegram_id },
+    });
+    const maps: Maps = await this.mapsRepository.findOne({
+      where: { id: user.location },
+    });
+    const roads: Roads[] = await this.roadsRepository.find({
+      where: { from: user.location },
+    });
+    const nextMaps: Maps[] = [];
+    for await (const road of roads) {
+      const mapsItem = await this.mapsRepository.findOne({
+        where: { id: road.to },
+      });
+      nextMaps.push(mapsItem);
+    }
     await ctx.reply(
-      `Вы возле артефакта: "${randArt.name}". Нужно его правильно запереть в короб. Материал покрытия крайне важен.`,
-      Markup.inlineKeyboard([
-        Markup.button.callback(
-          'Выбор короба.',
-          'artifactXXX' + randArt.anomaly,
-        ),
-      ]),
-    );
-  }
-
-  @Action(/artifactXXX.*/gim)
-  async onChoose(@Ctx() ctx: TelegrafContext, @Next() next: NextFunction) {
-    const match = ctx.match[0];
-    if (!match) next();
-    const anomalyId = +match.split('XXX')[1]; // chapterXXX1
-    const anomalyAll: Anomalies[] = await this.anomaliesRepository.find();
-    const anomalyTarget: Anomalies = anomalyAll.filter(
-      (item) => item.id === anomalyId,
-    )[0];
-    const anomalyEffects = Array.from(
-      new Set(anomalyAll.map((item) => item.effects)),
-    );
-    // const telegram_id: number =
-    // ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
-    // const user: Users = await this.usersRepository.findOne({
-    // where: { telegram_id: telegram_id },
-    // });
-    await ctx.reply(
-      `Аномалия, в которой находится артефакт: ${anomalyTarget.name}`,
+      `Вы находитесь в локации: "${maps.name}". Куда вы хотите отправиться?`,
       Markup.inlineKeyboard(
         [
-          ...anomalyEffects.map((anomalyItem) =>
+          Markup.button.callback('🍔Меню', 'menu'),
+          Markup.button.callback('📍Остаться здесь', 'leave'),
+          ...nextMaps.map((mapsItem) =>
             Markup.button.callback(
-              anomalyItem,
-              anomalyItem === anomalyTarget.effects
-                ? 'anomalyTrue'
-                : 'anomalyFalse',
+              mapsItem?.name,
+              'mapsXXX' + mapsItem.id.toString(),
             ),
           ),
-          Markup.button.callback('🍔Меню', 'menu'),
         ],
         {
           columns: 1,
@@ -155,31 +142,28 @@ export class ArtefactScene {
     );
   }
 
-  @Action('anomalyTrue')
-  async anomalyTrue(@Ctx() ctx: TelegrafContext) {
-    const wayTotal = Math.random() * 100;
-    if (wayTotal >= 60) {
-      await ctx.reply(
-        'Отлично, короб подошел, артефакт ведет себя стабильно.',
-        Markup.inlineKeyboard([Markup.button.callback('🍔Меню', 'menu')]),
-      );
-      await ctx.scene.leave();
-    } else {
-      await ctx.reply(
-        'Отлично, короб подошел, но артефакт был нестабилен и иссяк.',
-        Markup.inlineKeyboard([Markup.button.callback('🍔Меню', 'menu')]),
-      );
-      await ctx.scene.leave();
-    }
-  }
-
-  @Action('anomalyFalse')
-  async anomalyFalse(@Ctx() ctx: TelegrafContext) {
-    await ctx.reply(
-      'Короб не подошел, артефакт разрушен.',
-      Markup.inlineKeyboard([Markup.button.callback('🍔Меню', 'menu')]),
-    );
+  @Action(/mapsXXX.*/gim)
+  async onChoose(@Ctx() ctx: TelegrafContext, @Next() next: NextFunction) {
+    const match = ctx.match[0];
+    if (!match) next();
+    const mapId = +match.split('XXX')[1]; // chapterXXX1
+    const map: Maps = await this.mapsRepository.findOne({
+      where: { id: mapId },
+    });
+    const telegram_id: number =
+      ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
+    const user: Users = await this.usersRepository.findOne({
+      where: { telegram_id: telegram_id },
+    });
+    user.location = map.id || mapId;
+    await this.usersRepository.update({ id: user.id }, user);
     await ctx.scene.leave();
+    await ctx.reply(
+      `Вы вошли в локацию: ${map.name}`,
+      Markup.inlineKeyboard([Markup.button.callback('🍔Меню', 'menu')], {
+        columns: 1,
+      }),
+    );
   }
 
   @Action('leave')
@@ -190,6 +174,6 @@ export class ArtefactScene {
 
   @SceneLeave()
   async onSceneLeave(@Ctx() ctx: Scenes.SceneContext) {
-    await ctx.reply('Поиск артефакта завершен.');
+    await ctx.reply('Перемещение завершено.');
   }
 }

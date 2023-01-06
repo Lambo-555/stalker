@@ -9,5 +9,6 @@ var ScenesEnum;
     ScenesEnum["GROUP"] = "GROUP";
     ScenesEnum["ARTIFACT"] = "ARTIFACT";
     ScenesEnum["QUEST"] = "QUEST";
+    ScenesEnum["LOCATION"] = "LOCATION";
 })(ScenesEnum = exports.ScenesEnum || (exports.ScenesEnum = {}));
 //# sourceMappingURL=scenes.enum.js.map

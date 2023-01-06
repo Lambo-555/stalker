@@ -9,36 +9,36 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Users = void 0;
+exports.Artifacts = void 0;
 const typeorm_1 = require("typeorm");
-let Users = class Users {
+let Artifacts = class Artifacts {
 };
 __decorate([
     (0, typeorm_1.PrimaryGeneratedColumn)(),
     __metadata("design:type", Number)
-], Users.prototype, "id", void 0);
+], Artifacts.prototype, "id", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
-], Users.prototype, "name", void 0);
+], Artifacts.prototype, "name", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", Number)
-], Users.prototype, "funds", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
-    __metadata("design:type", Number)
-], Users.prototype, "telegram_id", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
-    __metadata("design:type", Number)
-], Users.prototype, "location", void 0);
+], Artifacts.prototype, "price", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
-], Users.prototype, "inventory", void 0);
-Users = __decorate([
-    (0, typeorm_1.Entity)('users')
-], Users);
-exports.Users = Users;
-//# sourceMappingURL=users.entity.js.map
+], Artifacts.prototype, "effects", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", Number)
+], Artifacts.prototype, "anomaly", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Artifacts.prototype, "about", void 0);
+Artifacts = __decorate([
+    (0, typeorm_1.Entity)('artifacts')
+], Artifacts);
+exports.Artifacts = Artifacts;
+//# sourceMappingURL=maps.entity%20copy.js.map

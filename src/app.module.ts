@@ -16,8 +16,17 @@ import { MutantScene } from './scenes/mutant.scene';
 import { ArtefactScene } from './scenes/artefact.scene';
 import { Anomalies } from './user/entities/anomalies.entity';
 import { Artifacts } from './user/entities/artifacts.entity';
+import { Maps } from './user/entities/maps.entity';
+import { Roads } from './user/entities/roads.entity';
+import { LocationScene } from './scenes/location.scene';
 
-const scenes = [TestWizard, AnomalyRoadScene, MutantScene, ArtefactScene];
+const scenes = [
+  TestWizard,
+  AnomalyRoadScene,
+  MutantScene,
+  ArtefactScene,
+  LocationScene,
+];
 
 @Module({
   imports: [
@@ -37,6 +46,8 @@ const scenes = [TestWizard, AnomalyRoadScene, MutantScene, ArtefactScene];
         Progress,
         Anomalies,
         Artifacts,
+        Maps,
+        Roads,
       ],
       synchronize: true,
     }),
@@ -48,6 +59,8 @@ const scenes = [TestWizard, AnomalyRoadScene, MutantScene, ArtefactScene];
       Progress,
       Anomalies,
       Artifacts,
+      Maps,
+      Roads,
     ]),
     TelegrafModule.forRoot({
       token: '5943057211:AAHh26OWDRO1fYtaGJtpL_lTSSTB-foTQWM',

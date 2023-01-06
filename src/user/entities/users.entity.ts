@@ -15,6 +15,9 @@ export class Users {
   telegram_id?: number;
 
   @Column({ nullable: true })
+  location?: number;
+
+  @Column({ nullable: true })
   inventory?: string;
 }
 

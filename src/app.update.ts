@@ -127,11 +127,12 @@ export default class AppUpdate {
             ),
           ),
           // Markup.button.callback('Инвентарь', 'inventory'),
-          Markup.button.callback('Сброс', 'chapterXXX' + firstChapter.id),
+          Markup.button.callback('⚽️Сброс', 'chapterXXX' + firstChapter.id),
           Markup.button.callback('🍔Меню', 'menu'),
-          Markup.button.callback('🔸Обход аномалий', ScenesEnum.ANOMALY_ROAD),
-          Markup.button.callback('🔸Встреча с мутантом', ScenesEnum.MUTANT),
-          Markup.button.callback('🔸Поиск артефактов', ScenesEnum.ARTIFACT),
+          Markup.button.callback('♻️Обход аномалий', ScenesEnum.ANOMALY_ROAD),
+          Markup.button.callback('🐫Встреча с мутантом', ScenesEnum.MUTANT),
+          Markup.button.callback('🥦Поиск артефактов', ScenesEnum.ARTIFACT),
+          Markup.button.callback('📍Перемещение', ScenesEnum.LOCATION),
         ],
         {
           columns: 1,
@@ -156,6 +157,12 @@ export default class AppUpdate {
   @Command(ScenesEnum.ARTIFACT)
   async enterArtefactScene(@Ctx() ctx: Scenes.SceneContext) {
     await ctx.scene.enter(ScenesEnum.ARTIFACT);
+  }
+
+  @Action(ScenesEnum.LOCATION)
+  @Command(ScenesEnum.LOCATION)
+  async enterLocationScene(@Ctx() ctx: Scenes.SceneContext) {
+    await ctx.scene.enter(ScenesEnum.LOCATION);
   }
 
   @Command('inventory')
@@ -244,9 +251,10 @@ export default class AppUpdate {
             ),
           ),
           Markup.button.callback('🍔Меню', 'menu'),
-          Markup.button.callback('🔸Обход аномалий', ScenesEnum.ANOMALY_ROAD),
-          Markup.button.callback('🔸Встреча с мутантом', ScenesEnum.MUTANT),
-          Markup.button.callback('🔸Поиск артефактов', ScenesEnum.ARTIFACT),
+          Markup.button.callback('♻️Обход аномалий', ScenesEnum.ANOMALY_ROAD),
+          Markup.button.callback('🐫Встреча с мутантом', ScenesEnum.MUTANT),
+          Markup.button.callback('🥦Поиск артефактов', ScenesEnum.ARTIFACT),
+          Markup.button.callback('📍Перемещение', ScenesEnum.LOCATION),
         ],
         {
           columns: 1,

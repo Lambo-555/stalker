@@ -193,4 +193,4 @@ ArtefactScene = ArtefactScene_1 = __decorate([
         typeorm_2.Repository])
 ], ArtefactScene);
 exports.ArtefactScene = ArtefactScene;
-//# sourceMappingURL=artefact.scene.js.map
+//# sourceMappingURL=artefact.scene%20copy.js.map

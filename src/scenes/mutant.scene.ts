@@ -121,7 +121,7 @@ export class MutantScene {
 
   @Action('mutantWays')
   async mutantWays(@Ctx() ctx: TelegrafContext) {
-    const ways = ['Атаковать', 'Сбежать', 'Замереть'];
+    const ways = ['Атаковать', 'Отбежать', 'Замереть'];
     await ctx.replyWithHTML(
       `<b>Пути:</b> `,
       Markup.inlineKeyboard(
@@ -390,6 +390,6 @@ export class MutantScene {
 
   @SceneLeave()
   async onSceneLeave(@Ctx() ctx: Scenes.SceneContext) {
-    await ctx.reply('Ваш путь продолжается.');
+    await ctx.reply('Встреча с мутантом окончена.');
   }
 }

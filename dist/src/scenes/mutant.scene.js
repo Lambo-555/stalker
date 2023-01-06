@@ -97,7 +97,7 @@ let MutantScene = MutantScene_1 = class MutantScene {
         ]));
     }
     async mutantWays(ctx) {
-        const ways = ['Атаковать', 'Сбежать', 'Замереть'];
+        const ways = ['Атаковать', 'Отбежать', 'Замереть'];
         await ctx.replyWithHTML(`<b>Пути:</b> `, telegraf_1.Markup.inlineKeyboard([
             ...ways.map((wayName) => telegraf_1.Markup.button.callback(wayName, 'actionChoose')),
         ], {
@@ -141,7 +141,7 @@ let MutantScene = MutantScene_1 = class MutantScene {
         await ctx.scene.leave();
     }
     async onSceneLeave(ctx) {
-        await ctx.reply('Ваш путь продолжается.');
+        await ctx.reply('Встреча с мутантом окончена.');
     }
 };
 __decorate([

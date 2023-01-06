@@ -24,6 +24,7 @@ export default class AppUpdate {
     enterAnomalyRoadScene(ctx: Scenes.SceneContext): Promise<void>;
     enterMutantScene(ctx: Scenes.SceneContext): Promise<void>;
     enterArtefactScene(ctx: Scenes.SceneContext): Promise<void>;
+    enterLocationScene(ctx: Scenes.SceneContext): Promise<void>;
     onInventory(ctx: TelegrafContext): Promise<void>;
     onChoose(ctx: TelegrafContext, next: NextFunction): Promise<void>;
 }

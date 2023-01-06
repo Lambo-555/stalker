@@ -14,6 +14,8 @@ import {
   Use,
 } from 'nestjs-telegraf';
 import { AppService } from 'src/app.service';
+import { Anomalies } from 'src/user/entities/anomalies.entity';
+import { Artifacts } from 'src/user/entities/artifacts.entity';
 import { Chapters } from 'src/user/entities/chapters.entity';
 import { Choices } from 'src/user/entities/choices.entity';
 import { InventoryItems } from 'src/user/entities/inventory_items.entity';
@@ -50,6 +52,10 @@ export class AnomalyRoadScene {
     private readonly progressRepository: Repository<Progress>,
     @InjectRepository(InventoryItems)
     private readonly inventoryItemsRepository: Repository<InventoryItems>,
+    @InjectRepository(Artifacts)
+    private readonly artifactsRepository: Repository<Artifacts>,
+    @InjectRepository(Anomalies)
+    private readonly anomaliesRepository: Repository<Anomalies>,
   ) {}
 
   @Use()
@@ -98,44 +104,40 @@ export class AnomalyRoadScene {
     // если то электра, то надо чаще разряжать аномалию болтами
     // если это телепорт, то надо идти компактее
     // если это жгучий пух, то идти надо медленно
-    const anomalyList = [
-      'Трамплин',
-      'Воронка',
-      'Карусель',
-      'Жарка',
-      'Пар',
-      'Комета',
-      'Электра',
-      'Тесла',
-      'Кисель',
-      'Кислотный туман',
-      'Газировка',
-      'Химическая комета',
-      'Жгучий пух',
-      'Пространственный пузырь',
-      'Телепорт',
-    ];
+    const anomaliesList = await this.anomaliesRepository.find();
     await ctx.reply(
       `Вы попали в зону аномалии "${this.appService.getRandomElInArr(
-        anomalyList,
-      )}". Вы кидаете болты, чтобы выжить и пройти дальше`,
+        anomaliesList.map((item) => item.name),
+      )}". Вы кидаете болты, чтобы выжить и пройти дальше.`,
       Markup.inlineKeyboard([
-        Markup.button.callback('Выбор направления', 'anomalyWays'),
+        Markup.button.callback('Выбор направления.', 'anomalyWays'),
       ]),
     );
   }
 
   @Action('anomalyWays')
   async anomalyWays(@Ctx() ctx: TelegrafContext) {
-    const ways = ['Влево', 'Направо', 'Прыжок', 'Проползти'];
+    const ways = [
+      { name: 'Шаг влево', status: 'true' },
+      { name: 'Шаг вправо', status: 'true' },
+      { name: 'Кинуть болт', status: 'true' },
+      { name: 'Прыгнуть', status: 'false' },
+      { name: 'Проползти', status: 'false' },
+      { name: 'Пробежать', status: 'false' },
+      { name: 'Прокрасться', status: 'true' },
+    ];
     await ctx.replyWithHTML(
       `<b>Пути:</b> `,
       Markup.inlineKeyboard(
         [
-          Markup.button.callback('Вперед', 'anyWay'),
+          Markup.button.callback('Шаг вперед', 'wayXXX' + 'true'),
           ...ways.map(
-            (wayName) =>
-              Markup.button.callback(wayName, 'anyWay', Math.random() > 0.6),
+            (way) =>
+              Markup.button.callback(
+                way.name,
+                'wayXXX' + way.status.toString(),
+                Math.random() > 0.6,
+              ),
             // Markup.button.callback(wayName, 'wayXXX' + wayName), // TODO
           ),
         ],
@@ -146,14 +148,22 @@ export class AnomalyRoadScene {
     );
   }
 
-  @Action('anyWay')
-  async anyWay(@Ctx() ctx: TelegrafContext) {
-    const wayTotal = Math.random() * 100;
+  @Action(/wayXXX.*/gim)
+  async onChoose(@Ctx() ctx: TelegrafContext, @Next() next: NextFunction) {
+    const match = ctx.match[0];
+    if (!match) next();
+    const wayStatus = match.split('XXX')[1]; // chapterXXX1
+    if (wayStatus == 'true') {
+      console.log('matchmatch1', match);
+    } else {
+      console.log('matchmatchmatch2', match);
+    }
 
+    const wayTotal = Math.random() * 100;
     // TODO find random artifact based of type of anomaly
     if (wayTotal < 10) {
       await ctx.replyWithHTML(
-        'Болт не сработал. Вы попали в аномалию и получили травму ХХ',
+        'Не сработало. Вы попали в аномалию и получили травму',
         Markup.inlineKeyboard([
           Markup.button.callback('Выбраться', 'anomalyWays'),
         ]),
@@ -161,21 +171,21 @@ export class AnomalyRoadScene {
     }
     if (wayTotal >= 20 && wayTotal < 20) {
       await ctx.replyWithHTML(
-        'Болт упал ровно. Путь безопасен. Нужно двигаться дальше',
+        'Все ровно. Путь безопасен. Нужно двигаться дальше',
         Markup.inlineKeyboard([
           Markup.button.callback('Дальше', 'anomalyWays'),
         ]),
       );
     }
-    if (wayTotal >= 20 && wayTotal < 70) {
+    if (wayTotal >= 20 && wayTotal < 60) {
       await ctx.replyWithHTML(
-        'Болт ударился о камень. Тут тупик',
+        'Аномалия создата тут тупик',
         Markup.inlineKeyboard([
           Markup.button.callback('Обойти', 'anomalyWays'),
         ]),
       );
     }
-    if (wayTotal >= 70) {
+    if (wayTotal >= 60) {
       await ctx.reply('Все как один болты ложились в роный путь. Вы выбрались');
       await ctx.scene.leave();
     }
@@ -400,6 +410,6 @@ export class AnomalyRoadScene {
 
   @SceneLeave()
   async onSceneLeave(@Ctx() ctx: Scenes.SceneContext) {
-    await ctx.reply('Ваш путь продолжается.');
+    await ctx.reply('Вы выбрались из аномальной зоны.');
   }
 }

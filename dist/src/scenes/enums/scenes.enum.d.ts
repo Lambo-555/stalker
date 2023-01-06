@@ -4,5 +4,6 @@ export declare enum ScenesEnum {
     MUTANT = "MUTANT",
     GROUP = "GROUP",
     ARTIFACT = "ARTIFACT",
-    QUEST = "QUEST"
+    QUEST = "QUEST",
+    LOCATION = "LOCATION"
 }

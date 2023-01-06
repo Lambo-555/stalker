@@ -3,5 +3,6 @@ export declare class Users {
     name?: string;
     funds?: number;
     telegram_id?: number;
+    location?: number;
     inventory?: string;
 }
