@@ -38,9 +38,9 @@ import { ScenesEnum } from './enums/scenes.enum';
 // сделать район богаче - новая миссия
 // чем богаче и умнее район, тем больше примочек на автоматы
 
-@Scene(ScenesEnum.LOCATION)
-export class LocationScene {
-  private readonly logger = new Logger(LocationScene.name);
+@Scene(ScenesEnum.QUEST)
+export class QuestScene {
+  private readonly logger = new Logger(QuestScene.name);
 
   constructor(
     private readonly appService: AppService,
@@ -109,61 +109,120 @@ export class LocationScene {
     const user: Users = await this.usersRepository.findOne({
       where: { telegram_id: telegram_id },
     });
-    const locations: LocationsEntity = await this.locationsRepository.findOne({
-      where: { id: user.location },
+    const location: LocationsEntity = await this.locationsRepository.findOne({
+      where: {
+        id: user.location,
+      },
     });
-    const roads: Roads[] = await this.roadsRepository.find({
-      where: { from: user.location },
+    const progress: Progress = await this.progressRepository.findOne({
+      where: {
+        user_id: user.id,
+      },
     });
-    const nextLocations: LocationsEntity[] = [];
-    for await (const road of roads) {
-      const locationsItem = await this.locationsRepository.findOne({
-        where: { id: road.to },
-      });
-      nextLocations.push(locationsItem);
-    }
-    await ctx.reply(
-      `Вы находитесь в локации: "${locations.name}". Куда вы хотите отправиться?`,
-      Markup.inlineKeyboard(
-        [
-          Markup.button.callback('🍔Меню', 'menu'),
-          Markup.button.callback('📍Остаться здесь', 'leave'),
-          ...nextLocations.map((locationItem) =>
-            Markup.button.callback(
-              locationItem?.name,
-              'locationsXXX' + locationItem.id.toString(),
-            ),
-          ),
-        ],
-        {
+    const chapter: Chapters = await this.chaptersRepository.findOne({
+      where: {
+        id: progress.chapter_id,
+      },
+    });
+    if (chapter.location === location.id) {
+      await ctx.reply(
+        `На этой локации есть с кем поговорить. ${chapter.character} вас ждет.`,
+        Markup.inlineKeyboard([
+          Markup.button.callback('🤝Поговорить', 'chapterXXX' + chapter.id),
+          Markup.button.callback('✋🏻Уйти', 'leave'),
+        ]),
+      );
+    } else {
+      await ctx.reply(
+        `Здесь не с кем поговорить`,
+        Markup.inlineKeyboard([Markup.button.callback('✋🏻Уйти', 'leave')], {
           columns: 1,
-        },
-      ),
-    );
+        }),
+      );
+    }
   }
 
-  @Action(/locationsXXX.*/gim)
-  async onChoose(@Ctx() ctx: TelegrafContext, @Next() next: NextFunction) {
+  @Action(/chapterXXX.*/gim)
+  async onChooseChapter(
+    @Ctx() ctx: TelegrafContext,
+    @Next() next: NextFunction,
+  ) {
     const match = ctx.match[0];
     if (!match) next();
-    const locationId = +match.split('XXX')[1]; // locationsXXX
-    const location: LocationsEntity = await this.locationsRepository.findOne({
-      where: { id: locationId },
-    });
+    console.log('match', match);
+    const selectedChapterId = +match.split('XXX')[1]; // chapterXXX1
+    console.log('choiseId', selectedChapterId);
     const telegram_id: number =
       ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
     const user: Users = await this.usersRepository.findOne({
       where: { telegram_id: telegram_id },
     });
-    user.location = location.id || locationId;
-    await this.usersRepository.update({ id: user.id }, user);
-    await ctx.scene.leave();
-    await ctx.reply(
-      `Вы вошли в локацию: ${location.name}`,
-      Markup.inlineKeyboard([Markup.button.callback('🍔Меню', 'menu')], {
-        columns: 1,
-      }),
-    );
+
+    let progress: Progress = await this.progressRepository.findOne({
+      where: {
+        user_id: user.id,
+      },
+    });
+    console.log('progress1', progress);
+    const location: LocationsEntity = await this.locationsRepository.findOne({
+      where: {
+        id: user.location,
+      },
+    });
+    await this.progressRepository.update(progress.progress_id, {
+      chapter_id: selectedChapterId,
+    });
+
+    progress = await this.progressRepository.findOne({
+      where: {
+        user_id: user.id,
+      },
+    });
+    console.log('progress2', progress);
+
+    const nextChapter: Chapters = await this.chaptersRepository.findOne({
+      where: { id: progress.chapter_id, location: location.id },
+    });
+    console.log('newChapter', nextChapter);
+
+    if (!nextChapter) {
+      await ctx.replyWithHTML(
+        `<b>Более не с кем тут разговаривать</b>`,
+        Markup.inlineKeyboard([Markup.button.callback('✋🏻Уйти', 'leave')]),
+      );
+    } else {
+      const choises: Choices[] = await this.choicesRepository.find({
+        where: { chapter_id: nextChapter.id },
+      });
+      console.log('choiseschoises', choises);
+
+      choises.forEach(async (item) => {
+        const chapter = await this.chaptersRepository.findOne({
+          where: { id: item.chapter_id },
+        });
+        return {
+          ...item,
+          description: chapter.character,
+        };
+      });
+      await ctx.replyWithHTML(
+        `<b>${nextChapter.character}:</b> ${nextChapter.content}`,
+        Markup.inlineKeyboard(
+          [
+            ...choises.map((item) =>
+              Markup.button.callback(
+                item?.description || 'neeext',
+                'chapterXXX' + item.next_chapter_id.toString(),
+              ),
+            ),
+            Markup.button.callback('✋🏻Уйти', 'leave'),
+          ],
+          {
+            columns: 1,
+          },
+        ),
+      );
+    }
   }
 
   @Action('leave')
@@ -174,6 +233,9 @@ export class LocationScene {
 
   @SceneLeave()
   async onSceneLeave(@Ctx() ctx: Scenes.SceneContext) {
-    await ctx.reply('Перемещение завершено.');
+    await ctx.reply(
+      'Диалог завершен.',
+      Markup.inlineKeyboard([Markup.button.callback('🍔Меню', 'menu')]),
+    );
   }
 }

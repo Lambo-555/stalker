@@ -100,15 +100,15 @@ let AppUpdate = AppUpdate_1 = class AppUpdate {
             userChapter = firstChapter;
         }
         await ctx.replyWithHTML(`<b>${userChapter.character}:</b> ${userChapter.content}`, telegraf_1.Markup.inlineKeyboard([
-            ...nextChoices.map((item) => telegraf_1.Markup.button.callback((item === null || item === void 0 ? void 0 : item.description) || 'neeext', 'chapterXXX' + item.next_chapter_id.toString())),
             telegraf_1.Markup.button.callback('⚽️Сброс', 'chapterXXX' + firstChapter.id),
             telegraf_1.Markup.button.callback('🍔Меню', 'menu'),
             telegraf_1.Markup.button.callback('♻️Обход аномалий', scenes_enum_1.ScenesEnum.ANOMALY_ROAD),
             telegraf_1.Markup.button.callback('🐫Встреча с мутантом', scenes_enum_1.ScenesEnum.MUTANT),
             telegraf_1.Markup.button.callback('🥦Поиск артефактов', scenes_enum_1.ScenesEnum.ARTIFACT),
             telegraf_1.Markup.button.callback('📍Перемещение', scenes_enum_1.ScenesEnum.LOCATION),
+            telegraf_1.Markup.button.callback('🤙Диалог', scenes_enum_1.ScenesEnum.QUEST),
         ], {
-            columns: 1,
+            columns: 2,
         }));
     }
     async enterAnomalyRoadScene(ctx) {
@@ -123,16 +123,8 @@ let AppUpdate = AppUpdate_1 = class AppUpdate {
     async enterLocationScene(ctx) {
         await ctx.scene.enter(scenes_enum_1.ScenesEnum.LOCATION);
     }
-    async onInventory(ctx) {
-        var _a, _b, _c;
-        const telegram_id = ((_a = ctx === null || ctx === void 0 ? void 0 : ctx.message) === null || _a === void 0 ? void 0 : _a.from.id) || ((_c = (_b = ctx === null || ctx === void 0 ? void 0 : ctx.callbackQuery) === null || _b === void 0 ? void 0 : _b.from) === null || _c === void 0 ? void 0 : _c.id);
-        const user = await this.usersRepository.findOne({
-            where: { telegram_id: telegram_id },
-        });
-        const inventoryText = JSON.parse((user === null || user === void 0 ? void 0 : user.inventory.toString()) || '')
-            .map((item) => ` ${item} `)
-            .join('');
-        await ctx.reply(inventoryText);
+    async enterQuestScene(ctx) {
+        await ctx.scene.enter(scenes_enum_1.ScenesEnum.QUEST);
     }
     async onChoose(ctx, next) {
         var _a, _b, _c;
@@ -176,12 +168,12 @@ let AppUpdate = AppUpdate_1 = class AppUpdate {
             return Object.assign(Object.assign({}, item), { description: chapter.character });
         });
         await ctx.replyWithHTML(`<b>${newChapter.character}:</b> ${newChapter.content}`, telegraf_1.Markup.inlineKeyboard([
-            ...choises.map((item) => telegraf_1.Markup.button.callback((item === null || item === void 0 ? void 0 : item.description) || 'neeext', 'chapterXXX' + item.next_chapter_id.toString())),
             telegraf_1.Markup.button.callback('🍔Меню', 'menu'),
             telegraf_1.Markup.button.callback('♻️Обход аномалий', scenes_enum_1.ScenesEnum.ANOMALY_ROAD),
             telegraf_1.Markup.button.callback('🐫Встреча с мутантом', scenes_enum_1.ScenesEnum.MUTANT),
             telegraf_1.Markup.button.callback('🥦Поиск артефактов', scenes_enum_1.ScenesEnum.ARTIFACT),
             telegraf_1.Markup.button.callback('📍Перемещение', scenes_enum_1.ScenesEnum.LOCATION),
+            telegraf_1.Markup.button.callback('🤙Диалог', scenes_enum_1.ScenesEnum.QUEST),
         ], {
             columns: 1,
         }));
@@ -237,13 +229,13 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AppUpdate.prototype, "enterLocationScene", null);
 __decorate([
-    (0, nestjs_telegraf_1.Command)('inventory'),
-    (0, nestjs_telegraf_1.Action)('inventory'),
+    (0, nestjs_telegraf_1.Action)(scenes_enum_1.ScenesEnum.QUEST),
+    (0, nestjs_telegraf_1.Command)(scenes_enum_1.ScenesEnum.QUEST),
     __param(0, (0, nestjs_telegraf_1.Ctx)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
-], AppUpdate.prototype, "onInventory", null);
+], AppUpdate.prototype, "enterQuestScene", null);
 __decorate([
     (0, nestjs_telegraf_1.Action)(/chapterXXX.*/gim),
     __param(0, (0, nestjs_telegraf_1.Ctx)()),

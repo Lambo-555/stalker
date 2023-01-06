@@ -120,12 +120,12 @@ export default class AppUpdate {
       `<b>${userChapter.character}:</b> ${userChapter.content}`,
       Markup.inlineKeyboard(
         [
-          ...nextChoices.map((item) =>
-            Markup.button.callback(
-              item?.description || 'neeext',
-              'chapterXXX' + item.next_chapter_id.toString(),
-            ),
-          ),
+          // ...nextChoices.map((item) =>
+          //   Markup.button.callback(
+          //     item?.description || 'neeext',
+          //     'chapterXXX' + item.next_chapter_id.toString(),
+          //   ),
+          // ),
           // Markup.button.callback('Инвентарь', 'inventory'),
           Markup.button.callback('⚽️Сброс', 'chapterXXX' + firstChapter.id),
           Markup.button.callback('🍔Меню', 'menu'),
@@ -133,9 +133,10 @@ export default class AppUpdate {
           Markup.button.callback('🐫Встреча с мутантом', ScenesEnum.MUTANT),
           Markup.button.callback('🥦Поиск артефактов', ScenesEnum.ARTIFACT),
           Markup.button.callback('📍Перемещение', ScenesEnum.LOCATION),
+          Markup.button.callback('🤙Диалог', ScenesEnum.QUEST),
         ],
         {
-          columns: 1,
+          columns: 2,
         },
       ),
     );
@@ -165,18 +166,10 @@ export default class AppUpdate {
     await ctx.scene.enter(ScenesEnum.LOCATION);
   }
 
-  @Command('inventory')
-  @Action('inventory')
-  async onInventory(@Ctx() ctx: TelegrafContext) {
-    const telegram_id: number =
-      ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
-    const user: Users = await this.usersRepository.findOne({
-      where: { telegram_id: telegram_id },
-    });
-    const inventoryText = JSON.parse(user?.inventory.toString() || '')
-      .map((item) => ` ${item} `)
-      .join('');
-    await ctx.reply(inventoryText);
+  @Action(ScenesEnum.QUEST)
+  @Command(ScenesEnum.QUEST)
+  async enterQuestScene(@Ctx() ctx: Scenes.SceneContext) {
+    await ctx.scene.enter(ScenesEnum.QUEST);
   }
 
   @Action(/chapterXXX.*/gim)
@@ -244,17 +237,18 @@ export default class AppUpdate {
       `<b>${newChapter.character}:</b> ${newChapter.content}`,
       Markup.inlineKeyboard(
         [
-          ...choises.map((item) =>
-            Markup.button.callback(
-              item?.description || 'neeext',
-              'chapterXXX' + item.next_chapter_id.toString(),
-            ),
-          ),
+          // ...choises.map((item) =>
+          //   Markup.button.callback(
+          //     item?.description || 'neeext',
+          //     'chapterXXX' + item.next_chapter_id.toString(),
+          //   ),
+          // ),
           Markup.button.callback('🍔Меню', 'menu'),
           Markup.button.callback('♻️Обход аномалий', ScenesEnum.ANOMALY_ROAD),
           Markup.button.callback('🐫Встреча с мутантом', ScenesEnum.MUTANT),
           Markup.button.callback('🥦Поиск артефактов', ScenesEnum.ARTIFACT),
           Markup.button.callback('📍Перемещение', ScenesEnum.LOCATION),
+          Markup.button.callback('🤙Диалог', ScenesEnum.QUEST),
         ],
         {
           columns: 1,

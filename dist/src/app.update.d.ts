@@ -25,6 +25,6 @@ export default class AppUpdate {
     enterMutantScene(ctx: Scenes.SceneContext): Promise<void>;
     enterArtefactScene(ctx: Scenes.SceneContext): Promise<void>;
     enterLocationScene(ctx: Scenes.SceneContext): Promise<void>;
-    onInventory(ctx: TelegrafContext): Promise<void>;
+    enterQuestScene(ctx: Scenes.SceneContext): Promise<void>;
     onChoose(ctx: TelegrafContext, next: NextFunction): Promise<void>;
 }

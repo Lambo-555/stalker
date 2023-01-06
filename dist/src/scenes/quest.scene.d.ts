@@ -12,7 +12,7 @@ import { Users } from 'src/user/entities/users.entity';
 import { Scenes } from 'telegraf';
 import { Repository } from 'typeorm';
 import { TelegrafContext } from '../interfaces/telegraf-context.interface';
-export declare class LocationScene {
+export declare class QuestScene {
     private readonly appService;
     private readonly usersRepository;
     private readonly chaptersRepository;
@@ -27,7 +27,7 @@ export declare class LocationScene {
     constructor(appService: AppService, usersRepository: Repository<Users>, chaptersRepository: Repository<Chapters>, choicesRepository: Repository<Choices>, progressRepository: Repository<Progress>, inventoryItemsRepository: Repository<InventoryItems>, artifactsRepository: Repository<Artifacts>, anomaliesRepository: Repository<Anomalies>, locationsRepository: Repository<LocationsEntity>, roadsRepository: Repository<Roads>);
     onRegister(ctx: TelegrafContext, next: NextFunction): Promise<void>;
     onSceneEnter(ctx: TelegrafContext): Promise<void>;
-    onChoose(ctx: TelegrafContext, next: NextFunction): Promise<void>;
+    onChooseChapter(ctx: TelegrafContext, next: NextFunction): Promise<void>;
     onLeaveCommand(ctx: Scenes.SceneContext): Promise<void>;
     onSceneLeave(ctx: Scenes.SceneContext): Promise<void>;
 }

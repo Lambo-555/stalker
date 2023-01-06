@@ -16,9 +16,10 @@ import { MutantScene } from './scenes/mutant.scene';
 import { ArtefactScene } from './scenes/artefact.scene';
 import { Anomalies } from './user/entities/anomalies.entity';
 import { Artifacts } from './user/entities/artifacts.entity';
-import { Maps } from './user/entities/maps.entity';
+import { LocationsEntity } from './user/entities/locations.entity';
 import { Roads } from './user/entities/roads.entity';
 import { LocationScene } from './scenes/location.scene';
+import { QuestScene } from './scenes/quest.scene';
 
 const scenes = [
   TestWizard,
@@ -26,6 +27,7 @@ const scenes = [
   MutantScene,
   ArtefactScene,
   LocationScene,
+  QuestScene,
 ];
 
 @Module({
@@ -46,7 +48,7 @@ const scenes = [
         Progress,
         Anomalies,
         Artifacts,
-        Maps,
+        LocationsEntity,
         Roads,
       ],
       synchronize: true,
@@ -59,7 +61,7 @@ const scenes = [
       Progress,
       Anomalies,
       Artifacts,
-      Maps,
+      LocationsEntity,
       Roads,
     ]),
     TelegrafModule.forRoot({

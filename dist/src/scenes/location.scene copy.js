@@ -30,7 +30,7 @@ const artifacts_entity_1 = require("../user/entities/artifacts.entity");
 const chapters_entity_1 = require("../user/entities/chapters.entity");
 const choices_entity_1 = require("../user/entities/choices.entity");
 const inventory_items_entity_1 = require("../user/entities/inventory_items.entity");
-const locations_entity_1 = require("../user/entities/locations.entity");
+const maps_entity_1 = require("../user/entities/maps.entity");
 const progress_entity_1 = require("../user/entities/progress.entity");
 const roads_entity_1 = require("../user/entities/roads.entity");
 const users_entity_1 = require("../user/entities/users.entity");
@@ -38,7 +38,7 @@ const telegraf_1 = require("telegraf");
 const typeorm_2 = require("typeorm");
 const scenes_enum_1 = require("./enums/scenes.enum");
 let LocationScene = LocationScene_1 = class LocationScene {
-    constructor(appService, usersRepository, chaptersRepository, choicesRepository, progressRepository, inventoryItemsRepository, artifactsRepository, anomaliesRepository, locationsRepository, roadsRepository) {
+    constructor(appService, usersRepository, chaptersRepository, choicesRepository, progressRepository, inventoryItemsRepository, artifactsRepository, anomaliesRepository, mapsRepository, roadsRepository) {
         this.appService = appService;
         this.usersRepository = usersRepository;
         this.chaptersRepository = chaptersRepository;
@@ -47,7 +47,7 @@ let LocationScene = LocationScene_1 = class LocationScene {
         this.inventoryItemsRepository = inventoryItemsRepository;
         this.artifactsRepository = artifactsRepository;
         this.anomaliesRepository = anomaliesRepository;
-        this.locationsRepository = locationsRepository;
+        this.mapsRepository = mapsRepository;
         this.roadsRepository = roadsRepository;
         this.logger = new common_1.Logger(LocationScene_1.name);
     }
@@ -95,23 +95,23 @@ let LocationScene = LocationScene_1 = class LocationScene {
         const user = await this.usersRepository.findOne({
             where: { telegram_id: telegram_id },
         });
-        const locations = await this.locationsRepository.findOne({
+        const maps = await this.mapsRepository.findOne({
             where: { id: user.location },
         });
         const roads = await this.roadsRepository.find({
             where: { from: user.location },
         });
-        const nextLocations = [];
+        const nextMaps = [];
         try {
             for (var _g = true, roads_1 = __asyncValues(roads), roads_1_1; roads_1_1 = await roads_1.next(), _a = roads_1_1.done, !_a;) {
                 _c = roads_1_1.value;
                 _g = false;
                 try {
                     const road = _c;
-                    const locationsItem = await this.locationsRepository.findOne({
+                    const mapsItem = await this.mapsRepository.findOne({
                         where: { id: road.to },
                     });
-                    nextLocations.push(locationsItem);
+                    nextMaps.push(mapsItem);
                 }
                 finally {
                     _g = true;
@@ -125,10 +125,10 @@ let LocationScene = LocationScene_1 = class LocationScene {
             }
             finally { if (e_1) throw e_1.error; }
         }
-        await ctx.reply(`Вы находитесь в локации: "${locations.name}". Куда вы хотите отправиться?`, telegraf_1.Markup.inlineKeyboard([
+        await ctx.reply(`Вы находитесь в локации: "${maps.name}". Куда вы хотите отправиться?`, telegraf_1.Markup.inlineKeyboard([
             telegraf_1.Markup.button.callback('🍔Меню', 'menu'),
             telegraf_1.Markup.button.callback('📍Остаться здесь', 'leave'),
-            ...nextLocations.map((locationItem) => telegraf_1.Markup.button.callback(locationItem === null || locationItem === void 0 ? void 0 : locationItem.name, 'locationsXXX' + locationItem.id.toString())),
+            ...nextMaps.map((mapsItem) => telegraf_1.Markup.button.callback(mapsItem === null || mapsItem === void 0 ? void 0 : mapsItem.name, 'mapsXXX' + mapsItem.id.toString())),
         ], {
             columns: 1,
         }));
@@ -138,18 +138,18 @@ let LocationScene = LocationScene_1 = class LocationScene {
         const match = ctx.match[0];
         if (!match)
             next();
-        const locationId = +match.split('XXX')[1];
-        const location = await this.locationsRepository.findOne({
-            where: { id: locationId },
+        const mapId = +match.split('XXX')[1];
+        const map = await this.mapsRepository.findOne({
+            where: { id: mapId },
         });
         const telegram_id = ((_a = ctx === null || ctx === void 0 ? void 0 : ctx.message) === null || _a === void 0 ? void 0 : _a.from.id) || ((_c = (_b = ctx === null || ctx === void 0 ? void 0 : ctx.callbackQuery) === null || _b === void 0 ? void 0 : _b.from) === null || _c === void 0 ? void 0 : _c.id);
         const user = await this.usersRepository.findOne({
             where: { telegram_id: telegram_id },
         });
-        user.location = location.id || locationId;
+        user.location = map.id || mapId;
         await this.usersRepository.update({ id: user.id }, user);
         await ctx.scene.leave();
-        await ctx.reply(`Вы вошли в локацию: ${location.name}`, telegraf_1.Markup.inlineKeyboard([telegraf_1.Markup.button.callback('🍔Меню', 'menu')], {
+        await ctx.reply(`Вы вошли в локацию: ${map.name}`, telegraf_1.Markup.inlineKeyboard([telegraf_1.Markup.button.callback('🍔Меню', 'menu')], {
             columns: 1,
         }));
     }
@@ -176,7 +176,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], LocationScene.prototype, "onSceneEnter", null);
 __decorate([
-    (0, nestjs_telegraf_1.Action)(/locationsXXX.*/gim),
+    (0, nestjs_telegraf_1.Action)(/mapsXXX.*/gim),
     __param(0, (0, nestjs_telegraf_1.Ctx)()),
     __param(1, (0, nestjs_telegraf_1.Next)()),
     __metadata("design:type", Function),
@@ -206,7 +206,7 @@ LocationScene = LocationScene_1 = __decorate([
     __param(5, (0, typeorm_1.InjectRepository)(inventory_items_entity_1.InventoryItems)),
     __param(6, (0, typeorm_1.InjectRepository)(artifacts_entity_1.Artifacts)),
     __param(7, (0, typeorm_1.InjectRepository)(anomalies_entity_1.Anomalies)),
-    __param(8, (0, typeorm_1.InjectRepository)(locations_entity_1.LocationsEntity)),
+    __param(8, (0, typeorm_1.InjectRepository)(maps_entity_1.Maps)),
     __param(9, (0, typeorm_1.InjectRepository)(roads_entity_1.Roads)),
     __metadata("design:paramtypes", [app_service_1.AppService,
         typeorm_2.Repository,
@@ -220,4 +220,4 @@ LocationScene = LocationScene_1 = __decorate([
         typeorm_2.Repository])
 ], LocationScene);
 exports.LocationScene = LocationScene;
-//# sourceMappingURL=location.scene.js.map
+//# sourceMappingURL=location.scene%20copy.js.map

@@ -13,6 +13,9 @@ export class Chapters {
 
   @Column({ default: 'default', nullable: true })
   inventory_required?: string;
+
+  @Column()
+  location: number;
 }
 
 // CREATE TABLE public.chapters (
@@ -22,4 +25,3 @@ export class Chapters {
 // 	inventory_required varchar(255) NOT NULL DEFAULT '{}'::character varying,
 // 	CONSTRAINT chapters_pkey PRIMARY KEY (id)
 // );
- 

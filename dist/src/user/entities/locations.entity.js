@@ -9,32 +9,24 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Chapters = void 0;
+exports.LocationsEntity = void 0;
 const typeorm_1 = require("typeorm");
-let Chapters = class Chapters {
+let LocationsEntity = class LocationsEntity {
 };
 __decorate([
     (0, typeorm_1.PrimaryGeneratedColumn)(),
     __metadata("design:type", Number)
-], Chapters.prototype, "id", void 0);
+], LocationsEntity.prototype, "id", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
-], Chapters.prototype, "character", void 0);
+], LocationsEntity.prototype, "name", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ default: 'default', nullable: true }),
+    (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
-], Chapters.prototype, "content", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ default: 'default', nullable: true }),
-    __metadata("design:type", String)
-], Chapters.prototype, "inventory_required", void 0);
-__decorate([
-    (0, typeorm_1.Column)(),
-    __metadata("design:type", Number)
-], Chapters.prototype, "location", void 0);
-Chapters = __decorate([
-    (0, typeorm_1.Entity)('chapters')
-], Chapters);
-exports.Chapters = Chapters;
-//# sourceMappingURL=chapters.entity.js.map
+], LocationsEntity.prototype, "about", void 0);
+LocationsEntity = __decorate([
+    (0, typeorm_1.Entity)('locations')
+], LocationsEntity);
+exports.LocationsEntity = LocationsEntity;
+//# sourceMappingURL=locations.entity.js.map
