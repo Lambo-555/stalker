@@ -22,7 +22,10 @@ const user_module_1 = require("./user/user.module");
 const registration_wizzard_1 = require("./scenes/registration.wizzard");
 const anomaly_scene_1 = require("./scenes/anomaly.scene");
 const mutant_scene_1 = require("./scenes/mutant.scene");
-const scenes = [registration_wizzard_1.TestWizard, anomaly_scene_1.AnomalyRoadScene, mutant_scene_1.MutantScene];
+const artefact_scene_1 = require("./scenes/artefact.scene");
+const anomalies_entity_1 = require("./user/entities/anomalies.entity");
+const artifacts_entity_1 = require("./user/entities/artifacts.entity");
+const scenes = [registration_wizzard_1.TestWizard, anomaly_scene_1.AnomalyRoadScene, mutant_scene_1.MutantScene, artefact_scene_1.ArtefactScene];
 let AppModule = class AppModule {
 };
 AppModule = __decorate([
@@ -36,7 +39,15 @@ AppModule = __decorate([
                 username: 'owner',
                 password: 'owner',
                 database: 'game',
-                entities: [users_entity_1.Users, chapters_entity_1.Chapters, choices_entity_1.Choices, inventory_items_entity_1.InventoryItems, progress_entity_1.Progress],
+                entities: [
+                    users_entity_1.Users,
+                    chapters_entity_1.Chapters,
+                    choices_entity_1.Choices,
+                    inventory_items_entity_1.InventoryItems,
+                    progress_entity_1.Progress,
+                    anomalies_entity_1.Anomalies,
+                    artifacts_entity_1.Artifacts,
+                ],
                 synchronize: true,
             }),
             typeorm_1.TypeOrmModule.forFeature([
@@ -45,6 +56,8 @@ AppModule = __decorate([
                 choices_entity_1.Choices,
                 inventory_items_entity_1.InventoryItems,
                 progress_entity_1.Progress,
+                anomalies_entity_1.Anomalies,
+                artifacts_entity_1.Artifacts,
             ]),
             nestjs_telegraf_1.TelegrafModule.forRoot({
                 token: '5943057211:AAHh26OWDRO1fYtaGJtpL_lTSSTB-foTQWM',

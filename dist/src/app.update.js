@@ -105,6 +105,7 @@ let AppUpdate = AppUpdate_1 = class AppUpdate {
             telegraf_1.Markup.button.callback('🍔Меню', 'menu'),
             telegraf_1.Markup.button.callback('🔸Обход аномалий', scenes_enum_1.ScenesEnum.ANOMALY_ROAD),
             telegraf_1.Markup.button.callback('🔸Встреча с мутантом', scenes_enum_1.ScenesEnum.MUTANT),
+            telegraf_1.Markup.button.callback('🔸Поиск артефактов', scenes_enum_1.ScenesEnum.ARTIFACT),
         ], {
             columns: 1,
         }));
@@ -114,6 +115,9 @@ let AppUpdate = AppUpdate_1 = class AppUpdate {
     }
     async enterMutantScene(ctx) {
         await ctx.scene.enter(scenes_enum_1.ScenesEnum.MUTANT);
+    }
+    async enterArtefactScene(ctx) {
+        await ctx.scene.enter(scenes_enum_1.ScenesEnum.ARTIFACT);
     }
     async onInventory(ctx) {
         var _a, _b, _c;
@@ -172,6 +176,7 @@ let AppUpdate = AppUpdate_1 = class AppUpdate {
             telegraf_1.Markup.button.callback('🍔Меню', 'menu'),
             telegraf_1.Markup.button.callback('🔸Обход аномалий', scenes_enum_1.ScenesEnum.ANOMALY_ROAD),
             telegraf_1.Markup.button.callback('🔸Встреча с мутантом', scenes_enum_1.ScenesEnum.MUTANT),
+            telegraf_1.Markup.button.callback('🔸Поиск артефактов', scenes_enum_1.ScenesEnum.ARTIFACT),
         ], {
             columns: 1,
         }));
@@ -210,6 +215,14 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AppUpdate.prototype, "enterMutantScene", null);
+__decorate([
+    (0, nestjs_telegraf_1.Action)(scenes_enum_1.ScenesEnum.ARTIFACT),
+    (0, nestjs_telegraf_1.Command)(scenes_enum_1.ScenesEnum.ARTIFACT),
+    __param(0, (0, nestjs_telegraf_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AppUpdate.prototype, "enterArtefactScene", null);
 __decorate([
     (0, nestjs_telegraf_1.Command)('inventory'),
     (0, nestjs_telegraf_1.Action)('inventory'),

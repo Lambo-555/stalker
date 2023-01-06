@@ -131,6 +131,7 @@ export default class AppUpdate {
           Markup.button.callback('🍔Меню', 'menu'),
           Markup.button.callback('🔸Обход аномалий', ScenesEnum.ANOMALY_ROAD),
           Markup.button.callback('🔸Встреча с мутантом', ScenesEnum.MUTANT),
+          Markup.button.callback('🔸Поиск артефактов', ScenesEnum.ARTIFACT),
         ],
         {
           columns: 1,
@@ -149,6 +150,12 @@ export default class AppUpdate {
   @Command(ScenesEnum.MUTANT)
   async enterMutantScene(@Ctx() ctx: Scenes.SceneContext) {
     await ctx.scene.enter(ScenesEnum.MUTANT);
+  }
+
+  @Action(ScenesEnum.ARTIFACT)
+  @Command(ScenesEnum.ARTIFACT)
+  async enterArtefactScene(@Ctx() ctx: Scenes.SceneContext) {
+    await ctx.scene.enter(ScenesEnum.ARTIFACT);
   }
 
   @Command('inventory')
@@ -239,6 +246,7 @@ export default class AppUpdate {
           Markup.button.callback('🍔Меню', 'menu'),
           Markup.button.callback('🔸Обход аномалий', ScenesEnum.ANOMALY_ROAD),
           Markup.button.callback('🔸Встреча с мутантом', ScenesEnum.MUTANT),
+          Markup.button.callback('🔸Поиск артефактов', ScenesEnum.ARTIFACT),
         ],
         {
           columns: 1,

@@ -23,6 +23,7 @@ export default class AppUpdate {
     onMenu(ctx: TelegrafContext): Promise<void>;
     enterAnomalyRoadScene(ctx: Scenes.SceneContext): Promise<void>;
     enterMutantScene(ctx: Scenes.SceneContext): Promise<void>;
+    enterArtefactScene(ctx: Scenes.SceneContext): Promise<void>;
     onInventory(ctx: TelegrafContext): Promise<void>;
     onChoose(ctx: TelegrafContext, next: NextFunction): Promise<void>;
 }

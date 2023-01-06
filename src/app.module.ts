@@ -13,9 +13,11 @@ import { UserModule } from './user/user.module';
 import { TestWizard } from './scenes/registration.wizzard';
 import { AnomalyRoadScene } from './scenes/anomaly.scene';
 import { MutantScene } from './scenes/mutant.scene';
+import { ArtefactScene } from './scenes/artefact.scene';
+import { Anomalies } from './user/entities/anomalies.entity';
+import { Artifacts } from './user/entities/artifacts.entity';
 
-const scenes = [TestWizard, AnomalyRoadScene, MutantScene];
-
+const scenes = [TestWizard, AnomalyRoadScene, MutantScene, ArtefactScene];
 
 @Module({
   imports: [
@@ -27,7 +29,15 @@ const scenes = [TestWizard, AnomalyRoadScene, MutantScene];
       username: 'owner',
       password: 'owner',
       database: 'game',
-      entities: [Users, Chapters, Choices, InventoryItems, Progress],
+      entities: [
+        Users,
+        Chapters,
+        Choices,
+        InventoryItems,
+        Progress,
+        Anomalies,
+        Artifacts,
+      ],
       synchronize: true,
     }),
     TypeOrmModule.forFeature([
@@ -36,6 +46,8 @@ const scenes = [TestWizard, AnomalyRoadScene, MutantScene];
       Choices,
       InventoryItems,
       Progress,
+      Anomalies,
+      Artifacts,
     ]),
     TelegrafModule.forRoot({
       token: '5943057211:AAHh26OWDRO1fYtaGJtpL_lTSSTB-foTQWM',
