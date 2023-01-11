@@ -80,61 +80,29 @@ let AnomalyRoadScene = AnomalyRoadScene_1 = class AnomalyRoadScene {
     }
     async onSceneEnter(ctx) {
         const anomaliesList = await this.anomaliesRepository.find();
-        await ctx.reply(`Вы попали в зону аномалии "${this.appService.getRandomElInArr(anomaliesList.map((item) => item.name))}". Вы кидаете болты, чтобы выжить и пройти дальше.`, telegraf_1.Markup.inlineKeyboard([
-            telegraf_1.Markup.button.callback('Выбор направления.', 'anomalyWays'),
-        ]));
-    }
-    async anomalyWays(ctx) {
-        const ways = [
-            { name: 'Шаг влево', status: 'true' },
-            { name: 'Шаг вправо', status: 'true' },
-            { name: 'Кинуть болт', status: 'true' },
-            { name: 'Прыгнуть', status: 'false' },
-            { name: 'Проползти', status: 'false' },
-            { name: 'Пробежать', status: 'false' },
-            { name: 'Прокрасться', status: 'true' },
-        ];
-        await ctx.replyWithHTML(`<b>Пути:</b> `, telegraf_1.Markup.inlineKeyboard([
-            telegraf_1.Markup.button.callback('Шаг вперед', 'wayXXX' + 'true'),
-            ...ways.map((way) => telegraf_1.Markup.button.callback(way.name, 'wayXXX' + way.status.toString(), Math.random() > 0.6)),
+        const anomaly = this.appService.getRandomElInArr(anomaliesList);
+        const trueTacticsName = JSON.parse(anomaly.tactics)[0];
+        const tactics = Array.from(new Set(anomaliesList.map((item) => JSON.parse(item.tactics)[0])));
+        await ctx.replyWithHTML(`Вы попали в зону аномалии <b>"${anomaly.name}"</b>\nВыберете стратегию поведения`, telegraf_1.Markup.inlineKeyboard([
+            ...tactics.map((candidateTacticsName) => telegraf_1.Markup.button.callback(candidateTacticsName, 'anomaly' + (candidateTacticsName === trueTacticsName ? 'True' : 'False'))),
         ], {
-            columns: 2,
+            columns: 1,
         }));
     }
-    async onChoose(ctx, next) {
-        const match = ctx.match[0];
-        if (!match)
-            next();
-        const wayStatus = match.split('XXX')[1];
-        if (wayStatus == 'true') {
-            console.log('matchmatch1', match);
-        }
-        else {
-            console.log('matchmatchmatch2', match);
-        }
+    async anomalyFalse(ctx) {
+        await ctx.reply('Стратегия неверна. Вы потеряли здоровье.');
+        await ctx.scene.leave();
+    }
+    async anomalyTrue(ctx) {
         const wayTotal = Math.random() * 100;
-        if (wayTotal < 10) {
-            await ctx.replyWithHTML('Не сработало. Вы попали в аномалию и получили травму', telegraf_1.Markup.inlineKeyboard([
-                telegraf_1.Markup.button.callback('Выбраться', 'anomalyWays'),
-            ]));
-        }
-        if (wayTotal >= 20 && wayTotal < 20) {
-            await ctx.replyWithHTML('Все ровно. Путь безопасен. Нужно двигаться дальше', telegraf_1.Markup.inlineKeyboard([
-                telegraf_1.Markup.button.callback('Дальше', 'anomalyWays'),
-            ]));
-        }
-        if (wayTotal >= 20 && wayTotal < 60) {
-            await ctx.replyWithHTML('Аномалия создата тут тупик', telegraf_1.Markup.inlineKeyboard([
-                telegraf_1.Markup.button.callback('Обойти', 'anomalyWays'),
-            ]));
-        }
         if (wayTotal >= 60) {
-            await ctx.reply('Все как один болты ложились в роный путь. Вы выбрались');
+            await ctx.reply('Тактика верна. Знание и удача на вашей стороне.');
             await ctx.scene.leave();
         }
-    }
-    async enterQuestScene(ctx) {
-        await ctx.scene.enter(scenes_enum_1.ScenesEnum.QUEST);
+        else {
+            await ctx.reply('Тактика оказалась верной. Но Зона все таки смогла нанести вам небольшие увечья.');
+            await ctx.scene.leave();
+        }
     }
     async market(ctx) {
     }
@@ -148,7 +116,7 @@ let AnomalyRoadScene = AnomalyRoadScene_1 = class AnomalyRoadScene {
         await ctx.scene.leave();
     }
     async onSceneLeave(ctx) {
-        await ctx.reply('Вы выбрались из аномальной зоны.');
+        await ctx.reply('Вы выбрались из аномальной зоны.', telegraf_1.Markup.inlineKeyboard([telegraf_1.Markup.button.callback('🍔Меню', 'menu')]));
     }
 };
 __decorate([
@@ -167,27 +135,19 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AnomalyRoadScene.prototype, "onSceneEnter", null);
 __decorate([
-    (0, nestjs_telegraf_1.Action)('anomalyWays'),
+    (0, nestjs_telegraf_1.Action)('anomalyFalse'),
     __param(0, (0, nestjs_telegraf_1.Ctx)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
-], AnomalyRoadScene.prototype, "anomalyWays", null);
+], AnomalyRoadScene.prototype, "anomalyFalse", null);
 __decorate([
-    (0, nestjs_telegraf_1.Action)(/wayXXX.*/gim),
-    __param(0, (0, nestjs_telegraf_1.Ctx)()),
-    __param(1, (0, nestjs_telegraf_1.Next)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Function]),
-    __metadata("design:returntype", Promise)
-], AnomalyRoadScene.prototype, "onChoose", null);
-__decorate([
-    (0, nestjs_telegraf_1.Action)(scenes_enum_1.ScenesEnum.QUEST),
+    (0, nestjs_telegraf_1.Action)('anomalyTrue'),
     __param(0, (0, nestjs_telegraf_1.Ctx)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
-], AnomalyRoadScene.prototype, "enterQuestScene", null);
+], AnomalyRoadScene.prototype, "anomalyTrue", null);
 __decorate([
     (0, nestjs_telegraf_1.Action)('play'),
     __param(0, (0, nestjs_telegraf_1.Ctx)()),

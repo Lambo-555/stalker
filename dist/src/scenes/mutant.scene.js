@@ -21,6 +21,7 @@ const app_service_1 = require("../app.service");
 const chapters_entity_1 = require("../user/entities/chapters.entity");
 const choices_entity_1 = require("../user/entities/choices.entity");
 const inventory_items_entity_1 = require("../user/entities/inventory_items.entity");
+const mutants_entity_1 = require("../user/entities/mutants.entity");
 const progress_entity_1 = require("../user/entities/progress.entity");
 const users_entity_1 = require("../user/entities/users.entity");
 const telegraf_1 = require("telegraf");
@@ -28,13 +29,14 @@ const typeorm_2 = require("typeorm");
 const activity_enum_1 = require("./enums/activity.enum");
 const scenes_enum_1 = require("./enums/scenes.enum");
 let MutantScene = MutantScene_1 = class MutantScene {
-    constructor(appService, usersRepository, chaptersRepository, choicesRepository, progressRepository, inventoryItemsRepository) {
+    constructor(appService, usersRepository, chaptersRepository, choicesRepository, progressRepository, inventoryItemsRepository, mutantsRepository) {
         this.appService = appService;
         this.usersRepository = usersRepository;
         this.chaptersRepository = chaptersRepository;
         this.choicesRepository = choicesRepository;
         this.progressRepository = progressRepository;
         this.inventoryItemsRepository = inventoryItemsRepository;
+        this.mutantsRepository = mutantsRepository;
         this.logger = new common_1.Logger(MutantScene_1.name);
     }
     async onRegister(ctx, next) {
@@ -75,56 +77,65 @@ let MutantScene = MutantScene_1 = class MutantScene {
         next();
     }
     async onSceneEnter(ctx) {
-        const mutantList = [
-            'Ворона',
-            'Тушкан',
-            'Кабан',
-            'Плоть',
-            'Слепой пёс',
-            'Псевдособака',
-            'Пси-собака',
-            'Полтергейст',
-            'Огненныйполтергейст',
-            'Снорк',
-            'Контролёр',
-            'Бюрер',
-            'Кровосос',
-            'Псевдогигант',
-            'Химера',
-        ];
-        await ctx.reply(`Вы встретили мутанта: "${this.appService.getRandomElInArr(mutantList)}". Нужно понять, что делать дальше`, telegraf_1.Markup.inlineKeyboard([
-            telegraf_1.Markup.button.callback('Выбрать тактику', 'mutantWays'),
-        ]));
+        var _a, _b, _c;
+        const telegram_id = ((_a = ctx === null || ctx === void 0 ? void 0 : ctx.message) === null || _a === void 0 ? void 0 : _a.from.id) || ((_c = (_b = ctx === null || ctx === void 0 ? void 0 : ctx.callbackQuery) === null || _b === void 0 ? void 0 : _b.from) === null || _c === void 0 ? void 0 : _c.id);
+        const user = await this.usersRepository.findOne({
+            where: { telegram_id: telegram_id },
+        });
+        const mutantList = await this.mutantsRepository.find();
+        const partList = ['плечо', 'лицо', 'ноги', 'живот', 'грудь', 'руки'];
+        const mutant = this.appService.getRandomElInArr(mutantList);
+        await ctx.reply(`Вы встретили мутанта: "${mutant.name}". Итоги боя\n` +
+            this.battle(mutant, user));
+        await ctx.scene.leave();
     }
-    async mutantWays(ctx) {
-        const ways = ['Атаковать', 'Отбежать', 'Замереть'];
-        await ctx.replyWithHTML(`<b>Пути:</b> `, telegraf_1.Markup.inlineKeyboard([
-            ...ways.map((wayName) => telegraf_1.Markup.button.callback(wayName, 'actionChoose')),
-        ], {
-            columns: 2,
-        }));
-    }
-    async actionChoose(ctx) {
-        const wayTotal = Math.random() * 100;
-        if (wayTotal < 10) {
-            await ctx.replyWithHTML('Тактика не сработала. Вы получии урон.', telegraf_1.Markup.inlineKeyboard([
-                telegraf_1.Markup.button.callback('Сделать выбор.', 'mutantWays'),
-            ]));
+    battle(enemy, user, text = '') {
+        const agilityUser = 5;
+        const agilityEnemy = 1;
+        let dodgeUser = false;
+        let dodgeEnemy = false;
+        if (agilityUser >= agilityEnemy) {
+            dodgeUser =
+                Math.random() * ((agilityUser - agilityEnemy) * 10) >
+                    Math.random() * 100;
         }
-        if (wayTotal >= 20 && wayTotal < 20) {
-            await ctx.replyWithHTML('Успешная тактика. Что делать дальше?', telegraf_1.Markup.inlineKeyboard([
-                telegraf_1.Markup.button.callback('Выбрать.', 'mutantWays'),
-            ]));
+        else {
+            dodgeEnemy =
+                Math.random() * ((agilityEnemy - agilityUser) * 10) >
+                    Math.random() * 100;
         }
-        if (wayTotal >= 20 && wayTotal < 70) {
-            await ctx.replyWithHTML('Тактика не помогла, но и не навредила. Далее.', telegraf_1.Markup.inlineKeyboard([
-                telegraf_1.Markup.button.callback('Передумать.', 'mutantWays'),
-            ]));
+        let dodgeChanceNameUser = dodgeUser ? '- уворот' : '- урон получен';
+        let dodgeChanceNameEnemy = dodgeEnemy ? '- уворот' : '- урон получен';
+        let randomModifier = Math.random() * 0.5 + 0.75;
+        let enemyDamage = 0;
+        const userDamage = !dodgeEnemy ? Math.floor(250 * randomModifier) : 0;
+        for (let i = 0; i < enemy.actions; i++) {
+            randomModifier = Math.random() * 0.5 + 0.75;
+            dodgeUser =
+                Math.random() * ((agilityUser - agilityEnemy) * 10) >
+                    Math.random() * 100;
+            dodgeEnemy =
+                Math.random() * ((agilityEnemy - agilityUser) * 10) >
+                    Math.random() * 100;
+            enemyDamage = !dodgeUser
+                ? Math.floor((enemy.damage * randomModifier) / enemy.actions)
+                : 0;
+            user.health -= enemyDamage;
+            text += `\n${enemy.name} нанес вам урон ${userDamage} 
+Уклонение: ${dodgeUser ? '🍀' : '❎'}. Ваше 🫀: ${user.health <= 0 ? 0 : user.health}\n`;
+            if (user.health <= 0) {
+                text += '\n☠️ Вы проиграли. Зона забрала вас.';
+                return text;
+            }
         }
-        if (wayTotal >= 70) {
-            await ctx.reply('Мутант более не опасен. Вы спасены и продолжаете путь.');
-            await ctx.scene.leave();
+        enemy.health -= userDamage;
+        text += `\nВы нанесли ${enemyDamage} урона ▶️ ${enemy.name}
+Уклонение врага: ${dodgeEnemy ? '🍀' : '❎'}. 🫀 врага: ${enemy.health <= 0 ? 0 : enemy.health}\n`;
+        if (enemy.health <= 0) {
+            text += `\n${enemy.name} теперь никого не побеспокоит.`;
+            return text;
         }
+        return this.battle(enemy, user, text);
     }
     async enterQuestScene(ctx) {
         await ctx.scene.enter(scenes_enum_1.ScenesEnum.QUEST);
@@ -141,7 +152,7 @@ let MutantScene = MutantScene_1 = class MutantScene {
         await ctx.scene.leave();
     }
     async onSceneLeave(ctx) {
-        await ctx.reply('Встреча с мутантом окончена.');
+        await ctx.reply('Встреча с мутантом окончена.', telegraf_1.Markup.inlineKeyboard([telegraf_1.Markup.button.callback('🍔Меню', 'menu')]));
     }
 };
 __decorate([
@@ -159,20 +170,6 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], MutantScene.prototype, "onSceneEnter", null);
-__decorate([
-    (0, nestjs_telegraf_1.Action)('mutantWays'),
-    __param(0, (0, nestjs_telegraf_1.Ctx)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", Promise)
-], MutantScene.prototype, "mutantWays", null);
-__decorate([
-    (0, nestjs_telegraf_1.Action)('actionChoose'),
-    __param(0, (0, nestjs_telegraf_1.Ctx)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", Promise)
-], MutantScene.prototype, "actionChoose", null);
 __decorate([
     (0, nestjs_telegraf_1.Action)(scenes_enum_1.ScenesEnum.QUEST),
     __param(0, (0, nestjs_telegraf_1.Ctx)()),
@@ -230,7 +227,9 @@ MutantScene = MutantScene_1 = __decorate([
     __param(3, (0, typeorm_1.InjectRepository)(choices_entity_1.Choices)),
     __param(4, (0, typeorm_1.InjectRepository)(progress_entity_1.Progress)),
     __param(5, (0, typeorm_1.InjectRepository)(inventory_items_entity_1.InventoryItems)),
+    __param(6, (0, typeorm_1.InjectRepository)(mutants_entity_1.Mutants)),
     __metadata("design:paramtypes", [app_service_1.AppService,
+        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,

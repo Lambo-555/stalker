@@ -24,6 +24,7 @@ import { Progress } from './user/entities/progress.entity';
 import { InventoryItems } from './user/entities/inventory_items.entity';
 import crypto from 'crypto';
 import { ScenesEnum } from './scenes/enums/scenes.enum';
+import { LocationsEntity } from './user/entities/locations.entity';
 
 @Update()
 @Injectable()
@@ -43,6 +44,8 @@ export default class AppUpdate {
     private readonly progressRepository: Repository<Progress>,
     @InjectRepository(InventoryItems)
     private readonly inventoryItemsRepository: Repository<InventoryItems>,
+    @InjectRepository(LocationsEntity)
+    private readonly locationsRepository: Repository<LocationsEntity>,
   ) {}
 
   onApplicationBootstrap() {
@@ -79,8 +82,8 @@ export default class AppUpdate {
         where: { content: Like('💭') },
       });
       await this.progressRepository.save({
-        user_id: userRegistered.id,
-        chapter_id: lastChapter.id,
+        user_id: userRegistered?.id,
+        chapter_id: lastChapter?.id || 50,
       });
       this.logger.debug(JSON.stringify(userRegistered, null, 2));
     }
@@ -97,10 +100,10 @@ export default class AppUpdate {
       where: { telegram_id: telegram_id },
     });
 
-    const userProgress: Progress = await this.progressRepository.findOne({
+    const progress: Progress = await this.progressRepository.findOne({
       where: { user_id: user.id },
     });
-    const userChapterId = userProgress.chapter_id;
+    const userChapterId = progress.chapter_id;
     let userChapter: Chapters = await this.chaptersRepository.findOne({
       where: { id: userChapterId },
     });
@@ -108,38 +111,43 @@ export default class AppUpdate {
       where: { chapter_id: userChapter.id },
     });
 
-    const firstChapter = await this.chaptersRepository.findOne({
+    const starterChapter = await this.chaptersRepository.findOne({
       order: { id: 1 },
       where: { content: Like('💭%') },
     });
-    if (!userChapter && firstChapter) {
-      userChapter = firstChapter;
+    if (!userChapter && starterChapter) {
+      userChapter = starterChapter;
     }
+    const locations: LocationsEntity = await this.locationsRepository.findOne({
+      where: { id: user.location },
+    });
+
+    const nextChapter: Chapters = await this.chaptersRepository.findOne({
+      where: { id: progress.chapter_id, location: locations.id },
+    });
 
     await ctx.replyWithHTML(
-      `<b>${userChapter.character}:</b> ${userChapter.content}`,
+      `Вы на локации: <b>${locations.name}</b>.`,
       Markup.inlineKeyboard(
         [
-          // ...nextChoices.map((item) =>
-          //   Markup.button.callback(
-          //     item?.description || 'neeext',
-          //     'chapterXXX' + item.next_chapter_id.toString(),
-          //   ),
-          // ),
-          // Markup.button.callback('Инвентарь', 'inventory'),
-          Markup.button.callback('⚽️Сброс', 'chapterXXX' + firstChapter.id),
-          Markup.button.callback('🍔Меню', 'menu'),
-          Markup.button.callback('♻️Обход аномалий', ScenesEnum.ANOMALY_ROAD),
-          Markup.button.callback('🐫Встреча с мутантом', ScenesEnum.MUTANT),
-          Markup.button.callback('🥦Поиск артефактов', ScenesEnum.ARTIFACT),
+          Markup.button.callback('🔩Аномалия', ScenesEnum.ANOMALY_ROAD),
+          Markup.button.callback('🐫Мутант', ScenesEnum.MUTANT),
+          Markup.button.callback('🥦Артефакт', ScenesEnum.ARTIFACT),
           Markup.button.callback('📍Перемещение', ScenesEnum.LOCATION),
-          Markup.button.callback('🤙Диалог', ScenesEnum.QUEST),
+          Markup.button.callback('📟PDA', 'PDA'),
+          Markup.button.callback('🤙Квест', ScenesEnum.QUEST, !!!nextChapter),
         ],
         {
           columns: 2,
         },
       ),
     );
+  }
+
+  @Action(ScenesEnum.PDA)
+  @Command(ScenesEnum.PDA)
+  async enterPdaScene(@Ctx() ctx: Scenes.SceneContext) {
+    await ctx.scene.enter(ScenesEnum.PDA);
   }
 
   @Action(ScenesEnum.ANOMALY_ROAD)
@@ -172,90 +180,90 @@ export default class AppUpdate {
     await ctx.scene.enter(ScenesEnum.QUEST);
   }
 
-  @Action(/chapterXXX.*/gim)
-  async onChoose(@Ctx() ctx: TelegrafContext, @Next() next: NextFunction) {
-    const match = ctx.match[0];
-    if (!match) next();
-    console.log('match', match);
-    const selectedChapterId = +match.split('XXX')[1]; // chapterXXX1
-    console.log('choiseId', selectedChapterId);
-    const telegram_id: number =
-      ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
-    const user: Users = await this.usersRepository.findOne({
-      where: { telegram_id: telegram_id },
-    });
+  // @Action(/chapterXXX.*/gim)
+  // async onChoose(@Ctx() ctx: TelegrafContext, @Next() next: NextFunction) {
+  //   const match = ctx.match[0];
+  //   if (!match) next();
+  //   console.log('match', match);
+  //   const selectedChapterId = +match.split('XXX')[1]; // chapterXXX1
+  //   console.log('choiseId', selectedChapterId);
+  //   const telegram_id: number =
+  //     ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
+  //   const user: Users = await this.usersRepository.findOne({
+  //     where: { telegram_id: telegram_id },
+  //   });
 
-    let progress: Progress = await this.progressRepository.findOne({
-      where: {
-        user_id: user.id,
-      },
-    });
-    console.log('progress1', progress);
+  //   let progress: Progress = await this.progressRepository.findOne({
+  //     where: {
+  //       user_id: user.id,
+  //     },
+  //   });
+  //   console.log('progress1', progress);
 
-    // if (progress.chapter_id > nextChapterId) {
-    //   await ctx.reply(
-    //     'Этот выбор вы уже сделали',
-    //     Markup.inlineKeyboard([Markup.button.callback('Menu', 'menu')], {
-    //       columns: 2,
-    //     }),
-    //   );
-    //   return;
-    // }
+  //   // if (progress.chapter_id > nextChapterId) {
+  //   //   await ctx.reply(
+  //   //     'Этот выбор вы уже сделали',
+  //   //     Markup.inlineKeyboard([Markup.button.callback('Menu', 'menu')], {
+  //   //       columns: 2,
+  //   //     }),
+  //   //   );
+  //   //   return;
+  //   // }
 
-    await this.progressRepository.update(progress.progress_id, {
-      chapter_id: selectedChapterId,
-    });
+  //   await this.progressRepository.update(progress.progress_id, {
+  //     chapter_id: selectedChapterId,
+  //   });
 
-    progress = await this.progressRepository.findOne({
-      where: {
-        user_id: user.id,
-      },
-    });
-    console.log('progress2', progress);
+  //   progress = await this.progressRepository.findOne({
+  //     where: {
+  //       user_id: user.id,
+  //     },
+  //   });
+  //   console.log('progress2', progress);
 
-    const newChapter: Chapters = await this.chaptersRepository.findOne({
-      where: { id: progress.chapter_id },
-    });
-    console.log('newChapter', newChapter);
+  //   const newChapter: Chapters = await this.chaptersRepository.findOne({
+  //     where: { id: progress.chapter_id },
+  //   });
+  //   console.log('newChapter', newChapter);
 
-    const choises: Choices[] = await this.choicesRepository.find({
-      where: { chapter_id: newChapter.id },
-    });
-    console.log('choiseschoises', choises);
+  //   const choises: Choices[] = await this.choicesRepository.find({
+  //     where: { chapter_id: newChapter.id },
+  //   });
+  //   console.log('choiseschoises', choises);
 
-    choises.forEach(async (item) => {
-      const chapter = await this.chaptersRepository.findOne({
-        where: { id: item.chapter_id },
-      });
-      return {
-        ...item,
-        description: chapter.character,
-      };
-    });
+  //   choises.forEach(async (item) => {
+  //     const chapter = await this.chaptersRepository.findOne({
+  //       where: { id: item.chapter_id },
+  //     });
+  //     return {
+  //       ...item,
+  //       description: chapter.character,
+  //     };
+  //   });
 
-    await ctx.replyWithHTML(
-      `<b>${newChapter.character}:</b> ${newChapter.content}`,
-      Markup.inlineKeyboard(
-        [
-          // ...choises.map((item) =>
-          //   Markup.button.callback(
-          //     item?.description || 'neeext',
-          //     'chapterXXX' + item.next_chapter_id.toString(),
-          //   ),
-          // ),
-          Markup.button.callback('🍔Меню', 'menu'),
-          Markup.button.callback('♻️Обход аномалий', ScenesEnum.ANOMALY_ROAD),
-          Markup.button.callback('🐫Встреча с мутантом', ScenesEnum.MUTANT),
-          Markup.button.callback('🥦Поиск артефактов', ScenesEnum.ARTIFACT),
-          Markup.button.callback('📍Перемещение', ScenesEnum.LOCATION),
-          Markup.button.callback('🤙Диалог', ScenesEnum.QUEST),
-        ],
-        {
-          columns: 1,
-        },
-      ),
-    );
-  }
+  //   await ctx.replyWithHTML(
+  //     `<b>${newChapter.character}:</b> ${newChapter.content}`,
+  //     Markup.inlineKeyboard(
+  //       [
+  //         // ...choises.map((item) =>
+  //         //   Markup.button.callback(
+  //         //     item?.description || 'neeext',
+  //         //     'chapterXXX' + item.next_chapter_id.toString(),
+  //         //   ),
+  //         // ),
+  //         Markup.button.callback('🍔Меню', 'menu'),
+  //         Markup.button.callback('♻️Обход аномалий', ScenesEnum.ANOMALY_ROAD),
+  //         Markup.button.callback('🐫Встреча с мутантом', ScenesEnum.MUTANT),
+  //         Markup.button.callback('🥦Поиск артефактов', ScenesEnum.ARTIFACT),
+  //         Markup.button.callback('📍Перемещение', ScenesEnum.LOCATION),
+  //         Markup.button.callback('🤙Диалог', ScenesEnum.QUEST),
+  //       ],
+  //       {
+  //         columns: 1,
+  //       },
+  //     ),
+  //   );
+  // }
 
   /**
    * Выберите сумму вашей ставки.

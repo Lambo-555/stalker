@@ -9,28 +9,28 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Roads = void 0;
+exports.RoadsEntity = void 0;
 const typeorm_1 = require("typeorm");
-let Roads = class Roads {
+let RoadsEntity = class RoadsEntity {
 };
 __decorate([
     (0, typeorm_1.PrimaryGeneratedColumn)(),
     __metadata("design:type", Number)
-], Roads.prototype, "id", void 0);
+], RoadsEntity.prototype, "id", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", Number)
-], Roads.prototype, "from", void 0);
+], RoadsEntity.prototype, "from", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", Number)
-], Roads.prototype, "to", void 0);
+], RoadsEntity.prototype, "to", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", Boolean)
-], Roads.prototype, "is_open", void 0);
-Roads = __decorate([
+], RoadsEntity.prototype, "is_open", void 0);
+RoadsEntity = __decorate([
     (0, typeorm_1.Entity)('roads')
-], Roads);
-exports.Roads = Roads;
+], RoadsEntity);
+exports.RoadsEntity = RoadsEntity;
 //# sourceMappingURL=roads.entity.js.map

@@ -21,7 +21,7 @@ import { Choices } from 'src/user/entities/choices.entity';
 import { InventoryItems } from 'src/user/entities/inventory_items.entity';
 import { LocationsEntity } from 'src/user/entities/locations.entity';
 import { Progress } from 'src/user/entities/progress.entity';
-import { Roads } from 'src/user/entities/roads.entity';
+import { RoadsEntity } from 'src/user/entities/roads.entity';
 import { Users } from 'src/user/entities/users.entity';
 import { Markup, Scenes } from 'telegraf';
 import { InlineKeyboardButton } from 'telegraf/typings/core/types/typegram';
@@ -60,8 +60,8 @@ export class QuestScene {
     private readonly anomaliesRepository: Repository<Anomalies>,
     @InjectRepository(LocationsEntity)
     private readonly locationsRepository: Repository<LocationsEntity>,
-    @InjectRepository(Roads)
-    private readonly roadsRepository: Repository<Roads>,
+    @InjectRepository(RoadsEntity)
+    private readonly roadsRepository: Repository<RoadsEntity>,
   ) {}
 
   @Use()
@@ -124,11 +124,16 @@ export class QuestScene {
         id: progress.chapter_id,
       },
     });
+    const starterChapter = await this.chaptersRepository.findOne({
+      order: { id: 1 },
+      where: { content: Like('💭%') },
+    });
     if (chapter.location === location.id) {
       await ctx.reply(
         `На этой локации есть с кем поговорить. ${chapter.character} вас ждет.`,
         Markup.inlineKeyboard([
           Markup.button.callback('🤝Поговорить', 'chapterXXX' + chapter.id),
+          Markup.button.callback('⚽️Сброс', 'chapterXXX' + starterChapter.id),
           Markup.button.callback('✋🏻Уйти', 'leave'),
         ]),
       );

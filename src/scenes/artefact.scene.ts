@@ -159,15 +159,12 @@ export class ArtefactScene {
   async anomalyTrue(@Ctx() ctx: TelegrafContext) {
     const wayTotal = Math.random() * 100;
     if (wayTotal >= 60) {
-      await ctx.reply(
-        'Отлично, короб подошел, артефакт ведет себя стабильно.',
-        Markup.inlineKeyboard([Markup.button.callback('🍔Меню', 'menu')]),
-      );
+      await ctx.reply('Отлично, короб подошел, артефакт ведет себя стабильно.');
       await ctx.scene.leave();
     } else {
       await ctx.reply(
         'Отлично, короб подошел, но артефакт был нестабилен и иссяк.',
-        Markup.inlineKeyboard([Markup.button.callback('🍔Меню', 'menu')]),
+        // Markup.inlineKeyboard([Markup.button.callback('🍔Меню', 'menu')]),
       );
       await ctx.scene.leave();
     }
@@ -190,6 +187,9 @@ export class ArtefactScene {
 
   @SceneLeave()
   async onSceneLeave(@Ctx() ctx: Scenes.SceneContext) {
-    await ctx.reply('Поиск артефакта завершен.');
+    await ctx.reply(
+      'Поиск артефакта завершен.',
+      Markup.inlineKeyboard([Markup.button.callback('🍔Меню', 'menu')]),
+    );
   }
 }

@@ -37,6 +37,14 @@ __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], Users.prototype, "inventory", void 0);
+__decorate([
+    (0, typeorm_1.Column)(),
+    __metadata("design:type", Number)
+], Users.prototype, "health", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: false, default: 0 }),
+    __metadata("design:type", Number)
+], Users.prototype, "radiation", void 0);
 Users = __decorate([
     (0, typeorm_1.Entity)('users')
 ], Users);

@@ -13,4 +13,7 @@ export class Anomalies {
 
   @Column({ nullable: true })
   about?: string;
+
+  @Column({ nullable: true })
+  tactics?: string;
 }

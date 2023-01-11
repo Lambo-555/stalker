@@ -5,6 +5,4 @@ export declare class Users {
     telegram_id?: number;
     location?: number;
     inventory?: string;
-    health: number;
-    radiation?: number;
 }

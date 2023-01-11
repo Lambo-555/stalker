@@ -29,6 +29,8 @@ const locations_entity_1 = require("./user/entities/locations.entity");
 const roads_entity_1 = require("./user/entities/roads.entity");
 const location_scene_1 = require("./scenes/location.scene");
 const quest_scene_1 = require("./scenes/quest.scene");
+const mutants_entity_1 = require("./user/entities/mutants.entity");
+const pda_scene_1 = require("./scenes/pda.scene");
 const scenes = [
     registration_wizzard_1.TestWizard,
     anomaly_scene_1.AnomalyRoadScene,
@@ -36,6 +38,7 @@ const scenes = [
     artefact_scene_1.ArtefactScene,
     location_scene_1.LocationScene,
     quest_scene_1.QuestScene,
+    pda_scene_1.PdaScene,
 ];
 let AppModule = class AppModule {
 };
@@ -59,7 +62,8 @@ AppModule = __decorate([
                     anomalies_entity_1.Anomalies,
                     artifacts_entity_1.Artifacts,
                     locations_entity_1.LocationsEntity,
-                    roads_entity_1.Roads,
+                    roads_entity_1.RoadsEntity,
+                    mutants_entity_1.Mutants,
                 ],
                 synchronize: true,
             }),
@@ -72,7 +76,8 @@ AppModule = __decorate([
                 anomalies_entity_1.Anomalies,
                 artifacts_entity_1.Artifacts,
                 locations_entity_1.LocationsEntity,
-                roads_entity_1.Roads,
+                roads_entity_1.RoadsEntity,
+                mutants_entity_1.Mutants,
             ]),
             nestjs_telegraf_1.TelegrafModule.forRoot({
                 token: '5943057211:AAHh26OWDRO1fYtaGJtpL_lTSSTB-foTQWM',

@@ -8,6 +8,7 @@ var ScenesEnum;
     ScenesEnum["MUTANT"] = "MUTANT";
     ScenesEnum["GROUP"] = "GROUP";
     ScenesEnum["ARTIFACT"] = "ARTIFACT";
+    ScenesEnum["PDA"] = "PDA";
     ScenesEnum["QUEST"] = "QUEST";
     ScenesEnum["LOCATION"] = "LOCATION";
 })(ScenesEnum = exports.ScenesEnum || (exports.ScenesEnum = {}));

@@ -29,6 +29,10 @@ __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], Anomalies.prototype, "about", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Anomalies.prototype, "tactics", void 0);
 Anomalies = __decorate([
     (0, typeorm_1.Entity)('anomalies')
 ], Anomalies);

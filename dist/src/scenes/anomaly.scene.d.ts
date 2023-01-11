@@ -23,9 +23,8 @@ export declare class AnomalyRoadScene {
     constructor(appService: AppService, usersRepository: Repository<Users>, chaptersRepository: Repository<Chapters>, choicesRepository: Repository<Choices>, progressRepository: Repository<Progress>, inventoryItemsRepository: Repository<InventoryItems>, artifactsRepository: Repository<Artifacts>, anomaliesRepository: Repository<Anomalies>);
     onRegister(ctx: TelegrafContext, next: NextFunction): Promise<void>;
     onSceneEnter(ctx: TelegrafContext): Promise<void>;
-    anomalyWays(ctx: TelegrafContext): Promise<void>;
-    onChoose(ctx: TelegrafContext, next: NextFunction): Promise<void>;
-    enterQuestScene(ctx: Scenes.SceneContext): Promise<void>;
+    anomalyFalse(ctx: TelegrafContext): Promise<void>;
+    anomalyTrue(ctx: TelegrafContext): Promise<void>;
     market(ctx: Scenes.SceneContext): Promise<void>;
     mystats(ctx: Scenes.SceneContext): Promise<void>;
     mission(ctx: Scenes.SceneContext): Promise<void>;

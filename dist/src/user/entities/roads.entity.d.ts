@@ -1,4 +1,4 @@
-export declare class Roads {
+export declare class RoadsEntity {
     id: number;
     from?: number;
     to?: number;

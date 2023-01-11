@@ -126,7 +126,6 @@ let LocationScene = LocationScene_1 = class LocationScene {
             finally { if (e_1) throw e_1.error; }
         }
         await ctx.reply(`Вы находитесь в локации: "${locations.name}". Куда вы хотите отправиться?`, telegraf_1.Markup.inlineKeyboard([
-            telegraf_1.Markup.button.callback('🍔Меню', 'menu'),
             telegraf_1.Markup.button.callback('📍Остаться здесь', 'leave'),
             ...nextLocations.map((locationItem) => telegraf_1.Markup.button.callback(locationItem === null || locationItem === void 0 ? void 0 : locationItem.name, 'locationsXXX' + locationItem.id.toString())),
         ], {
@@ -148,16 +147,13 @@ let LocationScene = LocationScene_1 = class LocationScene {
         });
         user.location = location.id || locationId;
         await this.usersRepository.update({ id: user.id }, user);
-        await ctx.scene.leave();
-        await ctx.reply(`Вы вошли в локацию: ${location.name}`, telegraf_1.Markup.inlineKeyboard([telegraf_1.Markup.button.callback('🍔Меню', 'menu')], {
-            columns: 1,
-        }));
+        await ctx.scene.reenter();
     }
     async onLeaveCommand(ctx) {
         await ctx.scene.leave();
     }
     async onSceneLeave(ctx) {
-        await ctx.reply('Перемещение завершено.');
+        await ctx.reply('Перемещение завершено.', telegraf_1.Markup.inlineKeyboard([telegraf_1.Markup.button.callback('🍔Меню', 'menu')]));
     }
 };
 __decorate([
@@ -207,7 +203,7 @@ LocationScene = LocationScene_1 = __decorate([
     __param(6, (0, typeorm_1.InjectRepository)(artifacts_entity_1.Artifacts)),
     __param(7, (0, typeorm_1.InjectRepository)(anomalies_entity_1.Anomalies)),
     __param(8, (0, typeorm_1.InjectRepository)(locations_entity_1.LocationsEntity)),
-    __param(9, (0, typeorm_1.InjectRepository)(roads_entity_1.Roads)),
+    __param(9, (0, typeorm_1.InjectRepository)(roads_entity_1.RoadsEntity)),
     __metadata("design:paramtypes", [app_service_1.AppService,
         typeorm_2.Repository,
         typeorm_2.Repository,

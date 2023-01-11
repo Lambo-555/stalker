@@ -17,6 +17,7 @@ import { AppService } from 'src/app.service';
 import { Chapters } from 'src/user/entities/chapters.entity';
 import { Choices } from 'src/user/entities/choices.entity';
 import { InventoryItems } from 'src/user/entities/inventory_items.entity';
+import { Mutants } from 'src/user/entities/mutants.entity';
 import { Progress } from 'src/user/entities/progress.entity';
 import { Users } from 'src/user/entities/users.entity';
 import { Markup, Scenes } from 'telegraf';
@@ -50,6 +51,8 @@ export class MutantScene {
     private readonly progressRepository: Repository<Progress>,
     @InjectRepository(InventoryItems)
     private readonly inventoryItemsRepository: Repository<InventoryItems>,
+    @InjectRepository(Mutants)
+    private readonly mutantsRepository: Repository<Mutants>,
   ) {}
 
   @Use()
@@ -92,84 +95,120 @@ export class MutantScene {
 
   @SceneEnter()
   async onSceneEnter(@Ctx() ctx: TelegrafContext) {
-    const mutantList = [
-      'Ворона',
-      'Тушкан',
-      'Кабан',
-      'Плоть',
-      'Слепой пёс',
-      'Псевдособака',
-      'Пси-собака',
-      'Полтергейст',
-      'Огненныйполтергейст',
-      'Снорк',
-      'Контролёр',
-      'Бюрер',
-      'Кровосос',
-      'Псевдогигант',
-      'Химера',
-    ];
+    const telegram_id: number =
+      ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
+    const user: Users = await this.usersRepository.findOne({
+      where: { telegram_id: telegram_id },
+    });
+    // const mutantList = [
+    //   'Ворона',
+    //   'Тушкан',
+    //   'Кабан',
+    //   'Плоть',
+    //   'Слепой пёс',
+    //   'Псевдособака',
+    //   'Пси-собака',
+    //   'Полтергейст',
+    //   'Огненныйполтергейст',
+    //   'Снорк',
+    //   'Контролёр',
+    //   'Бюрер',
+    //   'Кровосос',
+    //   'Псевдогигант',
+    //   'Химера',
+    // ];
+    const mutantList = await this.mutantsRepository.find();
+    const partList = ['плечо', 'лицо', 'ноги', 'живот', 'грудь', 'руки'];
+    const mutant = this.appService.getRandomElInArr(mutantList);
     await ctx.reply(
-      `Вы встретили мутанта: "${this.appService.getRandomElInArr(
-        mutantList,
-      )}". Нужно понять, что делать дальше`,
-      Markup.inlineKeyboard([
-        Markup.button.callback('Выбрать тактику', 'mutantWays'),
-      ]),
+      `Вы встретили мутанта: "${mutant.name}". Итоги боя\n` +
+        this.battle(mutant, user),
     );
+    // await ctx.reply(
+    //   `Вы встретили мутанта: "${mutant}". Итоги боя\n`,
+    //   // Markup.inlineKeyboard([
+    //   //   Markup.button.callback('Выбрать тактику', 'mutantWays'),
+    //   // ]),
+    // );
+    // await ctx.reply('Мутант более не опасен. Вы спасены и продолжаете путь.');
+    await ctx.scene.leave();
   }
 
-  @Action('mutantWays')
-  async mutantWays(@Ctx() ctx: TelegrafContext) {
-    const ways = ['Атаковать', 'Отбежать', 'Замереть'];
-    await ctx.replyWithHTML(
-      `<b>Пути:</b> `,
-      Markup.inlineKeyboard(
-        [
-          ...ways.map((wayName) =>
-            Markup.button.callback(wayName, 'actionChoose'),
-          ),
-        ],
-        {
-          columns: 2,
-        },
-      ),
-    );
+  battle(enemy: Mutants, user: Users, text = ''): string {
+    const agilityUser = 5;
+    const agilityEnemy = 1;
+    let dodgeUser = false;
+    let dodgeEnemy = false;
+    if (agilityUser >= agilityEnemy) {
+      dodgeUser =
+        Math.random() * ((agilityUser - agilityEnemy) * 10) >
+        Math.random() * 100;
+    } else {
+      dodgeEnemy =
+        Math.random() * ((agilityEnemy - agilityUser) * 10) >
+        Math.random() * 100;
+    }
+    let dodgeChanceNameUser = dodgeUser ? '- уворот' : '- урон получен';
+    let dodgeChanceNameEnemy = dodgeEnemy ? '- уворот' : '- урон получен';
+
+    let randomModifier = Math.random() * 0.5 + 0.75;
+    let enemyDamage = 0;
+    const userDamage = !dodgeEnemy ? Math.floor(250 * randomModifier) : 0;
+
+    for (let i = 0; i < enemy.actions; i++) {
+      randomModifier = Math.random() * 0.5 + 0.75;
+      dodgeUser =
+        Math.random() * ((agilityUser - agilityEnemy) * 10) >
+        Math.random() * 100;
+      dodgeEnemy =
+        Math.random() * ((agilityEnemy - agilityUser) * 10) >
+        Math.random() * 100;
+      enemyDamage = !dodgeUser
+        ? Math.floor((enemy.damage * randomModifier) / enemy.actions)
+        : 0;
+      user.health -= enemyDamage;
+      text += `\n${enemy.name} нанес вам урон ${userDamage} 
+Уклонение: ${dodgeUser ? '🍀' : '❎'}. Ваше 🫀: ${
+        user.health <= 0 ? 0 : user.health
+      }\n`;
+      if (user.health <= 0) {
+        text += '\n☠️ Вы проиграли. Зона забрала вас.';
+        return text;
+      }
+    }
+
+    enemy.health -= userDamage;
+    text += `\nВы нанесли ${enemyDamage} урона ▶️ ${enemy.name}
+Уклонение врага: ${dodgeEnemy ? '🍀' : '❎'}. 🫀 врага: ${
+      enemy.health <= 0 ? 0 : enemy.health
+    }\n`;
+    if (enemy.health <= 0) {
+      text += `\n${enemy.name} теперь никого не побеспокоит.`;
+      return text;
+    }
+    return this.battle(enemy, user, text);
   }
 
-  @Action('actionChoose')
-  async actionChoose(@Ctx() ctx: TelegrafContext) {
-    const wayTotal = Math.random() * 100;
-
-    if (wayTotal < 10) {
-      await ctx.replyWithHTML(
-        'Тактика не сработала. Вы получии урон.',
-        Markup.inlineKeyboard([
-          Markup.button.callback('Сделать выбор.', 'mutantWays'),
-        ]),
-      );
-    }
-    if (wayTotal >= 20 && wayTotal < 20) {
-      await ctx.replyWithHTML(
-        'Успешная тактика. Что делать дальше?',
-        Markup.inlineKeyboard([
-          Markup.button.callback('Выбрать.', 'mutantWays'),
-        ]),
-      );
-    }
-    if (wayTotal >= 20 && wayTotal < 70) {
-      await ctx.replyWithHTML(
-        'Тактика не помогла, но и не навредила. Далее.',
-        Markup.inlineKeyboard([
-          Markup.button.callback('Передумать.', 'mutantWays'),
-        ]),
-      );
-    }
-    if (wayTotal >= 70) {
-      await ctx.reply('Мутант более не опасен. Вы спасены и продолжаете путь.');
-      await ctx.scene.leave();
-    }
-  }
+  // @Action('mutantWays')
+  // async mutantWays(@Ctx() ctx: TelegrafContext) {
+  //   const ways = ['Атаковать', 'Отбежать', 'Замереть'];
+  //   await ctx.replyWithHTML(
+  //     `<b>Пути:</b> `,
+  //     Markup.inlineKeyboard(
+  //       [
+  //         ...ways.map((wayName) =>
+  //           Markup.button.callback(wayName, 'actionChoose'),
+  //         ),
+  //       ],
+  //       {
+  //         columns: 2,
+  //       },
+  //     ),
+  //   );
+  //   // TODO
+  //   await ctx.reply('Мутант более не опасен. Вы спасены и продолжаете путь.');
+  //   await ctx.scene.leave();
+  // }
 
   @Action(ScenesEnum.QUEST)
   async enterQuestScene(@Ctx() ctx: Scenes.SceneContext) {
@@ -390,6 +429,9 @@ export class MutantScene {
 
   @SceneLeave()
   async onSceneLeave(@Ctx() ctx: Scenes.SceneContext) {
-    await ctx.reply('Встреча с мутантом окончена.');
+    await ctx.reply(
+      'Встреча с мутантом окончена.',
+      Markup.inlineKeyboard([Markup.button.callback('🍔Меню', 'menu')]),
+    );
   }
 }

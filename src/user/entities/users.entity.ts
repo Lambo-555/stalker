@@ -19,6 +19,12 @@ export class Users {
 
   @Column({ nullable: true })
   inventory?: string;
+
+  @Column()
+  health: number;
+
+  @Column({ nullable: false, default: 0 })
+  radiation?: number;
 }
 
 // CREATE TABLE public.users (

@@ -102,9 +102,14 @@ let QuestScene = QuestScene_1 = class QuestScene {
                 id: progress.chapter_id,
             },
         });
+        const starterChapter = await this.chaptersRepository.findOne({
+            order: { id: 1 },
+            where: { content: (0, typeorm_2.Like)('💭%') },
+        });
         if (chapter.location === location.id) {
             await ctx.reply(`На этой локации есть с кем поговорить. ${chapter.character} вас ждет.`, telegraf_1.Markup.inlineKeyboard([
                 telegraf_1.Markup.button.callback('🤝Поговорить', 'chapterXXX' + chapter.id),
+                telegraf_1.Markup.button.callback('⚽️Сброс', 'chapterXXX' + starterChapter.id),
                 telegraf_1.Markup.button.callback('✋🏻Уйти', 'leave'),
             ]));
         }
@@ -226,7 +231,7 @@ QuestScene = QuestScene_1 = __decorate([
     __param(6, (0, typeorm_1.InjectRepository)(artifacts_entity_1.Artifacts)),
     __param(7, (0, typeorm_1.InjectRepository)(anomalies_entity_1.Anomalies)),
     __param(8, (0, typeorm_1.InjectRepository)(locations_entity_1.LocationsEntity)),
-    __param(9, (0, typeorm_1.InjectRepository)(roads_entity_1.Roads)),
+    __param(9, (0, typeorm_1.InjectRepository)(roads_entity_1.RoadsEntity)),
     __metadata("design:paramtypes", [app_service_1.AppService,
         typeorm_2.Repository,
         typeorm_2.Repository,

@@ -21,7 +21,7 @@ import { Choices } from 'src/user/entities/choices.entity';
 import { InventoryItems } from 'src/user/entities/inventory_items.entity';
 import { LocationsEntity } from 'src/user/entities/locations.entity';
 import { Progress } from 'src/user/entities/progress.entity';
-import { Roads } from 'src/user/entities/roads.entity';
+import { RoadsEntity } from 'src/user/entities/roads.entity';
 import { Users } from 'src/user/entities/users.entity';
 import { Markup, Scenes } from 'telegraf';
 import { InlineKeyboardButton } from 'telegraf/typings/core/types/typegram';
@@ -60,8 +60,8 @@ export class LocationScene {
     private readonly anomaliesRepository: Repository<Anomalies>,
     @InjectRepository(LocationsEntity)
     private readonly locationsRepository: Repository<LocationsEntity>,
-    @InjectRepository(Roads)
-    private readonly roadsRepository: Repository<Roads>,
+    @InjectRepository(RoadsEntity)
+    private readonly roadsRepository: Repository<RoadsEntity>,
   ) {}
 
   @Use()
@@ -112,7 +112,7 @@ export class LocationScene {
     const locations: LocationsEntity = await this.locationsRepository.findOne({
       where: { id: user.location },
     });
-    const roads: Roads[] = await this.roadsRepository.find({
+    const roads: RoadsEntity[] = await this.roadsRepository.find({
       where: { from: user.location },
     });
     const nextLocations: LocationsEntity[] = [];
@@ -126,7 +126,7 @@ export class LocationScene {
       `Вы находитесь в локации: "${locations.name}". Куда вы хотите отправиться?`,
       Markup.inlineKeyboard(
         [
-          Markup.button.callback('🍔Меню', 'menu'),
+          // Markup.button.callback('🍔Меню', 'menu'),
           Markup.button.callback('📍Остаться здесь', 'leave'),
           ...nextLocations.map((locationItem) =>
             Markup.button.callback(
@@ -157,13 +157,9 @@ export class LocationScene {
     });
     user.location = location.id || locationId;
     await this.usersRepository.update({ id: user.id }, user);
-    await ctx.scene.leave();
-    await ctx.reply(
-      `Вы вошли в локацию: ${location.name}`,
-      Markup.inlineKeyboard([Markup.button.callback('🍔Меню', 'menu')], {
-        columns: 1,
-      }),
-    );
+    // await ctx.reply(`Вы вошли в локацию: ${location.name}`);
+    await ctx.scene.reenter();
+    // await ctx.scene.leave();
   }
 
   @Action('leave')
@@ -174,6 +170,9 @@ export class LocationScene {
 
   @SceneLeave()
   async onSceneLeave(@Ctx() ctx: Scenes.SceneContext) {
-    await ctx.reply('Перемещение завершено.');
+    await ctx.reply(
+      'Перемещение завершено.',
+      Markup.inlineKeyboard([Markup.button.callback('🍔Меню', 'menu')]),
+    );
   }
 }

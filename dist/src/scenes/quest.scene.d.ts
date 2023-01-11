@@ -7,7 +7,7 @@ import { Choices } from 'src/user/entities/choices.entity';
 import { InventoryItems } from 'src/user/entities/inventory_items.entity';
 import { LocationsEntity } from 'src/user/entities/locations.entity';
 import { Progress } from 'src/user/entities/progress.entity';
-import { Roads } from 'src/user/entities/roads.entity';
+import { RoadsEntity } from 'src/user/entities/roads.entity';
 import { Users } from 'src/user/entities/users.entity';
 import { Scenes } from 'telegraf';
 import { Repository } from 'typeorm';
@@ -24,7 +24,7 @@ export declare class QuestScene {
     private readonly locationsRepository;
     private readonly roadsRepository;
     private readonly logger;
-    constructor(appService: AppService, usersRepository: Repository<Users>, chaptersRepository: Repository<Chapters>, choicesRepository: Repository<Choices>, progressRepository: Repository<Progress>, inventoryItemsRepository: Repository<InventoryItems>, artifactsRepository: Repository<Artifacts>, anomaliesRepository: Repository<Anomalies>, locationsRepository: Repository<LocationsEntity>, roadsRepository: Repository<Roads>);
+    constructor(appService: AppService, usersRepository: Repository<Users>, chaptersRepository: Repository<Chapters>, choicesRepository: Repository<Choices>, progressRepository: Repository<Progress>, inventoryItemsRepository: Repository<InventoryItems>, artifactsRepository: Repository<Artifacts>, anomaliesRepository: Repository<Anomalies>, locationsRepository: Repository<LocationsEntity>, roadsRepository: Repository<RoadsEntity>);
     onRegister(ctx: TelegrafContext, next: NextFunction): Promise<void>;
     onSceneEnter(ctx: TelegrafContext): Promise<void>;
     onChooseChapter(ctx: TelegrafContext, next: NextFunction): Promise<void>;

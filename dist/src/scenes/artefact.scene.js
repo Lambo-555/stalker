@@ -104,11 +104,11 @@ let ArtefactScene = ArtefactScene_1 = class ArtefactScene {
     async anomalyTrue(ctx) {
         const wayTotal = Math.random() * 100;
         if (wayTotal >= 60) {
-            await ctx.reply('Отлично, короб подошел, артефакт ведет себя стабильно.', telegraf_1.Markup.inlineKeyboard([telegraf_1.Markup.button.callback('🍔Меню', 'menu')]));
+            await ctx.reply('Отлично, короб подошел, артефакт ведет себя стабильно.');
             await ctx.scene.leave();
         }
         else {
-            await ctx.reply('Отлично, короб подошел, но артефакт был нестабилен и иссяк.', telegraf_1.Markup.inlineKeyboard([telegraf_1.Markup.button.callback('🍔Меню', 'menu')]));
+            await ctx.reply('Отлично, короб подошел, но артефакт был нестабилен и иссяк.');
             await ctx.scene.leave();
         }
     }
@@ -120,7 +120,7 @@ let ArtefactScene = ArtefactScene_1 = class ArtefactScene {
         await ctx.scene.leave();
     }
     async onSceneLeave(ctx) {
-        await ctx.reply('Поиск артефакта завершен.');
+        await ctx.reply('Поиск артефакта завершен.', telegraf_1.Markup.inlineKeyboard([telegraf_1.Markup.button.callback('🍔Меню', 'menu')]));
     }
 };
 __decorate([

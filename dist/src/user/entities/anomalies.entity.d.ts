@@ -3,4 +3,5 @@ export declare class Anomalies {
     name?: string;
     effects?: string;
     about?: string;
+    tactics?: string;
 }

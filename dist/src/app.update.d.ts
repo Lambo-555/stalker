@@ -8,6 +8,7 @@ import { Chapters } from './user/entities/chapters.entity';
 import { Choices } from './user/entities/choices.entity';
 import { Progress } from './user/entities/progress.entity';
 import { InventoryItems } from './user/entities/inventory_items.entity';
+import { LocationsEntity } from './user/entities/locations.entity';
 export default class AppUpdate {
     private readonly appService;
     private readonly usersRepository;
@@ -15,16 +16,17 @@ export default class AppUpdate {
     private readonly choicesRepository;
     private readonly progressRepository;
     private readonly inventoryItemsRepository;
+    private readonly locationsRepository;
     private readonly logger;
     private readonly secret;
-    constructor(appService: AppService, usersRepository: Repository<Users>, chaptersRepository: Repository<Chapters>, choicesRepository: Repository<Choices>, progressRepository: Repository<Progress>, inventoryItemsRepository: Repository<InventoryItems>);
+    constructor(appService: AppService, usersRepository: Repository<Users>, chaptersRepository: Repository<Chapters>, choicesRepository: Repository<Choices>, progressRepository: Repository<Progress>, inventoryItemsRepository: Repository<InventoryItems>, locationsRepository: Repository<LocationsEntity>);
     onApplicationBootstrap(): void;
     onRegister(ctx: TelegrafContext, next: NextFunction): Promise<void>;
     onMenu(ctx: TelegrafContext): Promise<void>;
+    enterPdaScene(ctx: Scenes.SceneContext): Promise<void>;
     enterAnomalyRoadScene(ctx: Scenes.SceneContext): Promise<void>;
     enterMutantScene(ctx: Scenes.SceneContext): Promise<void>;
     enterArtefactScene(ctx: Scenes.SceneContext): Promise<void>;
     enterLocationScene(ctx: Scenes.SceneContext): Promise<void>;
     enterQuestScene(ctx: Scenes.SceneContext): Promise<void>;
-    onChoose(ctx: TelegrafContext, next: NextFunction): Promise<void>;
 }
