@@ -23,13 +23,14 @@ const artifacts_entity_1 = require("../user/entities/artifacts.entity");
 const chapters_entity_1 = require("../user/entities/chapters.entity");
 const choices_entity_1 = require("../user/entities/choices.entity");
 const inventory_items_entity_1 = require("../user/entities/inventory_items.entity");
+const locations_entity_1 = require("../user/entities/locations.entity");
 const progress_entity_1 = require("../user/entities/progress.entity");
 const users_entity_1 = require("../user/entities/users.entity");
 const telegraf_1 = require("telegraf");
 const typeorm_2 = require("typeorm");
 const scenes_enum_1 = require("./enums/scenes.enum");
 let ArtefactScene = ArtefactScene_1 = class ArtefactScene {
-    constructor(appService, usersRepository, chaptersRepository, choicesRepository, progressRepository, inventoryItemsRepository, artifactsRepository, anomaliesRepository) {
+    constructor(appService, usersRepository, chaptersRepository, choicesRepository, progressRepository, inventoryItemsRepository, artifactsRepository, anomaliesRepository, locationsRepository) {
         this.appService = appService;
         this.usersRepository = usersRepository;
         this.chaptersRepository = chaptersRepository;
@@ -38,6 +39,7 @@ let ArtefactScene = ArtefactScene_1 = class ArtefactScene {
         this.inventoryItemsRepository = inventoryItemsRepository;
         this.artifactsRepository = artifactsRepository;
         this.anomaliesRepository = anomaliesRepository;
+        this.locationsRepository = locationsRepository;
         this.logger = new common_1.Logger(ArtefactScene_1.name);
     }
     async onRegister(ctx, next) {
@@ -62,8 +64,12 @@ let ArtefactScene = ArtefactScene_1 = class ArtefactScene {
             }
         }
         else {
+            const location = await this.locationsRepository.findOne({
+                where: { name: 'Кордон' },
+            });
             const userRegistered = await this.usersRepository.save({
                 telegram_id: telegram_id,
+                location: location.id,
             });
             const lastChapter = await this.chaptersRepository.findOne({
                 order: { id: 1 },
@@ -71,7 +77,8 @@ let ArtefactScene = ArtefactScene_1 = class ArtefactScene {
             });
             await this.progressRepository.save({
                 user_id: userRegistered.id,
-                chapter_id: lastChapter.id,
+                chapter_id: 90,
+                location: location.id,
             });
             this.logger.debug(JSON.stringify(userRegistered, null, 2));
         }
@@ -176,14 +183,16 @@ __decorate([
 ], ArtefactScene.prototype, "onSceneLeave", null);
 ArtefactScene = ArtefactScene_1 = __decorate([
     (0, nestjs_telegraf_1.Scene)(scenes_enum_1.ScenesEnum.ARTIFACT),
-    __param(1, (0, typeorm_1.InjectRepository)(users_entity_1.Users)),
-    __param(2, (0, typeorm_1.InjectRepository)(chapters_entity_1.Chapters)),
+    __param(1, (0, typeorm_1.InjectRepository)(users_entity_1.UsersEntity)),
+    __param(2, (0, typeorm_1.InjectRepository)(chapters_entity_1.ChaptersEntity)),
     __param(3, (0, typeorm_1.InjectRepository)(choices_entity_1.Choices)),
-    __param(4, (0, typeorm_1.InjectRepository)(progress_entity_1.Progress)),
+    __param(4, (0, typeorm_1.InjectRepository)(progress_entity_1.ProgressEntity)),
     __param(5, (0, typeorm_1.InjectRepository)(inventory_items_entity_1.InventoryItems)),
     __param(6, (0, typeorm_1.InjectRepository)(artifacts_entity_1.Artifacts)),
     __param(7, (0, typeorm_1.InjectRepository)(anomalies_entity_1.Anomalies)),
+    __param(8, (0, typeorm_1.InjectRepository)(locations_entity_1.LocationsEntity)),
     __metadata("design:paramtypes", [app_service_1.AppService,
+        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,

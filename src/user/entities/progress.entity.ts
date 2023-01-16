@@ -1,7 +1,7 @@
 import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 
-@Entity()
-export class Progress {
+@Entity('progress')
+export class ProgressEntity {
   @PrimaryGeneratedColumn()
   progress_id: number;
 

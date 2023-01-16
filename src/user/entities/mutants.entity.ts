@@ -1,7 +1,7 @@
 import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('mutants')
-export class Mutants {
+export class MutantsEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -16,4 +16,4 @@ export class Mutants {
 
   @Column({ default: 5 })
   actions: number;
-};
+}

@@ -31,6 +31,7 @@ const location_scene_1 = require("./scenes/location.scene");
 const quest_scene_1 = require("./scenes/quest.scene");
 const mutants_entity_1 = require("./user/entities/mutants.entity");
 const pda_scene_1 = require("./scenes/pda.scene");
+const quests_entity_1 = require("./user/entities/quests.entity");
 const scenes = [
     registration_wizzard_1.TestWizard,
     anomaly_scene_1.AnomalyRoadScene,
@@ -54,30 +55,32 @@ AppModule = __decorate([
                 password: 'owner',
                 database: 'game',
                 entities: [
-                    users_entity_1.Users,
-                    chapters_entity_1.Chapters,
+                    users_entity_1.UsersEntity,
+                    chapters_entity_1.ChaptersEntity,
                     choices_entity_1.Choices,
                     inventory_items_entity_1.InventoryItems,
-                    progress_entity_1.Progress,
+                    progress_entity_1.ProgressEntity,
                     anomalies_entity_1.Anomalies,
                     artifacts_entity_1.Artifacts,
                     locations_entity_1.LocationsEntity,
                     roads_entity_1.RoadsEntity,
-                    mutants_entity_1.Mutants,
+                    mutants_entity_1.MutantsEntity,
+                    quests_entity_1.QuestsEntity,
                 ],
-                synchronize: true,
+                synchronize: false,
             }),
             typeorm_1.TypeOrmModule.forFeature([
-                users_entity_1.Users,
-                chapters_entity_1.Chapters,
+                users_entity_1.UsersEntity,
+                chapters_entity_1.ChaptersEntity,
                 choices_entity_1.Choices,
                 inventory_items_entity_1.InventoryItems,
-                progress_entity_1.Progress,
+                progress_entity_1.ProgressEntity,
                 anomalies_entity_1.Anomalies,
                 artifacts_entity_1.Artifacts,
                 locations_entity_1.LocationsEntity,
                 roads_entity_1.RoadsEntity,
-                mutants_entity_1.Mutants,
+                mutants_entity_1.MutantsEntity,
+                quests_entity_1.QuestsEntity,
             ]),
             nestjs_telegraf_1.TelegrafModule.forRoot({
                 token: '5943057211:AAHh26OWDRO1fYtaGJtpL_lTSSTB-foTQWM',

@@ -9,32 +9,28 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MutantsEntity = void 0;
+exports.RoadsEntity = void 0;
 const typeorm_1 = require("typeorm");
-let MutantsEntity = class MutantsEntity {
+let RoadsEntity = class RoadsEntity {
 };
 __decorate([
     (0, typeorm_1.PrimaryGeneratedColumn)(),
     __metadata("design:type", Number)
-], MutantsEntity.prototype, "id", void 0);
+], RoadsEntity.prototype, "id", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
-    __metadata("design:type", String)
-], MutantsEntity.prototype, "name", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ default: 1000 }),
     __metadata("design:type", Number)
-], MutantsEntity.prototype, "health", void 0);
+], RoadsEntity.prototype, "from", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ default: 45 }),
+    (0, typeorm_1.Column)(),
     __metadata("design:type", Number)
-], MutantsEntity.prototype, "damage", void 0);
+], RoadsEntity.prototype, "to", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ default: 5 }),
-    __metadata("design:type", Number)
-], MutantsEntity.prototype, "actions", void 0);
-MutantsEntity = __decorate([
-    (0, typeorm_1.Entity)('mutants')
-], MutantsEntity);
-exports.MutantsEntity = MutantsEntity;
-//# sourceMappingURL=mutants.entity.js.map
+    (0, typeorm_1.Column)(),
+    __metadata("design:type", Boolean)
+], RoadsEntity.prototype, "is_open", void 0);
+RoadsEntity = __decorate([
+    (0, typeorm_1.Entity)('roads')
+], RoadsEntity);
+exports.RoadsEntity = RoadsEntity;
+//# sourceMappingURL=roads.entity%20copy.js.map

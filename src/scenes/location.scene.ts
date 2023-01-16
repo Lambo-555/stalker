@@ -16,13 +16,13 @@ import {
 import { AppService } from 'src/app.service';
 import { Anomalies } from 'src/user/entities/anomalies.entity';
 import { Artifacts } from 'src/user/entities/artifacts.entity';
-import { Chapters } from 'src/user/entities/chapters.entity';
+import { ChaptersEntity } from 'src/user/entities/chapters.entity';
 import { Choices } from 'src/user/entities/choices.entity';
 import { InventoryItems } from 'src/user/entities/inventory_items.entity';
 import { LocationsEntity } from 'src/user/entities/locations.entity';
-import { Progress } from 'src/user/entities/progress.entity';
+import { ProgressEntity } from 'src/user/entities/progress.entity';
 import { RoadsEntity } from 'src/user/entities/roads.entity';
-import { Users } from 'src/user/entities/users.entity';
+import { UsersEntity } from 'src/user/entities/users.entity';
 import { Markup, Scenes } from 'telegraf';
 import { InlineKeyboardButton } from 'telegraf/typings/core/types/typegram';
 import { Like, Repository } from 'typeorm';
@@ -44,14 +44,14 @@ export class LocationScene {
 
   constructor(
     private readonly appService: AppService,
-    @InjectRepository(Users)
-    private readonly usersRepository: Repository<Users>,
-    @InjectRepository(Chapters)
-    private readonly chaptersRepository: Repository<Chapters>,
+    @InjectRepository(UsersEntity)
+    private readonly usersRepository: Repository<UsersEntity>,
+    @InjectRepository(ChaptersEntity)
+    private readonly chaptersRepository: Repository<ChaptersEntity>,
     @InjectRepository(Choices)
     private readonly choicesRepository: Repository<Choices>,
-    @InjectRepository(Progress)
-    private readonly progressRepository: Repository<Progress>,
+    @InjectRepository(ProgressEntity)
+    private readonly progressRepository: Repository<ProgressEntity>,
     @InjectRepository(InventoryItems)
     private readonly inventoryItemsRepository: Repository<InventoryItems>,
     @InjectRepository(Artifacts)
@@ -68,7 +68,7 @@ export class LocationScene {
   async onRegister(@Ctx() ctx: TelegrafContext, @Next() next: NextFunction) {
     const telegram_id: number =
       ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
-    const user: Users = await this.usersRepository.findOne({
+    const user: UsersEntity = await this.usersRepository.findOne({
       where: { telegram_id: telegram_id },
     });
     if (user) {
@@ -86,8 +86,12 @@ export class LocationScene {
         });
       }
     } else {
-      const userRegistered: Users = await this.usersRepository.save({
+      const location = await this.locationsRepository.findOne({
+        where: { name: 'Кордон' },
+      });
+      const userRegistered: UsersEntity = await this.usersRepository.save({
         telegram_id: telegram_id,
+        location: location.id,
       });
       const lastChapter = await this.chaptersRepository.findOne({
         order: { id: 1 },
@@ -95,7 +99,8 @@ export class LocationScene {
       });
       await this.progressRepository.save({
         user_id: userRegistered.id,
-        chapter_id: lastChapter.id,
+        chapter_id: 90, // lastChapter.id,
+        location: location.id,
       });
       this.logger.debug(JSON.stringify(userRegistered, null, 2));
     }
@@ -106,7 +111,7 @@ export class LocationScene {
   async onSceneEnter(@Ctx() ctx: TelegrafContext) {
     const telegram_id: number =
       ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
-    const user: Users = await this.usersRepository.findOne({
+    const user: UsersEntity = await this.usersRepository.findOne({
       where: { telegram_id: telegram_id },
     });
     const locations: LocationsEntity = await this.locationsRepository.findOne({
@@ -152,7 +157,7 @@ export class LocationScene {
     });
     const telegram_id: number =
       ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
-    const user: Users = await this.usersRepository.findOne({
+    const user: UsersEntity = await this.usersRepository.findOne({
       where: { telegram_id: telegram_id },
     });
     user.location = location.id || locationId;

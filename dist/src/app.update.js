@@ -58,21 +58,26 @@ let AppUpdate = AppUpdate_1 = class AppUpdate {
                 });
                 await this.progressRepository.save({
                     user_id: user.id,
-                    chapter_id: lastChapter.id,
+                    chapter_id: 90,
                 });
             }
         }
         else {
+            const location = await this.locationsRepository.findOne({
+                where: { name: 'Кордон' },
+            });
             const userRegistered = await this.usersRepository.save({
                 telegram_id: telegram_id,
+                location: location.id,
             });
             const lastChapter = await this.chaptersRepository.findOne({
                 order: { id: 1 },
                 where: { content: (0, typeorm_1.Like)('💭') },
             });
             await this.progressRepository.save({
-                user_id: userRegistered === null || userRegistered === void 0 ? void 0 : userRegistered.id,
-                chapter_id: (lastChapter === null || lastChapter === void 0 ? void 0 : lastChapter.id) || 50,
+                user_id: userRegistered.id,
+                chapter_id: 90,
+                location: location.id,
             });
             this.logger.debug(JSON.stringify(userRegistered, null, 2));
         }
@@ -92,7 +97,7 @@ let AppUpdate = AppUpdate_1 = class AppUpdate {
             where: { id: userChapterId },
         });
         const nextChoices = await this.choicesRepository.find({
-            where: { chapter_id: userChapter.id },
+            where: { chapter_id: userChapter === null || userChapter === void 0 ? void 0 : userChapter.id },
         });
         const starterChapter = await this.chaptersRepository.findOne({
             order: { id: 1 },
@@ -205,10 +210,10 @@ __decorate([
 AppUpdate = AppUpdate_1 = __decorate([
     (0, nestjs_telegraf_1.Update)(),
     (0, common_1.Injectable)(),
-    __param(1, (0, typeorm_2.InjectRepository)(users_entity_1.Users)),
-    __param(2, (0, typeorm_2.InjectRepository)(chapters_entity_1.Chapters)),
+    __param(1, (0, typeorm_2.InjectRepository)(users_entity_1.UsersEntity)),
+    __param(2, (0, typeorm_2.InjectRepository)(chapters_entity_1.ChaptersEntity)),
     __param(3, (0, typeorm_2.InjectRepository)(choices_entity_1.Choices)),
-    __param(4, (0, typeorm_2.InjectRepository)(progress_entity_1.Progress)),
+    __param(4, (0, typeorm_2.InjectRepository)(progress_entity_1.ProgressEntity)),
     __param(5, (0, typeorm_2.InjectRepository)(inventory_items_entity_1.InventoryItems)),
     __param(6, (0, typeorm_2.InjectRepository)(locations_entity_1.LocationsEntity)),
     __metadata("design:paramtypes", [app_service_1.AppService,

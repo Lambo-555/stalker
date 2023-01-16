@@ -53,7 +53,7 @@ __decorate([
     (0, common_1.Post)(),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [users_entity_1.Users]),
+    __metadata("design:paramtypes", [users_entity_1.UsersEntity]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "create", null);
 __decorate([
@@ -61,7 +61,7 @@ __decorate([
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, users_entity_1.Users]),
+    __metadata("design:paramtypes", [Number, users_entity_1.UsersEntity]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "update", null);
 __decorate([

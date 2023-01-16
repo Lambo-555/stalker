@@ -1,7 +1,7 @@
 import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('chapters')
-export class Chapters {
+export class ChaptersEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -16,6 +16,9 @@ export class Chapters {
 
   @Column()
   location: number;
+
+  @Column()
+  quest?: number;
 }
 
 // CREATE TABLE public.chapters (

@@ -9,44 +9,44 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Users = void 0;
+exports.UsersEntity = void 0;
 const typeorm_1 = require("typeorm");
-let Users = class Users {
+let UsersEntity = class UsersEntity {
 };
 __decorate([
     (0, typeorm_1.PrimaryGeneratedColumn)(),
     __metadata("design:type", Number)
-], Users.prototype, "id", void 0);
+], UsersEntity.prototype, "id", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
-], Users.prototype, "name", void 0);
+], UsersEntity.prototype, "name", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", Number)
-], Users.prototype, "funds", void 0);
+], UsersEntity.prototype, "funds", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", Number)
-], Users.prototype, "telegram_id", void 0);
+], UsersEntity.prototype, "telegram_id", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", Number)
-], Users.prototype, "location", void 0);
+], UsersEntity.prototype, "location", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
-], Users.prototype, "inventory", void 0);
+], UsersEntity.prototype, "inventory", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", Number)
-], Users.prototype, "health", void 0);
+], UsersEntity.prototype, "health", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: false, default: 0 }),
     __metadata("design:type", Number)
-], Users.prototype, "radiation", void 0);
-Users = __decorate([
+], UsersEntity.prototype, "radiation", void 0);
+UsersEntity = __decorate([
     (0, typeorm_1.Entity)('users')
-], Users);
-exports.Users = Users;
+], UsersEntity);
+exports.UsersEntity = UsersEntity;
 //# sourceMappingURL=users.entity.js.map

@@ -1,10 +1,10 @@
-export declare class Users {
+export declare class UsersEntity {
     id?: number;
     name?: string;
     funds?: number;
     telegram_id?: number;
     location?: number;
     inventory?: string;
-    health: number;
+    health?: number;
     radiation?: number;
 }

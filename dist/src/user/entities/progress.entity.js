@@ -9,24 +9,24 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Progress = void 0;
+exports.ProgressEntity = void 0;
 const typeorm_1 = require("typeorm");
-let Progress = class Progress {
+let ProgressEntity = class ProgressEntity {
 };
 __decorate([
     (0, typeorm_1.PrimaryGeneratedColumn)(),
     __metadata("design:type", Number)
-], Progress.prototype, "progress_id", void 0);
+], ProgressEntity.prototype, "progress_id", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", Number)
-], Progress.prototype, "user_id", void 0);
+], ProgressEntity.prototype, "user_id", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", Number)
-], Progress.prototype, "chapter_id", void 0);
-Progress = __decorate([
-    (0, typeorm_1.Entity)()
-], Progress);
-exports.Progress = Progress;
+], ProgressEntity.prototype, "chapter_id", void 0);
+ProgressEntity = __decorate([
+    (0, typeorm_1.Entity)('progress')
+], ProgressEntity);
+exports.ProgressEntity = ProgressEntity;
 //# sourceMappingURL=progress.entity.js.map

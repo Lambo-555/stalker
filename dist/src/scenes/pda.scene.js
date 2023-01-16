@@ -66,8 +66,12 @@ let PdaScene = PdaScene_1 = class PdaScene {
             }
         }
         else {
+            const location = await this.locationsRepository.findOne({
+                where: { name: 'Кордон' },
+            });
             const userRegistered = await this.usersRepository.save({
                 telegram_id: telegram_id,
+                location: location.id,
             });
             const lastChapter = await this.chaptersRepository.findOne({
                 order: { id: 1 },
@@ -75,7 +79,8 @@ let PdaScene = PdaScene_1 = class PdaScene {
             });
             await this.progressRepository.save({
                 user_id: userRegistered.id,
-                chapter_id: lastChapter.id,
+                chapter_id: 90,
+                location: location.id,
             });
             this.logger.debug(JSON.stringify(userRegistered, null, 2));
         }
@@ -114,9 +119,17 @@ let PdaScene = PdaScene_1 = class PdaScene {
 🆘 /help - Помощь и пояснения
 📊 /statistics - Статистика игрока (wip)
 💡 /feedback - Написать отзыв об ошибках и предложениях
+💡 /creators - Написать отзыв об ошибках и предложениях
 
 🚪 /leave - Выход в основное меню
 `);
+    }
+    async onCreators(ctx, next) {
+        await ctx.replyWithHTML(`
+<b>Список разработчиков:</b>
+- Малышев Станислав - director, backend-developer
+- Илья Безродный - content-creator
+    `);
     }
     async onAbout(ctx, next) {
         await ctx.reply(`
@@ -158,6 +171,14 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], PdaScene.prototype, "onSceneEnter", null);
 __decorate([
+    (0, nestjs_telegraf_1.Command)('/creators'),
+    __param(0, (0, nestjs_telegraf_1.Ctx)()),
+    __param(1, (0, nestjs_telegraf_1.Next)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Function]),
+    __metadata("design:returntype", Promise)
+], PdaScene.prototype, "onCreators", null);
+__decorate([
     (0, nestjs_telegraf_1.Command)('/about'),
     __param(0, (0, nestjs_telegraf_1.Ctx)()),
     __param(1, (0, nestjs_telegraf_1.Next)()),
@@ -182,10 +203,10 @@ __decorate([
 ], PdaScene.prototype, "onSceneLeave", null);
 PdaScene = PdaScene_1 = __decorate([
     (0, nestjs_telegraf_1.Scene)(scenes_enum_1.ScenesEnum.PDA),
-    __param(1, (0, typeorm_1.InjectRepository)(users_entity_1.Users)),
-    __param(2, (0, typeorm_1.InjectRepository)(chapters_entity_1.Chapters)),
+    __param(1, (0, typeorm_1.InjectRepository)(users_entity_1.UsersEntity)),
+    __param(2, (0, typeorm_1.InjectRepository)(chapters_entity_1.ChaptersEntity)),
     __param(3, (0, typeorm_1.InjectRepository)(choices_entity_1.Choices)),
-    __param(4, (0, typeorm_1.InjectRepository)(progress_entity_1.Progress)),
+    __param(4, (0, typeorm_1.InjectRepository)(progress_entity_1.ProgressEntity)),
     __param(5, (0, typeorm_1.InjectRepository)(inventory_items_entity_1.InventoryItems)),
     __param(6, (0, typeorm_1.InjectRepository)(artifacts_entity_1.Artifacts)),
     __param(7, (0, typeorm_1.InjectRepository)(anomalies_entity_1.Anomalies)),

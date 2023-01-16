@@ -1,11 +1,11 @@
 import { UserService } from './user.service';
-import { Users } from './entities/users.entity';
+import { UsersEntity } from './entities/users.entity';
 export declare class UserController {
     private readonly userService;
     constructor(userService: UserService);
-    findAll(): Promise<Users[]>;
-    findOne(id: number): Promise<Users>;
-    create(user: Users): Promise<Users>;
-    update(id: number, user: Users): Promise<void>;
+    findAll(): Promise<UsersEntity[]>;
+    findOne(id: number): Promise<UsersEntity>;
+    create(user: UsersEntity): Promise<UsersEntity>;
+    update(id: number, user: UsersEntity): Promise<void>;
     delete(id: number): Promise<void>;
 }

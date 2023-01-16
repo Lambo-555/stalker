@@ -14,13 +14,13 @@ import {
 import { Markup, Scenes } from 'telegraf';
 import { NextFunction } from 'express';
 import { TelegrafContext } from 'src/interfaces/telegraf-context.interface';
-import { Users } from './user/entities/users.entity';
+import { UsersEntity } from './user/entities/users.entity';
 import { AppService } from './app.service';
 import { Like, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Chapters } from './user/entities/chapters.entity';
+import { ChaptersEntity } from './user/entities/chapters.entity';
 import { Choices } from './user/entities/choices.entity';
-import { Progress } from './user/entities/progress.entity';
+import { ProgressEntity } from './user/entities/progress.entity';
 import { InventoryItems } from './user/entities/inventory_items.entity';
 import crypto from 'crypto';
 import { ScenesEnum } from './scenes/enums/scenes.enum';
@@ -33,15 +33,15 @@ export default class AppUpdate {
   private readonly secret = 'bcryptersss';
 
   constructor(
-    private readonly appService: AppService,
-    @InjectRepository(Users)
-    private readonly usersRepository: Repository<Users>,
-    @InjectRepository(Chapters)
-    private readonly chaptersRepository: Repository<Chapters>,
+    private readonly appService: AppService, 
+    @InjectRepository(UsersEntity)
+    private readonly usersRepository: Repository<UsersEntity>,
+    @InjectRepository(ChaptersEntity)
+    private readonly chaptersRepository: Repository<ChaptersEntity>,
     @InjectRepository(Choices)
     private readonly choicesRepository: Repository<Choices>,
-    @InjectRepository(Progress)
-    private readonly progressRepository: Repository<Progress>,
+    @InjectRepository(ProgressEntity)
+    private readonly progressRepository: Repository<ProgressEntity>,
     @InjectRepository(InventoryItems)
     private readonly inventoryItemsRepository: Repository<InventoryItems>,
     @InjectRepository(LocationsEntity)
@@ -56,7 +56,7 @@ export default class AppUpdate {
   async onRegister(@Ctx() ctx: TelegrafContext, @Next() next: NextFunction) {
     const telegram_id: number =
       ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
-    const user: Users = await this.usersRepository.findOne({
+    const user: UsersEntity = await this.usersRepository.findOne({
       where: { telegram_id: telegram_id },
     });
     if (user) {
@@ -70,20 +70,26 @@ export default class AppUpdate {
         });
         await this.progressRepository.save({
           user_id: user.id,
-          chapter_id: lastChapter.id,
+          chapter_id: 90, //lastChapter.id,
         });
       }
     } else {
-      const userRegistered: Users = await this.usersRepository.save({
+      const location = await this.locationsRepository.findOne({
+        where: { name: 'Кордон' },
+      });
+      const userRegistered: UsersEntity = await this.usersRepository.save({
         telegram_id: telegram_id,
+        location: location.id,
       });
       const lastChapter = await this.chaptersRepository.findOne({
         order: { id: 1 },
         where: { content: Like('💭') },
       });
+
       await this.progressRepository.save({
-        user_id: userRegistered?.id,
-        chapter_id: lastChapter?.id || 50,
+        user_id: userRegistered.id,
+        chapter_id: 90, // lastChapter.id,
+        location: location.id,
       });
       this.logger.debug(JSON.stringify(userRegistered, null, 2));
     }
@@ -96,19 +102,19 @@ export default class AppUpdate {
   async onMenu(@Ctx() ctx: TelegrafContext) {
     const telegram_id: number =
       ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
-    const user: Users = await this.usersRepository.findOne({
+    const user: UsersEntity = await this.usersRepository.findOne({
       where: { telegram_id: telegram_id },
     });
 
-    const progress: Progress = await this.progressRepository.findOne({
+    const progress: ProgressEntity = await this.progressRepository.findOne({
       where: { user_id: user.id },
     });
     const userChapterId = progress.chapter_id;
-    let userChapter: Chapters = await this.chaptersRepository.findOne({
+    let userChapter: ChaptersEntity = await this.chaptersRepository.findOne({
       where: { id: userChapterId },
     });
     const nextChoices: Choices[] = await this.choicesRepository.find({
-      where: { chapter_id: userChapter.id },
+      where: { chapter_id: userChapter?.id },
     });
 
     const starterChapter = await this.chaptersRepository.findOne({
@@ -122,7 +128,7 @@ export default class AppUpdate {
       where: { id: user.location },
     });
 
-    const nextChapter: Chapters = await this.chaptersRepository.findOne({
+    const nextChapter: ChaptersEntity = await this.chaptersRepository.findOne({
       where: { id: progress.chapter_id, location: locations.id },
     });
 

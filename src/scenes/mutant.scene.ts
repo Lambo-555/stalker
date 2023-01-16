@@ -14,12 +14,13 @@ import {
   Use,
 } from 'nestjs-telegraf';
 import { AppService } from 'src/app.service';
-import { Chapters } from 'src/user/entities/chapters.entity';
+import { ChaptersEntity } from 'src/user/entities/chapters.entity';
 import { Choices } from 'src/user/entities/choices.entity';
 import { InventoryItems } from 'src/user/entities/inventory_items.entity';
-import { Mutants } from 'src/user/entities/mutants.entity';
-import { Progress } from 'src/user/entities/progress.entity';
-import { Users } from 'src/user/entities/users.entity';
+import { LocationsEntity } from 'src/user/entities/locations.entity';
+import { MutantsEntity } from 'src/user/entities/mutants.entity';
+import { ProgressEntity } from 'src/user/entities/progress.entity';
+import { UsersEntity } from 'src/user/entities/users.entity';
 import { Markup, Scenes } from 'telegraf';
 import { InlineKeyboardButton } from 'telegraf/typings/core/types/typegram';
 import { Like, Repository } from 'typeorm';
@@ -41,25 +42,28 @@ export class MutantScene {
 
   constructor(
     private readonly appService: AppService,
-    @InjectRepository(Users)
-    private readonly usersRepository: Repository<Users>,
-    @InjectRepository(Chapters)
-    private readonly chaptersRepository: Repository<Chapters>,
+    @InjectRepository(UsersEntity)
+    private readonly usersRepository: Repository<UsersEntity>,
+    @InjectRepository(ChaptersEntity)
+    private readonly chaptersRepository: Repository<ChaptersEntity>,
     @InjectRepository(Choices)
     private readonly choicesRepository: Repository<Choices>,
-    @InjectRepository(Progress)
-    private readonly progressRepository: Repository<Progress>,
+    @InjectRepository(ProgressEntity)
+    private readonly progressRepository: Repository<ProgressEntity>,
     @InjectRepository(InventoryItems)
     private readonly inventoryItemsRepository: Repository<InventoryItems>,
-    @InjectRepository(Mutants)
-    private readonly mutantsRepository: Repository<Mutants>,
+    @InjectRepository(MutantsEntity)
+    private readonly mutantsRepository: Repository<MutantsEntity>,
+    @InjectRepository(LocationsEntity)
+    private readonly locationsRepository: Repository<LocationsEntity>,
+
   ) {}
 
   @Use()
   async onRegister(@Ctx() ctx: TelegrafContext, @Next() next: NextFunction) {
     const telegram_id: number =
       ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
-    const user: Users = await this.usersRepository.findOne({
+    const user: UsersEntity = await this.usersRepository.findOne({
       where: { telegram_id: telegram_id },
     });
     if (user) {
@@ -67,18 +71,22 @@ export class MutantScene {
         where: { user_id: user.id },
       });
       if (!progress) {
-        const lastChapter = await this.chaptersRepository.findOne({
-          order: { id: 1 },
-          where: { content: Like('💭%') },
-        });
+        // const lastChapter = await this.chaptersRepository.findOne({
+        //   order: { id: 1 },
+        //   where: { content: Like('💭%') },
+        // });
         await this.progressRepository.save({
           user_id: user.id,
-          chapter_id: lastChapter.id,
+          chapter_id: 90, //lastChapter.id,
         });
       }
     } else {
-      const userRegistered: Users = await this.usersRepository.save({
+      const location = await this.locationsRepository.findOne({
+        where: { name: 'Кордон' },
+      });
+      const userRegistered: UsersEntity = await this.usersRepository.save({
         telegram_id: telegram_id,
+        location: location.id,
       });
       const lastChapter = await this.chaptersRepository.findOne({
         order: { id: 1 },
@@ -86,7 +94,8 @@ export class MutantScene {
       });
       await this.progressRepository.save({
         user_id: userRegistered.id,
-        chapter_id: lastChapter.id,
+        chapter_id: 90, // lastChapter.id,
+        location: location.id,
       });
       this.logger.debug(JSON.stringify(userRegistered, null, 2));
     }
@@ -97,26 +106,9 @@ export class MutantScene {
   async onSceneEnter(@Ctx() ctx: TelegrafContext) {
     const telegram_id: number =
       ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
-    const user: Users = await this.usersRepository.findOne({
+    const user: UsersEntity = await this.usersRepository.findOne({
       where: { telegram_id: telegram_id },
     });
-    // const mutantList = [
-    //   'Ворона',
-    //   'Тушкан',
-    //   'Кабан',
-    //   'Плоть',
-    //   'Слепой пёс',
-    //   'Псевдособака',
-    //   'Пси-собака',
-    //   'Полтергейст',
-    //   'Огненныйполтергейст',
-    //   'Снорк',
-    //   'Контролёр',
-    //   'Бюрер',
-    //   'Кровосос',
-    //   'Псевдогигант',
-    //   'Химера',
-    // ];
     const mutantList = await this.mutantsRepository.find();
     const partList = ['плечо', 'лицо', 'ноги', 'живот', 'грудь', 'руки'];
     const mutant = this.appService.getRandomElInArr(mutantList);
@@ -124,17 +116,23 @@ export class MutantScene {
       `Вы встретили мутанта: "${mutant.name}". Итоги боя\n` +
         this.battle(mutant, user),
     );
-    // await ctx.reply(
-    //   `Вы встретили мутанта: "${mutant}". Итоги боя\n`,
-    //   // Markup.inlineKeyboard([
-    //   //   Markup.button.callback('Выбрать тактику', 'mutantWays'),
-    //   // ]),
-    // );
-    // await ctx.reply('Мутант более не опасен. Вы спасены и продолжаете путь.');
     await ctx.scene.leave();
   }
 
-  battle(enemy: Mutants, user: Users, text = ''): string {
+  battleHitText(damage) {
+    const options = [
+      'нанес вам урон на ' + damage,
+      'нанес урон вашему телу на ' + damage,
+      'повредил вас, отобрав ' + damage,
+      'нанес увечья на ' + damage,
+      'нанес травмы ровно на ' + damage,
+      'вы впитали урон, равный ' + damage,
+      'покалечил вас ударом на ' + damage,
+    ];
+    return this.appService.getRandomElInArr(options);
+  }
+
+  battle(enemy: MutantsEntity, user: UsersEntity, text = ''): string {
     const agilityUser = 5;
     const agilityEnemy = 1;
     let dodgeUser = false;
@@ -148,13 +146,9 @@ export class MutantScene {
         Math.random() * ((agilityEnemy - agilityUser) * 10) >
         Math.random() * 100;
     }
-    let dodgeChanceNameUser = dodgeUser ? '- уворот' : '- урон получен';
-    let dodgeChanceNameEnemy = dodgeEnemy ? '- уворот' : '- урон получен';
-
     let randomModifier = Math.random() * 0.5 + 0.75;
     let enemyDamage = 0;
     const userDamage = !dodgeEnemy ? Math.floor(250 * randomModifier) : 0;
-
     for (let i = 0; i < enemy.actions; i++) {
       randomModifier = Math.random() * 0.5 + 0.75;
       dodgeUser =
@@ -167,8 +161,9 @@ export class MutantScene {
         ? Math.floor((enemy.damage * randomModifier) / enemy.actions)
         : 0;
       user.health -= enemyDamage;
-      text += `\n${enemy.name} нанес вам урон ${userDamage} 
-Уклонение: ${dodgeUser ? '🍀' : '❎'}. Ваше 🫀: ${
+      text += `\nХод врага ${i + 1}) ${enemy.name} - ${this.battleHitText(
+        enemyDamage,
+      )} HP.${dodgeUser ? '\n🍀 Уклонение.' : ''}\nВаше 🫀: ${
         user.health <= 0 ? 0 : user.health
       }\n`;
       if (user.health <= 0) {
@@ -176,43 +171,17 @@ export class MutantScene {
         return text;
       }
     }
-
-    enemy.health -= userDamage;
-    text += `\nВы нанесли ${enemyDamage} урона ▶️ ${enemy.name}
-Уклонение врага: ${dodgeEnemy ? '🍀' : '❎'}. 🫀 врага: ${
-      enemy.health <= 0 ? 0 : enemy.health
-    }\n`;
-    if (enemy.health <= 0) {
-      text += `\n${enemy.name} теперь никого не побеспокоит.`;
-      return text;
+    for (let i = 0; i < 7; i++) {
+      enemy.health -= userDamage;
+      text += `\nХод ${i + 1}) Вы нанесли ${enemyDamage} урона ▶️ ${enemy.name} ${dodgeEnemy ? '\nВраг уклониося 🍀.' : ''}\nВражеское 🫀: ${
+        enemy.health <= 0 ? 0 : enemy.health
+      }\n`;
+      if (enemy.health <= 0) {
+        text += `\n${enemy.name} теперь никого не побеспокоит.`;
+        return text;
+      }
     }
     return this.battle(enemy, user, text);
-  }
-
-  // @Action('mutantWays')
-  // async mutantWays(@Ctx() ctx: TelegrafContext) {
-  //   const ways = ['Атаковать', 'Отбежать', 'Замереть'];
-  //   await ctx.replyWithHTML(
-  //     `<b>Пути:</b> `,
-  //     Markup.inlineKeyboard(
-  //       [
-  //         ...ways.map((wayName) =>
-  //           Markup.button.callback(wayName, 'actionChoose'),
-  //         ),
-  //       ],
-  //       {
-  //         columns: 2,
-  //       },
-  //     ),
-  //   );
-  //   // TODO
-  //   await ctx.reply('Мутант более не опасен. Вы спасены и продолжаете путь.');
-  //   await ctx.scene.leave();
-  // }
-
-  @Action(ScenesEnum.QUEST)
-  async enterQuestScene(@Ctx() ctx: Scenes.SceneContext) {
-    await ctx.scene.enter(ScenesEnum.QUEST);
   }
 
   //   @Use()

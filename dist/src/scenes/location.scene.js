@@ -73,8 +73,12 @@ let LocationScene = LocationScene_1 = class LocationScene {
             }
         }
         else {
+            const location = await this.locationsRepository.findOne({
+                where: { name: 'Кордон' },
+            });
             const userRegistered = await this.usersRepository.save({
                 telegram_id: telegram_id,
+                location: location.id,
             });
             const lastChapter = await this.chaptersRepository.findOne({
                 order: { id: 1 },
@@ -82,7 +86,8 @@ let LocationScene = LocationScene_1 = class LocationScene {
             });
             await this.progressRepository.save({
                 user_id: userRegistered.id,
-                chapter_id: lastChapter.id,
+                chapter_id: 90,
+                location: location.id,
             });
             this.logger.debug(JSON.stringify(userRegistered, null, 2));
         }
@@ -195,10 +200,10 @@ __decorate([
 ], LocationScene.prototype, "onSceneLeave", null);
 LocationScene = LocationScene_1 = __decorate([
     (0, nestjs_telegraf_1.Scene)(scenes_enum_1.ScenesEnum.LOCATION),
-    __param(1, (0, typeorm_1.InjectRepository)(users_entity_1.Users)),
-    __param(2, (0, typeorm_1.InjectRepository)(chapters_entity_1.Chapters)),
+    __param(1, (0, typeorm_1.InjectRepository)(users_entity_1.UsersEntity)),
+    __param(2, (0, typeorm_1.InjectRepository)(chapters_entity_1.ChaptersEntity)),
     __param(3, (0, typeorm_1.InjectRepository)(choices_entity_1.Choices)),
-    __param(4, (0, typeorm_1.InjectRepository)(progress_entity_1.Progress)),
+    __param(4, (0, typeorm_1.InjectRepository)(progress_entity_1.ProgressEntity)),
     __param(5, (0, typeorm_1.InjectRepository)(inventory_items_entity_1.InventoryItems)),
     __param(6, (0, typeorm_1.InjectRepository)(artifacts_entity_1.Artifacts)),
     __param(7, (0, typeorm_1.InjectRepository)(anomalies_entity_1.Anomalies)),

@@ -1,7 +1,7 @@
 import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('users')
-export class Users {
+export class UsersEntity {
   @PrimaryGeneratedColumn()
   id?: number;
 
@@ -21,7 +21,7 @@ export class Users {
   inventory?: string;
 
   @Column()
-  health: number;
+  health?: number;
 
   @Column({ nullable: false, default: 0 })
   radiation?: number;

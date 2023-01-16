@@ -25,13 +25,14 @@ const choices_entity_1 = require("../user/entities/choices.entity");
 const inventory_items_entity_1 = require("../user/entities/inventory_items.entity");
 const locations_entity_1 = require("../user/entities/locations.entity");
 const progress_entity_1 = require("../user/entities/progress.entity");
+const quests_entity_1 = require("../user/entities/quests.entity");
 const roads_entity_1 = require("../user/entities/roads.entity");
 const users_entity_1 = require("../user/entities/users.entity");
 const telegraf_1 = require("telegraf");
 const typeorm_2 = require("typeorm");
 const scenes_enum_1 = require("./enums/scenes.enum");
 let QuestScene = QuestScene_1 = class QuestScene {
-    constructor(appService, usersRepository, chaptersRepository, choicesRepository, progressRepository, inventoryItemsRepository, artifactsRepository, anomaliesRepository, locationsRepository, roadsRepository) {
+    constructor(appService, usersRepository, chaptersRepository, choicesRepository, progressRepository, inventoryItemsRepository, artifactsRepository, anomaliesRepository, locationsRepository, roadsRepository, questsEntity) {
         this.appService = appService;
         this.usersRepository = usersRepository;
         this.chaptersRepository = chaptersRepository;
@@ -42,6 +43,7 @@ let QuestScene = QuestScene_1 = class QuestScene {
         this.anomaliesRepository = anomaliesRepository;
         this.locationsRepository = locationsRepository;
         this.roadsRepository = roadsRepository;
+        this.questsEntity = questsEntity;
         this.logger = new common_1.Logger(QuestScene_1.name);
     }
     async onRegister(ctx, next) {
@@ -66,8 +68,12 @@ let QuestScene = QuestScene_1 = class QuestScene {
             }
         }
         else {
+            const location = await this.locationsRepository.findOne({
+                where: { name: 'Кордон' },
+            });
             const userRegistered = await this.usersRepository.save({
                 telegram_id: telegram_id,
+                location: location.id,
             });
             const lastChapter = await this.chaptersRepository.findOne({
                 order: { id: 1 },
@@ -75,7 +81,8 @@ let QuestScene = QuestScene_1 = class QuestScene {
             });
             await this.progressRepository.save({
                 user_id: userRegistered.id,
-                chapter_id: lastChapter.id,
+                chapter_id: 90,
+                location: location.id,
             });
             this.logger.debug(JSON.stringify(userRegistered, null, 2));
         }
@@ -102,12 +109,17 @@ let QuestScene = QuestScene_1 = class QuestScene {
                 id: progress.chapter_id,
             },
         });
+        const quest = await this.questsEntity.findOne({
+            where: {
+                id: chapter.quest,
+            },
+        });
         const starterChapter = await this.chaptersRepository.findOne({
             order: { id: 1 },
             where: { content: (0, typeorm_2.Like)('💭%') },
         });
         if (chapter.location === location.id) {
-            await ctx.reply(`На этой локации есть с кем поговорить. ${chapter.character} вас ждет.`, telegraf_1.Markup.inlineKeyboard([
+            await ctx.reply(`На этой локации есть с кем поговорить. ${chapter.character} вас ждет. Ваша текущая задача: ${quest.name}`, telegraf_1.Markup.inlineKeyboard([
                 telegraf_1.Markup.button.callback('🤝Поговорить', 'chapterXXX' + chapter.id),
                 telegraf_1.Markup.button.callback('⚽️Сброс', 'chapterXXX' + starterChapter.id),
                 telegraf_1.Markup.button.callback('✋🏻Уйти', 'leave'),
@@ -223,16 +235,18 @@ __decorate([
 ], QuestScene.prototype, "onSceneLeave", null);
 QuestScene = QuestScene_1 = __decorate([
     (0, nestjs_telegraf_1.Scene)(scenes_enum_1.ScenesEnum.QUEST),
-    __param(1, (0, typeorm_1.InjectRepository)(users_entity_1.Users)),
-    __param(2, (0, typeorm_1.InjectRepository)(chapters_entity_1.Chapters)),
+    __param(1, (0, typeorm_1.InjectRepository)(users_entity_1.UsersEntity)),
+    __param(2, (0, typeorm_1.InjectRepository)(chapters_entity_1.ChaptersEntity)),
     __param(3, (0, typeorm_1.InjectRepository)(choices_entity_1.Choices)),
-    __param(4, (0, typeorm_1.InjectRepository)(progress_entity_1.Progress)),
+    __param(4, (0, typeorm_1.InjectRepository)(progress_entity_1.ProgressEntity)),
     __param(5, (0, typeorm_1.InjectRepository)(inventory_items_entity_1.InventoryItems)),
     __param(6, (0, typeorm_1.InjectRepository)(artifacts_entity_1.Artifacts)),
     __param(7, (0, typeorm_1.InjectRepository)(anomalies_entity_1.Anomalies)),
     __param(8, (0, typeorm_1.InjectRepository)(locations_entity_1.LocationsEntity)),
     __param(9, (0, typeorm_1.InjectRepository)(roads_entity_1.RoadsEntity)),
+    __param(10, (0, typeorm_1.InjectRepository)(quests_entity_1.QuestsEntity)),
     __metadata("design:paramtypes", [app_service_1.AppService,
+        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
