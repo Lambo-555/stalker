@@ -56,7 +56,7 @@ let AnomalyRoadScene = AnomalyRoadScene_1 = class AnomalyRoadScene {
             if (!progress) {
                 const lastChapter = await this.chaptersRepository.findOne({
                     order: { id: 1 },
-                    where: { content: (0, typeorm_2.Like)('💭%') },
+                    where: { content: (0, typeorm_2.Like)('Один из грузовиков%') },
                 });
                 await this.progressRepository.save({
                     user_id: user.id,
@@ -74,7 +74,7 @@ let AnomalyRoadScene = AnomalyRoadScene_1 = class AnomalyRoadScene {
             });
             const lastChapter = await this.chaptersRepository.findOne({
                 order: { id: 1 },
-                where: { content: (0, typeorm_2.Like)('💭') },
+                where: { content: (0, typeorm_2.Like)('Один из грузовиков%') },
             });
             await this.progressRepository.save({
                 user_id: userRegistered.id,
@@ -202,7 +202,7 @@ AnomalyRoadScene = AnomalyRoadScene_1 = __decorate([
     (0, nestjs_telegraf_1.Scene)(scenes_enum_1.ScenesEnum.ANOMALY_ROAD),
     __param(1, (0, typeorm_1.InjectRepository)(users_entity_1.UsersEntity)),
     __param(2, (0, typeorm_1.InjectRepository)(chapters_entity_1.ChaptersEntity)),
-    __param(3, (0, typeorm_1.InjectRepository)(choices_entity_1.Choices)),
+    __param(3, (0, typeorm_1.InjectRepository)(choices_entity_1.ChoicesEntity)),
     __param(4, (0, typeorm_1.InjectRepository)(progress_entity_1.ProgressEntity)),
     __param(5, (0, typeorm_1.InjectRepository)(inventory_items_entity_1.InventoryItems)),
     __param(6, (0, typeorm_1.InjectRepository)(artifacts_entity_1.Artifacts)),

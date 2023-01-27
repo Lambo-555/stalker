@@ -57,7 +57,7 @@ AppModule = __decorate([
                 entities: [
                     users_entity_1.UsersEntity,
                     chapters_entity_1.ChaptersEntity,
-                    choices_entity_1.Choices,
+                    choices_entity_1.ChoicesEntity,
                     inventory_items_entity_1.InventoryItems,
                     progress_entity_1.ProgressEntity,
                     anomalies_entity_1.Anomalies,
@@ -72,7 +72,7 @@ AppModule = __decorate([
             typeorm_1.TypeOrmModule.forFeature([
                 users_entity_1.UsersEntity,
                 chapters_entity_1.ChaptersEntity,
-                choices_entity_1.Choices,
+                choices_entity_1.ChoicesEntity,
                 inventory_items_entity_1.InventoryItems,
                 progress_entity_1.ProgressEntity,
                 anomalies_entity_1.Anomalies,

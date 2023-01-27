@@ -9,32 +9,32 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Choices = void 0;
+exports.ChoicesEntity = void 0;
 const typeorm_1 = require("typeorm");
-let Choices = class Choices {
+let ChoicesEntity = class ChoicesEntity {
 };
 __decorate([
     (0, typeorm_1.PrimaryGeneratedColumn)(),
     __metadata("design:type", Number)
-], Choices.prototype, "id", void 0);
+], ChoicesEntity.prototype, "id", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", Number)
-], Choices.prototype, "chapter_id", void 0);
+], ChoicesEntity.prototype, "chapter_id", void 0);
 __decorate([
     (0, typeorm_1.Column)({ default: 'default', nullable: true }),
     __metadata("design:type", String)
-], Choices.prototype, "inventory_required", void 0);
+], ChoicesEntity.prototype, "inventory_required", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", Number)
-], Choices.prototype, "next_chapter_id", void 0);
+], ChoicesEntity.prototype, "next_chapter_id", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
-], Choices.prototype, "description", void 0);
-Choices = __decorate([
+], ChoicesEntity.prototype, "description", void 0);
+ChoicesEntity = __decorate([
     (0, typeorm_1.Entity)('choices')
-], Choices);
-exports.Choices = Choices;
+], ChoicesEntity);
+exports.ChoicesEntity = ChoicesEntity;
 //# sourceMappingURL=choices.entity.js.map

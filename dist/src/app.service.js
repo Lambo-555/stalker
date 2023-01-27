@@ -52,6 +52,38 @@ let AppService = class AppService {
             { command: 'menu', description: 'Главное меню' },
         ]);
     }
+    escapeText(escapedMsg) {
+        return escapedMsg
+            .replace(/_/g, '\\_')
+            .replace(/\*/g, '\\*')
+            .replace(/\*/g, '\\*')
+            .replace(/\(/g, '\\(')
+            .replace(/\)/g, '\\)')
+            .replace(/\[/g, '\\[')
+            .replace(/\!/g, '\\!')
+            .replace(/\`/g, '\\`')
+            .replace(/\-/g, '\\-')
+            .replace(/\./g, '\\.')
+            .replace(/\,/g, '\\,');
+    }
+    async updateDisplay(progress, keyboard, text, mediaLink, mediaText) {
+        await this.bot.telegram.editMessageText(progress.chat_id, progress.message_display_id, null, this.escapeText(text || '...'), {
+            reply_markup: keyboard,
+            parse_mode: 'MarkdownV2',
+        });
+        if (mediaLink) {
+            await this.bot.telegram.editMessageMedia(progress.chat_id, progress.message_display_id, null, {
+                type: 'photo',
+                media: mediaLink,
+                caption: mediaText || 'подпись медиа',
+            });
+        }
+    }
+    getTelegramId(ctx) {
+        var _a, _b, _c;
+        const telegram_id = ((_a = ctx === null || ctx === void 0 ? void 0 : ctx.message) === null || _a === void 0 ? void 0 : _a.from.id) || ((_c = (_b = ctx === null || ctx === void 0 ? void 0 : ctx.callbackQuery) === null || _b === void 0 ? void 0 : _b.from) === null || _c === void 0 ? void 0 : _c.id);
+        return telegram_id;
+    }
     sleep(ms) {
         return new Promise((resolve) => setTimeout(resolve, ms));
     }
@@ -83,6 +115,12 @@ let AppService = class AppService {
         }
     }
 };
+__decorate([
+    __param(0, (0, nestjs_telegraf_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AppService.prototype, "getTelegramId", null);
 AppService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, nestjs_telegraf_1.InjectBot)()),

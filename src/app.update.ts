@@ -10,8 +10,9 @@ import {
   Message,
   Start,
   SceneEnter,
+  InjectBot,
 } from 'nestjs-telegraf';
-import { Markup, Scenes } from 'telegraf';
+import { Context, Markup, Scenes, Telegraf } from 'telegraf';
 import { NextFunction } from 'express';
 import { TelegrafContext } from 'src/interfaces/telegraf-context.interface';
 import { UsersEntity } from './user/entities/users.entity';
@@ -19,79 +20,71 @@ import { AppService } from './app.service';
 import { Like, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ChaptersEntity } from './user/entities/chapters.entity';
-import { Choices } from './user/entities/choices.entity';
+import { ChoicesEntity } from './user/entities/choices.entity';
 import { ProgressEntity } from './user/entities/progress.entity';
 import { InventoryItems } from './user/entities/inventory_items.entity';
-import crypto from 'crypto';
 import { ScenesEnum } from './scenes/enums/scenes.enum';
 import { LocationsEntity } from './user/entities/locations.entity';
+import {
+  InlineKeyboardButton,
+  InlineKeyboardMarkup,
+} from 'telegraf/typings/core/types/typegram';
+import { inlineKeyboard } from 'telegraf/typings/markup';
 
 @Update()
 @Injectable()
 export default class AppUpdate {
   private readonly logger = new Logger(AppUpdate.name);
-  private readonly secret = 'bcryptersss';
 
   constructor(
-    private readonly appService: AppService, 
+    private readonly appService: AppService,
     @InjectRepository(UsersEntity)
     private readonly usersRepository: Repository<UsersEntity>,
     @InjectRepository(ChaptersEntity)
     private readonly chaptersRepository: Repository<ChaptersEntity>,
-    @InjectRepository(Choices)
-    private readonly choicesRepository: Repository<Choices>,
+    @InjectRepository(ChoicesEntity)
+    private readonly choicesRepository: Repository<ChoicesEntity>,
     @InjectRepository(ProgressEntity)
     private readonly progressRepository: Repository<ProgressEntity>,
     @InjectRepository(InventoryItems)
     private readonly inventoryItemsRepository: Repository<InventoryItems>,
     @InjectRepository(LocationsEntity)
     private readonly locationsRepository: Repository<LocationsEntity>,
-  ) {}
+    @InjectBot()
+    private readonly bot: Telegraf<Context>,
+  ) { }
 
   onApplicationBootstrap() {
     this.appService.commandListInit();
   }
 
+  /**
+   * Регистрация пользователя
+   * @param ctx Контекст телеграмма
+   * @param next Продолжение игры
+   */
   @Use()
   async onRegister(@Ctx() ctx: TelegrafContext, @Next() next: NextFunction) {
-    const telegram_id: number =
-      ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
+    const telegram_id = this.appService.getTelegramId(ctx);
     const user: UsersEntity = await this.usersRepository.findOne({
       where: { telegram_id: telegram_id },
     });
-    if (user) {
-      const progress = await this.progressRepository.findOne({
-        where: { user_id: user.id },
-      });
-      if (!progress) {
-        const lastChapter = await this.chaptersRepository.findOne({
-          order: { id: 1 },
-          where: { content: Like('💭%') },
-        });
-        await this.progressRepository.save({
-          user_id: user.id,
-          chapter_id: 90, //lastChapter.id,
-        });
-      }
-    } else {
+    if (!user) {
       const location = await this.locationsRepository.findOne({
-        where: { name: 'Кордон' },
+        where: { id: 1 },
       });
       const userRegistered: UsersEntity = await this.usersRepository.save({
         telegram_id: telegram_id,
         location: location.id,
       });
       const lastChapter = await this.chaptersRepository.findOne({
-        order: { id: 1 },
-        where: { content: Like('💭') },
+        where: { content: Like('Один из грузовиков%') },
       });
-
       await this.progressRepository.save({
         user_id: userRegistered.id,
-        chapter_id: 90, // lastChapter.id,
+        chapter_id: lastChapter.id,
         location: location.id,
       });
-      this.logger.debug(JSON.stringify(userRegistered, null, 2));
     }
     next();
   }
@@ -100,54 +93,129 @@ export default class AppUpdate {
   @Action('menu')
   @Command('menu')
   async onMenu(@Ctx() ctx: TelegrafContext) {
-    const telegram_id: number =
-      ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
-    const user: UsersEntity = await this.usersRepository.findOne({
-      where: { telegram_id: telegram_id },
-    });
-
-    const progress: ProgressEntity = await this.progressRepository.findOne({
-      where: { user_id: user.id },
-    });
-    const userChapterId = progress.chapter_id;
-    let userChapter: ChaptersEntity = await this.chaptersRepository.findOne({
-      where: { id: userChapterId },
-    });
-    const nextChoices: Choices[] = await this.choicesRepository.find({
-      where: { chapter_id: userChapter?.id },
-    });
-
-    const starterChapter = await this.chaptersRepository.findOne({
-      order: { id: 1 },
-      where: { content: Like('💭%') },
-    });
-    if (!userChapter && starterChapter) {
-      userChapter = starterChapter;
-    }
-    const locations: LocationsEntity = await this.locationsRepository.findOne({
-      where: { id: user.location },
-    });
-
-    const nextChapter: ChaptersEntity = await this.chaptersRepository.findOne({
-      where: { id: progress.chapter_id, location: locations.id },
-    });
-
-    await ctx.replyWithHTML(
-      `Вы на локации: <b>${locations.name}</b>.`,
-      Markup.inlineKeyboard(
-        [
-          Markup.button.callback('🔩Аномалия', ScenesEnum.ANOMALY_ROAD),
-          Markup.button.callback('🐫Мутант', ScenesEnum.MUTANT),
-          Markup.button.callback('🥦Артефакт', ScenesEnum.ARTIFACT),
-          Markup.button.callback('📍Перемещение', ScenesEnum.LOCATION),
-          Markup.button.callback('📟PDA', 'PDA'),
-          Markup.button.callback('🤙Квест', ScenesEnum.QUEST, !!!nextChapter),
-        ],
+    try {
+      const telegram_id = this.appService.getTelegramId(ctx);
+      const user: UsersEntity = await this.usersRepository.findOne({
+        where: { telegram_id: telegram_id },
+      });
+      let progress: ProgressEntity = await this.progressRepository.findOne({
+        where: { user_id: user.id },
+      });
+      const lastChapter = await this.chaptersRepository.findOne({
+        where: { content: Like('Один из грузовиков%') },
+      });
+      const location = await this.locationsRepository.findOne({
+        where: { id: 1 },
+      });
+      if (!progress) {
+        progress = await this.progressRepository.save({
+          user_id: user.id,
+          chapter_id: lastChapter.id,
+          location: location.id,
+        });
+      }
+      // await this.progressRepository.delete(progress.progress_id);
+      // await this.usersRepository.delete(user.id);
+      if (!progress?.chat_id || !progress?.message_display_id) {
+        const messageDisplay = await ctx.reply('display');
+        await this.progressRepository.update(progress?.progress_id, {
+          chat_id: messageDisplay.chat.id,
+          message_display_id: messageDisplay.message_id,
+        });
+        progress = await this.progressRepository.findOne({
+          where: { user_id: user.id },
+        });
+      }
+      if (progress.chat_id && progress.message_display_id) {
+        await ctx.deleteMessage();
+      }
+      let chapter: ChaptersEntity = await this.chaptersRepository.findOne({
+        where: { id: progress.chapter_id },
+      });
+      const starterChapter = await this.chaptersRepository.findOne({
+        order: { id: 1 },
+        where: { content: Like('Один из грузовиков%') },
+      });
+      if (!chapter && starterChapter) {
+        chapter = starterChapter;
+      }
+      const locations: LocationsEntity = await this.locationsRepository.findOne(
         {
-          columns: 2,
+          where: { id: user.location },
         },
-      ),
-    );
+      );
+      const nextChapter: ChaptersEntity = await this.chaptersRepository.findOne(
+        {
+          where: { id: progress?.chapter_id, location: locations?.id },
+        },
+      );
+
+      const pda = Markup.button.callback('📟PDA', 'PDA');
+      const story = Markup.button.callback(
+        '☢️История',
+        ScenesEnum.QUEST,
+        !!!nextChapter,
+      );
+      const move = Markup.button.callback('📍Перемещение', ScenesEnum.LOCATION);
+
+      const markup = Markup.inlineKeyboard([pda, story, move], {
+        columns: 1,
+      }).reply_markup;
+
+      // update display
+      // update display
+      // update display
+      await this.bot.telegram.editMessageText(
+        progress.chat_id,
+        progress.message_display_id,
+        null,
+        this.appService.escapeText(`Вы на локации: ${locations?.name}.`),
+        {
+          reply_markup: markup,
+          parse_mode: 'MarkdownV2',
+        },
+      );
+      await this.bot.telegram.editMessageMedia(
+        progress.chat_id,
+        progress.message_display_id,
+        null,
+        {
+          type: 'photo',
+          media: '',
+          caption: 'space caption',
+        },
+      );
+    } catch (error) {
+      console.error(error);
+    }
+
+    // Markup.button.callback('🔩Аномалия', ScenesEnum.ANOMALY_ROAD),
+    // Markup.button.callback('🐫Мутант', ScenesEnum.MUTANT),
+    // Markup.button.callback('🤷Бандиты', ScenesEnum.BANDIT),
+    // Markup.button.callback('🥦Артефакт', ScenesEnum.ARTIFACT),
+    // await ctx.replyWithHTML(
+    //   `Вы на локации: <b>${locations?.name}</b>.`,
+    //   Markup.inlineKeyboard(
+    //     [
+    //       // Markup.button.callback('🔩Аномалия', ScenesEnum.ANOMALY_ROAD),
+    //       // Markup.button.callback('🐫Мутант', ScenesEnum.MUTANT),
+    //       // Markup.button.callback('🤷Бандиты', ScenesEnum.BANDIT),
+    //       // Markup.button.callback('🥦Артефакт', ScenesEnum.ARTIFACT),
+    //       Markup.button.callback('📍Перемещение', ScenesEnum.LOCATION),
+    //       Markup.button.callback('📟PDA', 'PDA'),
+    //       Markup.button.callback('☢️История', ScenesEnum.QUEST, !!!nextChapter),
+    //     ],
+    //     {
+    //       columns: 2,
+    //     },
+    //   ),
+    // );
+  }
+
+  @Action(ScenesEnum.BANDIT)
+  @Command(ScenesEnum.BANDIT)
+  async enterBanditScene(@Ctx() ctx: Scenes.SceneContext) {
+    await ctx.scene.enter(ScenesEnum.BANDIT);
   }
 
   @Action(ScenesEnum.PDA)

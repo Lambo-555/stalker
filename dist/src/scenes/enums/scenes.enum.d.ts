@@ -6,5 +6,6 @@ export declare enum ScenesEnum {
     ARTIFACT = "ARTIFACT",
     PDA = "PDA",
     QUEST = "QUEST",
-    LOCATION = "LOCATION"
+    LOCATION = "LOCATION",
+    BANDIT = "BANDIT"
 }

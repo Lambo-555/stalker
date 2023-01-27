@@ -26,17 +26,13 @@ __decorate([
     __metadata("design:type", String)
 ], ChaptersEntity.prototype, "content", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ default: 'default', nullable: true }),
-    __metadata("design:type", String)
-], ChaptersEntity.prototype, "inventory_required", void 0);
-__decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", Number)
 ], ChaptersEntity.prototype, "location", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
-    __metadata("design:type", Number)
-], ChaptersEntity.prototype, "quest", void 0);
+    __metadata("design:type", String)
+], ChaptersEntity.prototype, "image", void 0);
 ChaptersEntity = __decorate([
     (0, typeorm_1.Entity)('chapters')
 ], ChaptersEntity);

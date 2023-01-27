@@ -6,7 +6,7 @@ import { AppService } from './app.service';
 import AppUpdate from './app.update';
 import { ChaptersEntity } from './user/entities/chapters.entity';
 import { ProgressEntity } from './user/entities/progress.entity';
-import { Choices } from './user/entities/choices.entity';
+import { ChoicesEntity } from './user/entities/choices.entity';
 import { InventoryItems } from './user/entities/inventory_items.entity';
 import { UsersEntity } from './user/entities/users.entity';
 import { UserModule } from './user/user.module';
@@ -47,7 +47,7 @@ const scenes = [
       entities: [
         UsersEntity,
         ChaptersEntity,
-        Choices,
+        ChoicesEntity,
         InventoryItems,
         ProgressEntity,
         Anomalies,
@@ -62,7 +62,7 @@ const scenes = [
     TypeOrmModule.forFeature([
       UsersEntity,
       ChaptersEntity,
-      Choices,
+      ChoicesEntity,
       InventoryItems,
       ProgressEntity,
       Anomalies,

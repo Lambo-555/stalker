@@ -17,7 +17,7 @@ import { AppService } from 'src/app.service';
 import { Anomalies } from 'src/user/entities/anomalies.entity';
 import { Artifacts } from 'src/user/entities/artifacts.entity';
 import { ChaptersEntity } from 'src/user/entities/chapters.entity';
-import { Choices } from 'src/user/entities/choices.entity';
+import { ChoicesEntity } from 'src/user/entities/choices.entity';
 import { InventoryItems } from 'src/user/entities/inventory_items.entity';
 import { LocationsEntity } from 'src/user/entities/locations.entity';
 import { ProgressEntity } from 'src/user/entities/progress.entity';
@@ -40,8 +40,8 @@ export class PdaScene {
     private readonly usersRepository: Repository<UsersEntity>,
     @InjectRepository(ChaptersEntity)
     private readonly chaptersRepository: Repository<ChaptersEntity>,
-    @InjectRepository(Choices)
-    private readonly choicesRepository: Repository<Choices>,
+    @InjectRepository(ChoicesEntity)
+    private readonly choicesRepository: Repository<ChoicesEntity>,
     @InjectRepository(ProgressEntity)
     private readonly progressRepository: Repository<ProgressEntity>,
     @InjectRepository(InventoryItems)
@@ -54,7 +54,7 @@ export class PdaScene {
     private readonly locationsRepository: Repository<LocationsEntity>,
     @InjectRepository(RoadsEntity)
     private readonly roadsRepository: Repository<RoadsEntity>,
-  ) {}
+  ) { }
 
   @Use()
   async onRegister(@Ctx() ctx: TelegrafContext, @Next() next: NextFunction) {
@@ -70,7 +70,7 @@ export class PdaScene {
       if (!progress) {
         const lastChapter = await this.chaptersRepository.findOne({
           order: { id: 1 },
-          where: { content: Like('💭%') },
+          where: { content: Like('Один из грузовиков%') },
         });
         await this.progressRepository.save({
           user_id: user.id,
@@ -86,12 +86,11 @@ export class PdaScene {
         location: location.id,
       });
       const lastChapter = await this.chaptersRepository.findOne({
-        order: { id: 1 },
-        where: { content: Like('💭') },
+        where: { content: Like('Один из грузовиков%') },
       });
       await this.progressRepository.save({
         user_id: userRegistered.id,
-        chapter_id: 90, // lastChapter.id,
+        chapter_id: lastChapter.id,
         location: location.id,
       });
       this.logger.debug(JSON.stringify(userRegistered, null, 2));
@@ -111,15 +110,33 @@ export class PdaScene {
     const userLocation = await this.locationsRepository.findOne({
       where: { id: user.location },
     });
+    const progress: ProgressEntity = await this.progressRepository.findOne({
+      where: {
+        user_id: user.id,
+      },
+    });
+    const nextChapter: ChaptersEntity = await this.chaptersRepository.findOne({
+      where: { id: progress.chapter_id },
+    });
+    const locationId = nextChapter.location;
+    const nextLocation = await this.locationsRepository.findOne({
+      where: { id: locationId },
+    });
     await ctx.replyWithHTML(
       `
-📟 Вы смотрите в свой КПК(PDA). Версия прошивки "${pdaVersion}"
+📟 Вы смотрите в свой КПК(PDA)
+Локация(текущая): ${userLocation.name},
+Локация(цель): ${nextLocation.name},
+🚪 /leave - Выход в основное меню
+`,
+    );
 
-Здоровье: ${user.health}🫀, Радиация: ${user.radiation}☢️,
-Кровотечение: ${0}🩸, Пси-состояние: ${100}🧠,
-Локация: ${userLocation.name},
-Средства: ${user.funds}🛢,
-
+    const x = `
+    . Версия прошивки "${pdaVersion}
+    Средства: ${user.funds}🛢,
+    Здоровье: ${user.health}🫀, Радиация: ${user.radiation}☢️,
+    Кровотечение: ${0}🩸, Пси-состояние: ${100}🧠,
+    
 📱 /about - О КПК
 🎒 /inventory - Рюкзак (wip)
 📻 /radioTune - Настройка волны радио (только для версии прошивки <b>PDA-X16</b>)
@@ -135,11 +152,7 @@ export class PdaScene {
 🆘 /help - Помощь и пояснения
 📊 /statistics - Статистика игрока (wip)
 💡 /feedback - Написать отзыв об ошибках и предложениях
-💡 /creators - Написать отзыв об ошибках и предложениях
-
-🚪 /leave - Выход в основное меню
-`,
-    );
+💡 /creators - Написать отзыв об ошибках и предложениях`;
   }
 
   @Command('/creators')
@@ -147,8 +160,20 @@ export class PdaScene {
     await ctx.replyWithHTML(`
 <b>Список разработчиков:</b>
 - Малышев Станислав - director, backend-developer
-- Илья Безродный - content-creator
     `);
+  }
+
+  @Command('/help')
+  async onHelp(@Ctx() ctx: TelegrafContext, @Next() next: NextFunction) {
+    await ctx.replyWithHTML(`
+<b>Помощь:</b>
+Данная игра - новелла по сюжету игры Сталкер.
+Чтобы пройти сюжет нужно переходить в нужные локации и вести диалог с NPC.
+Текущую локацию и место, куда нужно уйти можно узать в PDA.
+
+Ряд фраз изменены, чтобы помещаться в лимиты телеграмма по кнопкам.
+На данный момент решения игрока ни на что не влияют, но ведется разработка кармы, которая будет влиять на концовки и возможности выбрать то или иное решение в диалогах. 
+`);
   }
 
   @Command('/about')
@@ -228,7 +253,7 @@ export class PdaScene {
   @SceneLeave()
   async onSceneLeave(@Ctx() ctx: Scenes.SceneContext) {
     await ctx.reply(
-      'Вы перестали смотреть на КПК.',
+      'Вы убрали КПК.',
       Markup.inlineKeyboard([Markup.button.callback('🍔Меню', 'menu')]),
     );
   }

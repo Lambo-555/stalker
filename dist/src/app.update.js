@@ -27,7 +27,7 @@ const inventory_items_entity_1 = require("./user/entities/inventory_items.entity
 const scenes_enum_1 = require("./scenes/enums/scenes.enum");
 const locations_entity_1 = require("./user/entities/locations.entity");
 let AppUpdate = AppUpdate_1 = class AppUpdate {
-    constructor(appService, usersRepository, chaptersRepository, choicesRepository, progressRepository, inventoryItemsRepository, locationsRepository) {
+    constructor(appService, usersRepository, chaptersRepository, choicesRepository, progressRepository, inventoryItemsRepository, locationsRepository, bot) {
         this.appService = appService;
         this.usersRepository = usersRepository;
         this.chaptersRepository = chaptersRepository;
@@ -35,93 +35,109 @@ let AppUpdate = AppUpdate_1 = class AppUpdate {
         this.progressRepository = progressRepository;
         this.inventoryItemsRepository = inventoryItemsRepository;
         this.locationsRepository = locationsRepository;
+        this.bot = bot;
         this.logger = new common_1.Logger(AppUpdate_1.name);
-        this.secret = 'bcryptersss';
     }
     onApplicationBootstrap() {
         this.appService.commandListInit();
     }
     async onRegister(ctx, next) {
-        var _a, _b, _c;
-        const telegram_id = ((_a = ctx === null || ctx === void 0 ? void 0 : ctx.message) === null || _a === void 0 ? void 0 : _a.from.id) || ((_c = (_b = ctx === null || ctx === void 0 ? void 0 : ctx.callbackQuery) === null || _b === void 0 ? void 0 : _b.from) === null || _c === void 0 ? void 0 : _c.id);
+        const telegram_id = this.appService.getTelegramId(ctx);
         const user = await this.usersRepository.findOne({
             where: { telegram_id: telegram_id },
         });
-        if (user) {
-            const progress = await this.progressRepository.findOne({
-                where: { user_id: user.id },
-            });
-            if (!progress) {
-                const lastChapter = await this.chaptersRepository.findOne({
-                    order: { id: 1 },
-                    where: { content: (0, typeorm_1.Like)('💭%') },
-                });
-                await this.progressRepository.save({
-                    user_id: user.id,
-                    chapter_id: 90,
-                });
-            }
-        }
-        else {
+        if (!user) {
             const location = await this.locationsRepository.findOne({
-                where: { name: 'Кордон' },
+                where: { id: 1 },
             });
             const userRegistered = await this.usersRepository.save({
                 telegram_id: telegram_id,
                 location: location.id,
             });
             const lastChapter = await this.chaptersRepository.findOne({
-                order: { id: 1 },
-                where: { content: (0, typeorm_1.Like)('💭') },
+                where: { content: (0, typeorm_1.Like)('Один из грузовиков%') },
             });
             await this.progressRepository.save({
                 user_id: userRegistered.id,
-                chapter_id: 90,
+                chapter_id: lastChapter.id,
                 location: location.id,
             });
-            this.logger.debug(JSON.stringify(userRegistered, null, 2));
         }
         next();
     }
     async onMenu(ctx) {
-        var _a, _b, _c;
-        const telegram_id = ((_a = ctx === null || ctx === void 0 ? void 0 : ctx.message) === null || _a === void 0 ? void 0 : _a.from.id) || ((_c = (_b = ctx === null || ctx === void 0 ? void 0 : ctx.callbackQuery) === null || _b === void 0 ? void 0 : _b.from) === null || _c === void 0 ? void 0 : _c.id);
-        const user = await this.usersRepository.findOne({
-            where: { telegram_id: telegram_id },
-        });
-        const progress = await this.progressRepository.findOne({
-            where: { user_id: user.id },
-        });
-        const userChapterId = progress.chapter_id;
-        let userChapter = await this.chaptersRepository.findOne({
-            where: { id: userChapterId },
-        });
-        const nextChoices = await this.choicesRepository.find({
-            where: { chapter_id: userChapter === null || userChapter === void 0 ? void 0 : userChapter.id },
-        });
-        const starterChapter = await this.chaptersRepository.findOne({
-            order: { id: 1 },
-            where: { content: (0, typeorm_1.Like)('💭%') },
-        });
-        if (!userChapter && starterChapter) {
-            userChapter = starterChapter;
+        try {
+            const telegram_id = this.appService.getTelegramId(ctx);
+            const user = await this.usersRepository.findOne({
+                where: { telegram_id: telegram_id },
+            });
+            let progress = await this.progressRepository.findOne({
+                where: { user_id: user.id },
+            });
+            const lastChapter = await this.chaptersRepository.findOne({
+                where: { content: (0, typeorm_1.Like)('Один из грузовиков%') },
+            });
+            const location = await this.locationsRepository.findOne({
+                where: { id: 1 },
+            });
+            if (!progress) {
+                progress = await this.progressRepository.save({
+                    user_id: user.id,
+                    chapter_id: lastChapter.id,
+                    location: location.id,
+                });
+            }
+            if (!(progress === null || progress === void 0 ? void 0 : progress.chat_id) || !(progress === null || progress === void 0 ? void 0 : progress.message_display_id)) {
+                const messageDisplay = await ctx.reply('display');
+                await this.progressRepository.update(progress === null || progress === void 0 ? void 0 : progress.progress_id, {
+                    chat_id: messageDisplay.chat.id,
+                    message_display_id: messageDisplay.message_id,
+                });
+                progress = await this.progressRepository.findOne({
+                    where: { user_id: user.id },
+                });
+            }
+            if (progress.chat_id && progress.message_display_id) {
+                await ctx.deleteMessage();
+            }
+            let chapter = await this.chaptersRepository.findOne({
+                where: { id: progress.chapter_id },
+            });
+            const starterChapter = await this.chaptersRepository.findOne({
+                order: { id: 1 },
+                where: { content: (0, typeorm_1.Like)('Один из грузовиков%') },
+            });
+            if (!chapter && starterChapter) {
+                chapter = starterChapter;
+            }
+            const locations = await this.locationsRepository.findOne({
+                where: { id: user.location },
+            });
+            const nextChapter = await this.chaptersRepository.findOne({
+                where: { id: progress === null || progress === void 0 ? void 0 : progress.chapter_id, location: locations === null || locations === void 0 ? void 0 : locations.id },
+            });
+            const pda = telegraf_1.Markup.button.callback('📟PDA', 'PDA');
+            const story = telegraf_1.Markup.button.callback('☢️История', scenes_enum_1.ScenesEnum.QUEST, !!!nextChapter);
+            const move = telegraf_1.Markup.button.callback('📍Перемещение', scenes_enum_1.ScenesEnum.LOCATION);
+            const markup = telegraf_1.Markup.inlineKeyboard([pda, story, move], {
+                columns: 1,
+            }).reply_markup;
+            await this.bot.telegram.editMessageText(progress.chat_id, progress.message_display_id, null, this.appService.escapeText(`Вы на локации: ${locations === null || locations === void 0 ? void 0 : locations.name}.`), {
+                reply_markup: markup,
+                parse_mode: 'MarkdownV2',
+            });
+            await this.bot.telegram.editMessageMedia(progress.chat_id, progress.message_display_id, null, {
+                type: 'photo',
+                media: '',
+                caption: 'space caption',
+            });
         }
-        const locations = await this.locationsRepository.findOne({
-            where: { id: user.location },
-        });
-        const nextChapter = await this.chaptersRepository.findOne({
-            where: { id: progress.chapter_id, location: locations.id },
-        });
-        await ctx.replyWithHTML(`Вы на локации: <b>${locations.name}</b>.`, telegraf_1.Markup.inlineKeyboard([
-            telegraf_1.Markup.button.callback('🔩Аномалия', scenes_enum_1.ScenesEnum.ANOMALY_ROAD),
-            telegraf_1.Markup.button.callback('🐫Мутант', scenes_enum_1.ScenesEnum.MUTANT),
-            telegraf_1.Markup.button.callback('🥦Артефакт', scenes_enum_1.ScenesEnum.ARTIFACT),
-            telegraf_1.Markup.button.callback('📍Перемещение', scenes_enum_1.ScenesEnum.LOCATION),
-            telegraf_1.Markup.button.callback('📟PDA', 'PDA'),
-            telegraf_1.Markup.button.callback('🤙Квест', scenes_enum_1.ScenesEnum.QUEST, !!!nextChapter),
-        ], {
-            columns: 2,
-        }));
+        catch (error) {
+            console.error(error);
+        }
+    }
+    async enterBanditScene(ctx) {
+        await ctx.scene.enter(scenes_enum_1.ScenesEnum.BANDIT);
     }
     async enterPdaScene(ctx) {
         await ctx.scene.enter(scenes_enum_1.ScenesEnum.PDA);
@@ -159,6 +175,14 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AppUpdate.prototype, "onMenu", null);
+__decorate([
+    (0, nestjs_telegraf_1.Action)(scenes_enum_1.ScenesEnum.BANDIT),
+    (0, nestjs_telegraf_1.Command)(scenes_enum_1.ScenesEnum.BANDIT),
+    __param(0, (0, nestjs_telegraf_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AppUpdate.prototype, "enterBanditScene", null);
 __decorate([
     (0, nestjs_telegraf_1.Action)(scenes_enum_1.ScenesEnum.PDA),
     (0, nestjs_telegraf_1.Command)(scenes_enum_1.ScenesEnum.PDA),
@@ -212,17 +236,19 @@ AppUpdate = AppUpdate_1 = __decorate([
     (0, common_1.Injectable)(),
     __param(1, (0, typeorm_2.InjectRepository)(users_entity_1.UsersEntity)),
     __param(2, (0, typeorm_2.InjectRepository)(chapters_entity_1.ChaptersEntity)),
-    __param(3, (0, typeorm_2.InjectRepository)(choices_entity_1.Choices)),
+    __param(3, (0, typeorm_2.InjectRepository)(choices_entity_1.ChoicesEntity)),
     __param(4, (0, typeorm_2.InjectRepository)(progress_entity_1.ProgressEntity)),
     __param(5, (0, typeorm_2.InjectRepository)(inventory_items_entity_1.InventoryItems)),
     __param(6, (0, typeorm_2.InjectRepository)(locations_entity_1.LocationsEntity)),
+    __param(7, (0, nestjs_telegraf_1.InjectBot)()),
     __metadata("design:paramtypes", [app_service_1.AppService,
         typeorm_1.Repository,
         typeorm_1.Repository,
         typeorm_1.Repository,
         typeorm_1.Repository,
         typeorm_1.Repository,
-        typeorm_1.Repository])
+        typeorm_1.Repository,
+        telegraf_1.Telegraf])
 ], AppUpdate);
 exports.default = AppUpdate;
 //# sourceMappingURL=app.update.js.map

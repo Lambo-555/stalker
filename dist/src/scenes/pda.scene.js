@@ -57,7 +57,7 @@ let PdaScene = PdaScene_1 = class PdaScene {
             if (!progress) {
                 const lastChapter = await this.chaptersRepository.findOne({
                     order: { id: 1 },
-                    where: { content: (0, typeorm_2.Like)('💭%') },
+                    where: { content: (0, typeorm_2.Like)('Один из грузовиков%') },
                 });
                 await this.progressRepository.save({
                     user_id: user.id,
@@ -74,12 +74,11 @@ let PdaScene = PdaScene_1 = class PdaScene {
                 location: location.id,
             });
             const lastChapter = await this.chaptersRepository.findOne({
-                order: { id: 1 },
-                where: { content: (0, typeorm_2.Like)('💭') },
+                where: { content: (0, typeorm_2.Like)('Один из грузовиков%') },
             });
             await this.progressRepository.save({
                 user_id: userRegistered.id,
-                chapter_id: 90,
+                chapter_id: lastChapter.id,
                 location: location.id,
             });
             this.logger.debug(JSON.stringify(userRegistered, null, 2));
@@ -96,14 +95,30 @@ let PdaScene = PdaScene_1 = class PdaScene {
         const userLocation = await this.locationsRepository.findOne({
             where: { id: user.location },
         });
+        const progress = await this.progressRepository.findOne({
+            where: {
+                user_id: user.id,
+            },
+        });
+        const nextChapter = await this.chaptersRepository.findOne({
+            where: { id: progress.chapter_id },
+        });
+        const locationId = nextChapter.location;
+        const nextLocation = await this.locationsRepository.findOne({
+            where: { id: locationId },
+        });
         await ctx.replyWithHTML(`
-📟 Вы смотрите в свой КПК(PDA). Версия прошивки "${pdaVersion}"
-
-Здоровье: ${user.health}🫀, Радиация: ${user.radiation}☢️,
-Кровотечение: ${0}🩸, Пси-состояние: ${100}🧠,
-Локация: ${userLocation.name},
-Средства: ${user.funds}🛢,
-
+📟 Вы смотрите в свой КПК(PDA)
+Локация(текущая): ${userLocation.name},
+Локация(цель): ${nextLocation.name},
+🚪 /leave - Выход в основное меню
+`);
+        const x = `
+    . Версия прошивки "${pdaVersion}
+    Средства: ${user.funds}🛢,
+    Здоровье: ${user.health}🫀, Радиация: ${user.radiation}☢️,
+    Кровотечение: ${0}🩸, Пси-состояние: ${100}🧠,
+    
 📱 /about - О КПК
 🎒 /inventory - Рюкзак (wip)
 📻 /radioTune - Настройка волны радио (только для версии прошивки <b>PDA-X16</b>)
@@ -119,17 +134,24 @@ let PdaScene = PdaScene_1 = class PdaScene {
 🆘 /help - Помощь и пояснения
 📊 /statistics - Статистика игрока (wip)
 💡 /feedback - Написать отзыв об ошибках и предложениях
-💡 /creators - Написать отзыв об ошибках и предложениях
-
-🚪 /leave - Выход в основное меню
-`);
+💡 /creators - Написать отзыв об ошибках и предложениях`;
     }
     async onCreators(ctx, next) {
         await ctx.replyWithHTML(`
 <b>Список разработчиков:</b>
 - Малышев Станислав - director, backend-developer
-- Илья Безродный - content-creator
     `);
+    }
+    async onHelp(ctx, next) {
+        await ctx.replyWithHTML(`
+<b>Помощь:</b>
+Данная игра - новелла по сюжету игры Сталкер.
+Чтобы пройти сюжет нужно переходить в нужные локации и вести диалог с NPC.
+Текущую локацию и место, куда нужно уйти можно узать в PDA.
+
+Ряд фраз изменены, чтобы помещаться в лимиты телеграмма по кнопкам.
+На данный момент решения игрока ни на что не влияют, но ведется разработка кармы, которая будет влиять на концовки и возможности выбрать то или иное решение в диалогах. 
+`);
     }
     async onAbout(ctx, next) {
         await ctx.reply(`
@@ -151,7 +173,7 @@ let PdaScene = PdaScene_1 = class PdaScene {
         await ctx.scene.leave();
     }
     async onSceneLeave(ctx) {
-        await ctx.reply('Вы перестали смотреть на КПК.', telegraf_1.Markup.inlineKeyboard([telegraf_1.Markup.button.callback('🍔Меню', 'menu')]));
+        await ctx.reply('Вы убрали КПК.', telegraf_1.Markup.inlineKeyboard([telegraf_1.Markup.button.callback('🍔Меню', 'menu')]));
     }
 };
 __decorate([
@@ -179,6 +201,14 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], PdaScene.prototype, "onCreators", null);
 __decorate([
+    (0, nestjs_telegraf_1.Command)('/help'),
+    __param(0, (0, nestjs_telegraf_1.Ctx)()),
+    __param(1, (0, nestjs_telegraf_1.Next)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Function]),
+    __metadata("design:returntype", Promise)
+], PdaScene.prototype, "onHelp", null);
+__decorate([
     (0, nestjs_telegraf_1.Command)('/about'),
     __param(0, (0, nestjs_telegraf_1.Ctx)()),
     __param(1, (0, nestjs_telegraf_1.Next)()),
@@ -205,7 +235,7 @@ PdaScene = PdaScene_1 = __decorate([
     (0, nestjs_telegraf_1.Scene)(scenes_enum_1.ScenesEnum.PDA),
     __param(1, (0, typeorm_1.InjectRepository)(users_entity_1.UsersEntity)),
     __param(2, (0, typeorm_1.InjectRepository)(chapters_entity_1.ChaptersEntity)),
-    __param(3, (0, typeorm_1.InjectRepository)(choices_entity_1.Choices)),
+    __param(3, (0, typeorm_1.InjectRepository)(choices_entity_1.ChoicesEntity)),
     __param(4, (0, typeorm_1.InjectRepository)(progress_entity_1.ProgressEntity)),
     __param(5, (0, typeorm_1.InjectRepository)(inventory_items_entity_1.InventoryItems)),
     __param(6, (0, typeorm_1.InjectRepository)(artifacts_entity_1.Artifacts)),

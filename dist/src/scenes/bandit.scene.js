@@ -11,9 +11,9 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-var ArtefactScene_1;
+var BanditScene_1;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ArtefactScene = void 0;
+exports.BanditScene = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const nestjs_telegraf_1 = require("nestjs-telegraf");
@@ -23,13 +23,16 @@ const artifacts_entity_1 = require("../user/entities/artifacts.entity");
 const chapters_entity_1 = require("../user/entities/chapters.entity");
 const choices_entity_1 = require("../user/entities/choices.entity");
 const inventory_items_entity_1 = require("../user/entities/inventory_items.entity");
+const locations_entity_1 = require("../user/entities/locations.entity");
 const progress_entity_1 = require("../user/entities/progress.entity");
+const quests_entity_1 = require("../user/entities/quests.entity");
+const roads_entity_1 = require("../user/entities/roads.entity");
 const users_entity_1 = require("../user/entities/users.entity");
 const telegraf_1 = require("telegraf");
 const typeorm_2 = require("typeorm");
 const scenes_enum_1 = require("./enums/scenes.enum");
-let ArtefactScene = ArtefactScene_1 = class ArtefactScene {
-    constructor(appService, usersRepository, chaptersRepository, choicesRepository, progressRepository, inventoryItemsRepository, artifactsRepository, anomaliesRepository) {
+let BanditScene = BanditScene_1 = class BanditScene {
+    constructor(appService, usersRepository, chaptersRepository, choicesRepository, progressRepository, inventoryItemsRepository, artifactsRepository, anomaliesRepository, locationsRepository, roadsRepository, questsEntity) {
         this.appService = appService;
         this.usersRepository = usersRepository;
         this.chaptersRepository = chaptersRepository;
@@ -38,7 +41,10 @@ let ArtefactScene = ArtefactScene_1 = class ArtefactScene {
         this.inventoryItemsRepository = inventoryItemsRepository;
         this.artifactsRepository = artifactsRepository;
         this.anomaliesRepository = anomaliesRepository;
-        this.logger = new common_1.Logger(ArtefactScene_1.name);
+        this.locationsRepository = locationsRepository;
+        this.roadsRepository = roadsRepository;
+        this.questsEntity = questsEntity;
+        this.logger = new common_1.Logger(BanditScene_1.name);
     }
     async onRegister(ctx, next) {
         var _a, _b, _c;
@@ -53,7 +59,7 @@ let ArtefactScene = ArtefactScene_1 = class ArtefactScene {
             if (!progress) {
                 const lastChapter = await this.chaptersRepository.findOne({
                     order: { id: 1 },
-                    where: { content: (0, typeorm_2.Like)('💭%') },
+                    where: { content: (0, typeorm_2.Like)('Один из грузовиков%') },
                 });
                 await this.progressRepository.save({
                     user_id: user.id,
@@ -62,65 +68,34 @@ let ArtefactScene = ArtefactScene_1 = class ArtefactScene {
             }
         }
         else {
+            const location = await this.locationsRepository.findOne({
+                where: { name: 'Кордон' },
+            });
             const userRegistered = await this.usersRepository.save({
                 telegram_id: telegram_id,
-            });
-            const lastChapter = await this.chaptersRepository.findOne({
-                order: { id: 1 },
-                where: { content: (0, typeorm_2.Like)('💭') },
+                location: location.id,
             });
             await this.progressRepository.save({
                 user_id: userRegistered.id,
-                chapter_id: lastChapter.id,
+                chapter_id: 90,
+                location: location.id,
             });
             this.logger.debug(JSON.stringify(userRegistered, null, 2));
         }
         next();
     }
     async onSceneEnter(ctx) {
-        const artList = await this.artifactsRepository.find();
-        const randArt = this.appService.getRandomElInArr(artList);
-        await ctx.reply(`Вы возле артефакта: "${randArt.name}". Нужно его правильно запереть в короб. Материал покрытия крайне важен.`, telegraf_1.Markup.inlineKeyboard([
-            telegraf_1.Markup.button.callback('Выбор короба.', 'artifactXXX' + randArt.anomaly),
-        ]));
-    }
-    async onChoose(ctx, next) {
-        const match = ctx.match[0];
-        if (!match)
-            next();
-        const anomalyId = +match.split('XXX')[1];
-        const anomalyAll = await this.anomaliesRepository.find();
-        const anomalyTarget = anomalyAll.filter((item) => item.id === anomalyId)[0];
-        const anomalyEffects = Array.from(new Set(anomalyAll.map((item) => item.effects)));
-        await ctx.reply(`Аномалия, в которой находится артефакт: ${anomalyTarget.name}`, telegraf_1.Markup.inlineKeyboard([
-            ...anomalyEffects.map((anomalyItem) => telegraf_1.Markup.button.callback(anomalyItem, anomalyItem === anomalyTarget.effects
-                ? 'anomalyTrue'
-                : 'anomalyFalse')),
-            telegraf_1.Markup.button.callback('🍔Меню', 'menu'),
-        ], {
-            columns: 1,
-        }));
-    }
-    async anomalyTrue(ctx) {
-        const wayTotal = Math.random() * 100;
-        if (wayTotal >= 60) {
-            await ctx.reply('Отлично, короб подошел, артефакт ведет себя стабильно.');
-            await ctx.scene.leave();
-        }
-        else {
-            await ctx.reply('Отлично, короб подошел, но артефакт был нестабилен и иссяк.');
-            await ctx.scene.leave();
-        }
-    }
-    async anomalyFalse(ctx) {
-        await ctx.reply('Короб не подошел, артефакт разрушен.', telegraf_1.Markup.inlineKeyboard([telegraf_1.Markup.button.callback('🍔Меню', 'menu')]));
-        await ctx.scene.leave();
+        var _a, _b, _c;
+        const telegram_id = ((_a = ctx === null || ctx === void 0 ? void 0 : ctx.message) === null || _a === void 0 ? void 0 : _a.from.id) || ((_c = (_b = ctx === null || ctx === void 0 ? void 0 : ctx.callbackQuery) === null || _b === void 0 ? void 0 : _b.from) === null || _c === void 0 ? void 0 : _c.id);
+        const user = await this.usersRepository.findOne({
+            where: { telegram_id: telegram_id },
+        });
     }
     async onLeaveCommand(ctx) {
         await ctx.scene.leave();
     }
     async onSceneLeave(ctx) {
-        await ctx.reply('Поиск артефакта завершен.', telegraf_1.Markup.inlineKeyboard([telegraf_1.Markup.button.callback('🍔Меню', 'menu')]));
+        await ctx.reply('Диалог завершен.', telegraf_1.Markup.inlineKeyboard([telegraf_1.Markup.button.callback('🍔Меню', 'menu')]));
     }
 };
 __decorate([
@@ -130,59 +105,40 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, Function]),
     __metadata("design:returntype", Promise)
-], ArtefactScene.prototype, "onRegister", null);
+], BanditScene.prototype, "onRegister", null);
 __decorate([
     (0, nestjs_telegraf_1.SceneEnter)(),
     __param(0, (0, nestjs_telegraf_1.Ctx)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
-], ArtefactScene.prototype, "onSceneEnter", null);
-__decorate([
-    (0, nestjs_telegraf_1.Action)(/artifactXXX.*/gim),
-    __param(0, (0, nestjs_telegraf_1.Ctx)()),
-    __param(1, (0, nestjs_telegraf_1.Next)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Function]),
-    __metadata("design:returntype", Promise)
-], ArtefactScene.prototype, "onChoose", null);
-__decorate([
-    (0, nestjs_telegraf_1.Action)('anomalyTrue'),
-    __param(0, (0, nestjs_telegraf_1.Ctx)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", Promise)
-], ArtefactScene.prototype, "anomalyTrue", null);
-__decorate([
-    (0, nestjs_telegraf_1.Action)('anomalyFalse'),
-    __param(0, (0, nestjs_telegraf_1.Ctx)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", Promise)
-], ArtefactScene.prototype, "anomalyFalse", null);
+], BanditScene.prototype, "onSceneEnter", null);
 __decorate([
     (0, nestjs_telegraf_1.Action)('leave'),
     __param(0, (0, nestjs_telegraf_1.Ctx)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
-], ArtefactScene.prototype, "onLeaveCommand", null);
+], BanditScene.prototype, "onLeaveCommand", null);
 __decorate([
     (0, nestjs_telegraf_1.SceneLeave)(),
     __param(0, (0, nestjs_telegraf_1.Ctx)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
-], ArtefactScene.prototype, "onSceneLeave", null);
-ArtefactScene = ArtefactScene_1 = __decorate([
-    (0, nestjs_telegraf_1.Scene)(scenes_enum_1.ScenesEnum.ARTIFACT),
-    __param(1, (0, typeorm_1.InjectRepository)(users_entity_1.Users)),
-    __param(2, (0, typeorm_1.InjectRepository)(chapters_entity_1.Chapters)),
-    __param(3, (0, typeorm_1.InjectRepository)(choices_entity_1.Choices)),
-    __param(4, (0, typeorm_1.InjectRepository)(progress_entity_1.Progress)),
+], BanditScene.prototype, "onSceneLeave", null);
+BanditScene = BanditScene_1 = __decorate([
+    (0, nestjs_telegraf_1.Scene)(scenes_enum_1.ScenesEnum.BANDIT),
+    __param(1, (0, typeorm_1.InjectRepository)(users_entity_1.UsersEntity)),
+    __param(2, (0, typeorm_1.InjectRepository)(chapters_entity_1.ChaptersEntity)),
+    __param(3, (0, typeorm_1.InjectRepository)(choices_entity_1.ChoicesEntity)),
+    __param(4, (0, typeorm_1.InjectRepository)(progress_entity_1.ProgressEntity)),
     __param(5, (0, typeorm_1.InjectRepository)(inventory_items_entity_1.InventoryItems)),
     __param(6, (0, typeorm_1.InjectRepository)(artifacts_entity_1.Artifacts)),
     __param(7, (0, typeorm_1.InjectRepository)(anomalies_entity_1.Anomalies)),
+    __param(8, (0, typeorm_1.InjectRepository)(locations_entity_1.LocationsEntity)),
+    __param(9, (0, typeorm_1.InjectRepository)(roads_entity_1.RoadsEntity)),
+    __param(10, (0, typeorm_1.InjectRepository)(quests_entity_1.QuestsEntity)),
     __metadata("design:paramtypes", [app_service_1.AppService,
         typeorm_2.Repository,
         typeorm_2.Repository,
@@ -190,7 +146,10 @@ ArtefactScene = ArtefactScene_1 = __decorate([
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
+        typeorm_2.Repository,
+        typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository])
-], ArtefactScene);
-exports.ArtefactScene = ArtefactScene;
-//# sourceMappingURL=artefact.scene%20copy.js.map
+], BanditScene);
+exports.BanditScene = BanditScene;
+//# sourceMappingURL=bandit.scene.js.map

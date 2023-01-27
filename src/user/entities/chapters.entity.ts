@@ -11,14 +11,11 @@ export class ChaptersEntity {
   @Column({ default: 'default', nullable: true })
   content?: string;
 
-  @Column({ default: 'default', nullable: true })
-  inventory_required?: string;
-
   @Column()
   location: number;
 
   @Column()
-  quest?: number;
+  image?: string;
 }
 
 // CREATE TABLE public.chapters (

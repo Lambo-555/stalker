@@ -17,7 +17,7 @@ import { AppService } from 'src/app.service';
 import { Anomalies } from 'src/user/entities/anomalies.entity';
 import { Artifacts } from 'src/user/entities/artifacts.entity';
 import { ChaptersEntity } from 'src/user/entities/chapters.entity';
-import { Choices } from 'src/user/entities/choices.entity';
+import { ChoicesEntity } from 'src/user/entities/choices.entity';
 import { InventoryItems } from 'src/user/entities/inventory_items.entity';
 import { LocationsEntity } from 'src/user/entities/locations.entity';
 import { ProgressEntity } from 'src/user/entities/progress.entity';
@@ -48,8 +48,8 @@ export class LocationScene {
     private readonly usersRepository: Repository<UsersEntity>,
     @InjectRepository(ChaptersEntity)
     private readonly chaptersRepository: Repository<ChaptersEntity>,
-    @InjectRepository(Choices)
-    private readonly choicesRepository: Repository<Choices>,
+    @InjectRepository(ChoicesEntity)
+    private readonly choicesRepository: Repository<ChoicesEntity>,
     @InjectRepository(ProgressEntity)
     private readonly progressRepository: Repository<ProgressEntity>,
     @InjectRepository(InventoryItems)
@@ -78,7 +78,7 @@ export class LocationScene {
       if (!progress) {
         const lastChapter = await this.chaptersRepository.findOne({
           order: { id: 1 },
-          where: { content: Like('💭%') },
+          where: { content: Like('Один из грузовиков%') },
         });
         await this.progressRepository.save({
           user_id: user.id,
@@ -95,7 +95,7 @@ export class LocationScene {
       });
       const lastChapter = await this.chaptersRepository.findOne({
         order: { id: 1 },
-        where: { content: Like('💭') },
+        where: { content: Like('Один из грузовиков%') },
       });
       await this.progressRepository.save({
         user_id: userRegistered.id,

@@ -7,4 +7,5 @@ export enum ScenesEnum {
   PDA = 'PDA',
   QUEST = 'QUEST',
   LOCATION = 'LOCATION',
+  BANDIT = 'BANDIT',
 }
