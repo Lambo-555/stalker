@@ -1,4 +1,3 @@
-import { NextFunction } from 'express';
 import { AppService } from 'src/app.service';
 import { Anomalies } from 'src/user/entities/anomalies.entity';
 import { Artifacts } from 'src/user/entities/artifacts.entity';
@@ -25,11 +24,7 @@ export declare class PdaScene {
     private readonly roadsRepository;
     private readonly logger;
     constructor(appService: AppService, usersRepository: Repository<UsersEntity>, chaptersRepository: Repository<ChaptersEntity>, choicesRepository: Repository<ChoicesEntity>, progressRepository: Repository<ProgressEntity>, inventoryItemsRepository: Repository<InventoryItems>, artifactsRepository: Repository<Artifacts>, anomaliesRepository: Repository<Anomalies>, locationsRepository: Repository<LocationsEntity>, roadsRepository: Repository<RoadsEntity>);
-    onRegister(ctx: TelegrafContext, next: NextFunction): Promise<void>;
     onSceneEnter(ctx: TelegrafContext): Promise<void>;
-    onCreators(ctx: TelegrafContext, next: NextFunction): Promise<void>;
-    onHelp(ctx: TelegrafContext, next: NextFunction): Promise<void>;
-    onAbout(ctx: TelegrafContext, next: NextFunction): Promise<void>;
     onLeaveCommand(ctx: Scenes.SceneContext): Promise<void>;
     onSceneLeave(ctx: Scenes.SceneContext): Promise<void>;
 }

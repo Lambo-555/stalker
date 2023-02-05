@@ -62,50 +62,7 @@ export class LocationScene {
     private readonly locationsRepository: Repository<LocationsEntity>,
     @InjectRepository(RoadsEntity)
     private readonly roadsRepository: Repository<RoadsEntity>,
-  ) {}
-
-  @Use()
-  async onRegister(@Ctx() ctx: TelegrafContext, @Next() next: NextFunction) {
-    const telegram_id: number =
-      ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
-    const user: UsersEntity = await this.usersRepository.findOne({
-      where: { telegram_id: telegram_id },
-    });
-    if (user) {
-      const progress = await this.progressRepository.findOne({
-        where: { user_id: user.id },
-      });
-      if (!progress) {
-        const lastChapter = await this.chaptersRepository.findOne({
-          order: { id: 1 },
-          where: { content: Like('Один из грузовиков%') },
-        });
-        await this.progressRepository.save({
-          user_id: user.id,
-          chapter_id: lastChapter.id,
-        });
-      }
-    } else {
-      const location = await this.locationsRepository.findOne({
-        where: { name: 'Кордон' },
-      });
-      const userRegistered: UsersEntity = await this.usersRepository.save({
-        telegram_id: telegram_id,
-        location: location.id,
-      });
-      const lastChapter = await this.chaptersRepository.findOne({
-        order: { id: 1 },
-        where: { content: Like('Один из грузовиков%') },
-      });
-      await this.progressRepository.save({
-        user_id: userRegistered.id,
-        chapter_id: 90, // lastChapter.id,
-        location: location.id,
-      });
-      this.logger.debug(JSON.stringify(userRegistered, null, 2));
-    }
-    next();
-  }
+  ) { }
 
   @SceneEnter()
   async onSceneEnter(@Ctx() ctx: TelegrafContext) {
@@ -114,7 +71,12 @@ export class LocationScene {
     const user: UsersEntity = await this.usersRepository.findOne({
       where: { telegram_id: telegram_id },
     });
-    const locations: LocationsEntity = await this.locationsRepository.findOne({
+    const progress: ProgressEntity = await this.progressRepository.findOne({
+      where: {
+        user_id: user.id,
+      },
+    });
+    const location: LocationsEntity = await this.locationsRepository.findOne({
       where: { id: user.location },
     });
     const roads: RoadsEntity[] = await this.roadsRepository.find({
@@ -127,23 +89,25 @@ export class LocationScene {
       });
       nextLocations.push(locationsItem);
     }
-    await ctx.reply(
-      `Вы находитесь в локации: "${locations.name}". Куда вы хотите отправиться?`,
-      Markup.inlineKeyboard(
-        [
-          // Markup.button.callback('🍔Меню', 'menu'),
-          Markup.button.callback('📍Остаться здесь', 'leave'),
-          ...nextLocations.map((locationItem) =>
-            Markup.button.callback(
-              locationItem?.name,
-              'locationsXXX' + locationItem.id.toString(),
-            ),
+    const keyboard = Markup.inlineKeyboard(
+      [
+        ...nextLocations.map((locationItem) =>
+          Markup.button.callback(
+            locationItem?.name,
+            'locationsXXX' + locationItem.id.toString(),
           ),
-        ],
-        {
-          columns: 1,
-        },
-      ),
+        ),
+        Markup.button.callback('📍Остаться здесь', 'leave'),
+      ],
+      {
+        columns: 1,
+      },
+    ).reply_markup;
+    await this.appService.updateDisplay(
+      progress,
+      keyboard,
+      `Вы находитесь в локации: "${location.name}". Куда вы хотите отправиться?`,
+      location.image,
     );
   }
 
@@ -162,22 +126,37 @@ export class LocationScene {
     });
     user.location = location.id || locationId;
     await this.usersRepository.update({ id: user.id }, user);
-    // await ctx.reply(`Вы вошли в локацию: ${location.name}`);
     await ctx.scene.reenter();
-    // await ctx.scene.leave();
   }
 
   @Action('leave')
   async onLeaveCommand(@Ctx() ctx: Scenes.SceneContext) {
     await ctx.scene.leave();
-    // await ctx.scene.enter(ScenesEnum.QUEST);
   }
 
   @SceneLeave()
   async onSceneLeave(@Ctx() ctx: Scenes.SceneContext) {
-    await ctx.reply(
-      'Перемещение завершено.',
-      Markup.inlineKeyboard([Markup.button.callback('🍔Меню', 'menu')]),
+    const telegram_id: number =
+      ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
+    const user: UsersEntity = await this.usersRepository.findOne({
+      where: { telegram_id: telegram_id },
+    });
+    const progress: ProgressEntity = await this.progressRepository.findOne({
+      where: {
+        user_id: user.id,
+      },
+    });
+    const location: LocationsEntity = await this.locationsRepository.findOne({
+      where: { id: user.location },
+    });
+    const keyboard = Markup.inlineKeyboard([
+      Markup.button.callback('Меню', 'menu'),
+    ]).reply_markup;
+    await this.appService.updateDisplay(
+      progress,
+      keyboard,
+      `Перемещение завершено`,
+      location?.image,
     );
   }
 }

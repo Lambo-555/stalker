@@ -51,48 +51,6 @@ let LocationScene = LocationScene_1 = class LocationScene {
         this.roadsRepository = roadsRepository;
         this.logger = new common_1.Logger(LocationScene_1.name);
     }
-    async onRegister(ctx, next) {
-        var _a, _b, _c;
-        const telegram_id = ((_a = ctx === null || ctx === void 0 ? void 0 : ctx.message) === null || _a === void 0 ? void 0 : _a.from.id) || ((_c = (_b = ctx === null || ctx === void 0 ? void 0 : ctx.callbackQuery) === null || _b === void 0 ? void 0 : _b.from) === null || _c === void 0 ? void 0 : _c.id);
-        const user = await this.usersRepository.findOne({
-            where: { telegram_id: telegram_id },
-        });
-        if (user) {
-            const progress = await this.progressRepository.findOne({
-                where: { user_id: user.id },
-            });
-            if (!progress) {
-                const lastChapter = await this.chaptersRepository.findOne({
-                    order: { id: 1 },
-                    where: { content: (0, typeorm_2.Like)('Один из грузовиков%') },
-                });
-                await this.progressRepository.save({
-                    user_id: user.id,
-                    chapter_id: lastChapter.id,
-                });
-            }
-        }
-        else {
-            const location = await this.locationsRepository.findOne({
-                where: { name: 'Кордон' },
-            });
-            const userRegistered = await this.usersRepository.save({
-                telegram_id: telegram_id,
-                location: location.id,
-            });
-            const lastChapter = await this.chaptersRepository.findOne({
-                order: { id: 1 },
-                where: { content: (0, typeorm_2.Like)('Один из грузовиков%') },
-            });
-            await this.progressRepository.save({
-                user_id: userRegistered.id,
-                chapter_id: 90,
-                location: location.id,
-            });
-            this.logger.debug(JSON.stringify(userRegistered, null, 2));
-        }
-        next();
-    }
     async onSceneEnter(ctx) {
         var _a, e_1, _b, _c;
         var _d, _e, _f;
@@ -100,7 +58,12 @@ let LocationScene = LocationScene_1 = class LocationScene {
         const user = await this.usersRepository.findOne({
             where: { telegram_id: telegram_id },
         });
-        const locations = await this.locationsRepository.findOne({
+        const progress = await this.progressRepository.findOne({
+            where: {
+                user_id: user.id,
+            },
+        });
+        const location = await this.locationsRepository.findOne({
             where: { id: user.location },
         });
         const roads = await this.roadsRepository.find({
@@ -130,12 +93,13 @@ let LocationScene = LocationScene_1 = class LocationScene {
             }
             finally { if (e_1) throw e_1.error; }
         }
-        await ctx.reply(`Вы находитесь в локации: "${locations.name}". Куда вы хотите отправиться?`, telegraf_1.Markup.inlineKeyboard([
-            telegraf_1.Markup.button.callback('📍Остаться здесь', 'leave'),
+        const keyboard = telegraf_1.Markup.inlineKeyboard([
             ...nextLocations.map((locationItem) => telegraf_1.Markup.button.callback(locationItem === null || locationItem === void 0 ? void 0 : locationItem.name, 'locationsXXX' + locationItem.id.toString())),
+            telegraf_1.Markup.button.callback('📍Остаться здесь', 'leave'),
         ], {
             columns: 1,
-        }));
+        }).reply_markup;
+        await this.appService.updateDisplay(progress, keyboard, `Вы находитесь в локации: "${location.name}". Куда вы хотите отправиться?`, location.image);
     }
     async onChoose(ctx, next) {
         var _a, _b, _c;
@@ -158,17 +122,25 @@ let LocationScene = LocationScene_1 = class LocationScene {
         await ctx.scene.leave();
     }
     async onSceneLeave(ctx) {
-        await ctx.reply('Перемещение завершено.', telegraf_1.Markup.inlineKeyboard([telegraf_1.Markup.button.callback('🍔Меню', 'menu')]));
+        var _a, _b, _c;
+        const telegram_id = ((_a = ctx === null || ctx === void 0 ? void 0 : ctx.message) === null || _a === void 0 ? void 0 : _a.from.id) || ((_c = (_b = ctx === null || ctx === void 0 ? void 0 : ctx.callbackQuery) === null || _b === void 0 ? void 0 : _b.from) === null || _c === void 0 ? void 0 : _c.id);
+        const user = await this.usersRepository.findOne({
+            where: { telegram_id: telegram_id },
+        });
+        const progress = await this.progressRepository.findOne({
+            where: {
+                user_id: user.id,
+            },
+        });
+        const location = await this.locationsRepository.findOne({
+            where: { id: user.location },
+        });
+        const keyboard = telegraf_1.Markup.inlineKeyboard([
+            telegraf_1.Markup.button.callback('Меню', 'menu'),
+        ]).reply_markup;
+        await this.appService.updateDisplay(progress, keyboard, `Перемещение завершено`, location === null || location === void 0 ? void 0 : location.image);
     }
 };
-__decorate([
-    (0, nestjs_telegraf_1.Use)(),
-    __param(0, (0, nestjs_telegraf_1.Ctx)()),
-    __param(1, (0, nestjs_telegraf_1.Next)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Function]),
-    __metadata("design:returntype", Promise)
-], LocationScene.prototype, "onRegister", null);
 __decorate([
     (0, nestjs_telegraf_1.SceneEnter)(),
     __param(0, (0, nestjs_telegraf_1.Ctx)()),

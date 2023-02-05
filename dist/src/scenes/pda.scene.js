@@ -44,54 +44,12 @@ let PdaScene = PdaScene_1 = class PdaScene {
         this.roadsRepository = roadsRepository;
         this.logger = new common_1.Logger(PdaScene_1.name);
     }
-    async onRegister(ctx, next) {
-        var _a, _b, _c;
-        const telegram_id = ((_a = ctx === null || ctx === void 0 ? void 0 : ctx.message) === null || _a === void 0 ? void 0 : _a.from.id) || ((_c = (_b = ctx === null || ctx === void 0 ? void 0 : ctx.callbackQuery) === null || _b === void 0 ? void 0 : _b.from) === null || _c === void 0 ? void 0 : _c.id);
-        const user = await this.usersRepository.findOne({
-            where: { telegram_id: telegram_id },
-        });
-        if (user) {
-            const progress = await this.progressRepository.findOne({
-                where: { user_id: user.id },
-            });
-            if (!progress) {
-                const lastChapter = await this.chaptersRepository.findOne({
-                    order: { id: 1 },
-                    where: { content: (0, typeorm_2.Like)('Один из грузовиков%') },
-                });
-                await this.progressRepository.save({
-                    user_id: user.id,
-                    chapter_id: lastChapter.id,
-                });
-            }
-        }
-        else {
-            const location = await this.locationsRepository.findOne({
-                where: { name: 'Кордон' },
-            });
-            const userRegistered = await this.usersRepository.save({
-                telegram_id: telegram_id,
-                location: location.id,
-            });
-            const lastChapter = await this.chaptersRepository.findOne({
-                where: { content: (0, typeorm_2.Like)('Один из грузовиков%') },
-            });
-            await this.progressRepository.save({
-                user_id: userRegistered.id,
-                chapter_id: lastChapter.id,
-                location: location.id,
-            });
-            this.logger.debug(JSON.stringify(userRegistered, null, 2));
-        }
-        next();
-    }
     async onSceneEnter(ctx) {
         var _a, _b, _c;
         const telegram_id = ((_a = ctx === null || ctx === void 0 ? void 0 : ctx.message) === null || _a === void 0 ? void 0 : _a.from.id) || ((_c = (_b = ctx === null || ctx === void 0 ? void 0 : ctx.callbackQuery) === null || _b === void 0 ? void 0 : _b.from) === null || _c === void 0 ? void 0 : _c.id);
         const user = await this.usersRepository.findOne({
             where: { telegram_id: telegram_id },
         });
-        const pdaVersion = 'stable';
         const userLocation = await this.locationsRepository.findOne({
             where: { id: user.location },
         });
@@ -107,83 +65,36 @@ let PdaScene = PdaScene_1 = class PdaScene {
         const nextLocation = await this.locationsRepository.findOne({
             where: { id: locationId },
         });
-        await ctx.replyWithHTML(`
+        const keyboard = telegraf_1.Markup.inlineKeyboard([
+            telegraf_1.Markup.button.callback('Меню', 'menu'),
+        ]).reply_markup;
+        const pdaMenu = `
 📟 Вы смотрите в свой КПК(PDA)
-Локация(текущая): ${userLocation.name},
-Локация(цель): ${nextLocation.name},
-🚪 /leave - Выход в основное меню
-`);
-        const x = `
-    . Версия прошивки "${pdaVersion}
-    Средства: ${user.funds}🛢,
-    Здоровье: ${user.health}🫀, Радиация: ${user.radiation}☢️,
-    Кровотечение: ${0}🩸, Пси-состояние: ${100}🧠,
-    
-📱 /about - О КПК
-🎒 /inventory - Рюкзак (wip)
-📻 /radioTune - Настройка волны радио (только для версии прошивки <b>PDA-X16</b>)
-📍 /location - Текущая локация
-🪬 /quest - Текуший квест-задача, её локация
 
-🎟💴 /buyTickets - Купить билеты проводников (wip)
-🔑💳 /crypto - Подключение крипто-кошельков (wip)
-
-🕯 /chat - Доступ V чат сталкеров (wip торговля)
-🗺 /map - Просмотр пройденного пути на карте Зоны (wip)
-🎭 /art - Арты про STALKER (wip)
-🆘 /help - Помощь и пояснения
-📊 /statistics - Статистика игрока (wip)
-💡 /feedback - Написать отзыв об ошибках и предложениях
-💡 /creators - Написать отзыв об ошибках и предложениях`;
-    }
-    async onCreators(ctx, next) {
-        await ctx.replyWithHTML(`
-<b>Список разработчиков:</b>
-- Малышев Станислав - director, backend-developer
-    `);
-    }
-    async onHelp(ctx, next) {
-        await ctx.replyWithHTML(`
-<b>Помощь:</b>
-Данная игра - новелла по сюжету игры Сталкер.
-Чтобы пройти сюжет нужно переходить в нужные локации и вести диалог с NPC.
-Текущую локацию и место, куда нужно уйти можно узать в PDA.
-
-Ряд фраз изменены, чтобы помещаться в лимиты телеграмма по кнопкам.
-На данный момент решения игрока ни на что не влияют, но ведется разработка кармы, которая будет влиять на концовки и возможности выбрать то или иное решение в диалогах. 
-`);
-    }
-    async onAbout(ctx, next) {
-        await ctx.reply(`
-КПК, он же PDA - самый распространенный девайс в Зоне. Причин тому несколько:
-- другие устройства не работают при воздействии столь мощной радиации и аномалий
-- данная модель выпущена огромным тиражем, дешева и часто "передается по наследству"
-- более подобных КПК не выпускают, на них стоит запрет, как и на все сталкерское
-- мастера меняют лишь версии прошивки, но не создают само железо
-- функций КПК хватает, разве что артефакты он не ищет, но это пока что
-
-Без пароля от КПК не достать нужные данные. Удается лишь считать последние открытые вкладки.
-Увесистая вышла штука. Но в целом ценная вещь, ее стоит беречь.
-
-📱 /reenter - Меню КПК 
-🚪 /leave - Выход в основное меню
-      `);
+Текущая локация: ${userLocation.name}
+Целевая локация: ${nextLocation.name}`;
+        await this.appService.updateDisplay(progress, keyboard, pdaMenu, nextLocation.image);
     }
     async onLeaveCommand(ctx) {
         await ctx.scene.leave();
     }
     async onSceneLeave(ctx) {
-        await ctx.reply('Вы убрали КПК.', telegraf_1.Markup.inlineKeyboard([telegraf_1.Markup.button.callback('🍔Меню', 'menu')]));
+        var _a, _b, _c;
+        const telegram_id = ((_a = ctx === null || ctx === void 0 ? void 0 : ctx.message) === null || _a === void 0 ? void 0 : _a.from.id) || ((_c = (_b = ctx === null || ctx === void 0 ? void 0 : ctx.callbackQuery) === null || _b === void 0 ? void 0 : _b.from) === null || _c === void 0 ? void 0 : _c.id);
+        const user = await this.usersRepository.findOne({
+            where: { telegram_id: telegram_id },
+        });
+        const progress = await this.progressRepository.findOne({
+            where: {
+                user_id: user.id,
+            },
+        });
+        const keyboard = telegraf_1.Markup.inlineKeyboard([
+            telegraf_1.Markup.button.callback('Меню', 'menu'),
+        ]).reply_markup;
+        await this.appService.updateDisplay(progress, keyboard, `КПК(PDA) закрыт`);
     }
 };
-__decorate([
-    (0, nestjs_telegraf_1.Use)(),
-    __param(0, (0, nestjs_telegraf_1.Ctx)()),
-    __param(1, (0, nestjs_telegraf_1.Next)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Function]),
-    __metadata("design:returntype", Promise)
-], PdaScene.prototype, "onRegister", null);
 __decorate([
     (0, nestjs_telegraf_1.Command)('/reenter'),
     (0, nestjs_telegraf_1.SceneEnter)(),
@@ -192,30 +103,6 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], PdaScene.prototype, "onSceneEnter", null);
-__decorate([
-    (0, nestjs_telegraf_1.Command)('/creators'),
-    __param(0, (0, nestjs_telegraf_1.Ctx)()),
-    __param(1, (0, nestjs_telegraf_1.Next)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Function]),
-    __metadata("design:returntype", Promise)
-], PdaScene.prototype, "onCreators", null);
-__decorate([
-    (0, nestjs_telegraf_1.Command)('/help'),
-    __param(0, (0, nestjs_telegraf_1.Ctx)()),
-    __param(1, (0, nestjs_telegraf_1.Next)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Function]),
-    __metadata("design:returntype", Promise)
-], PdaScene.prototype, "onHelp", null);
-__decorate([
-    (0, nestjs_telegraf_1.Command)('/about'),
-    __param(0, (0, nestjs_telegraf_1.Ctx)()),
-    __param(1, (0, nestjs_telegraf_1.Next)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Function]),
-    __metadata("design:returntype", Promise)
-], PdaScene.prototype, "onAbout", null);
 __decorate([
     (0, nestjs_telegraf_1.Action)('leave'),
     (0, nestjs_telegraf_1.Command)('leave'),

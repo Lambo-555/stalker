@@ -12,6 +12,7 @@ import {
   TELEGRAF_STAGE,
   Next,
   Use,
+  InjectBot,
 } from 'nestjs-telegraf';
 import { AppService } from 'src/app.service';
 import { Anomalies } from 'src/user/entities/anomalies.entity';
@@ -24,7 +25,7 @@ import { ProgressEntity } from 'src/user/entities/progress.entity';
 import { QuestsEntity } from 'src/user/entities/quests.entity';
 import { RoadsEntity } from 'src/user/entities/roads.entity';
 import { UsersEntity } from 'src/user/entities/users.entity';
-import { Markup, Scenes } from 'telegraf';
+import { Context, Markup, Scenes, Telegraf } from 'telegraf';
 import { InlineKeyboardButton } from 'telegraf/typings/core/types/typegram';
 import { Like, Repository } from 'typeorm';
 import { TelegrafContext } from '../interfaces/telegraf-context.interface';
@@ -65,55 +66,155 @@ export class BanditScene {
     private readonly roadsRepository: Repository<RoadsEntity>,
     @InjectRepository(QuestsEntity)
     private readonly questsEntity: Repository<QuestsEntity>,
+    @InjectBot()
+    private readonly bot: Telegraf<Context>,
   ) {}
 
-  @Use()
-  async onRegister(@Ctx() ctx: TelegrafContext, @Next() next: NextFunction) {
-    const telegram_id: number =
-      ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
-    const user: UsersEntity = await this.usersRepository.findOne({
-      where: { telegram_id: telegram_id },
-    });
-    if (user) {
-      const progress = await this.progressRepository.findOne({
-        where: { user_id: user.id },
-      });
-      if (!progress) {
-        const lastChapter = await this.chaptersRepository.findOne({
-          order: { id: 1 },
-          where: { content: Like('Один из грузовиков%') },
-        });
-        await this.progressRepository.save({
-          user_id: user.id,
-          chapter_id: lastChapter.id,
-        });
-      }
-    } else {
-      const location = await this.locationsRepository.findOne({
-        where: { name: 'Кордон' },
-      });
-      const userRegistered: UsersEntity = await this.usersRepository.save({
-        telegram_id: telegram_id,
-        location: location.id,
-      });
-      await this.progressRepository.save({
-        user_id: userRegistered.id,
-        chapter_id: 90, // lastChapter.id,
-        location: location.id,
-      });
-      this.logger.debug(JSON.stringify(userRegistered, null, 2));
+  calculateDistance(
+    posOne: { x: number; y: number },
+    posTwo: { x: number; y: number },
+  ): number {
+    const deltaX = posTwo.x - posOne.x;
+    const deltaY = posTwo.y - posOne.y;
+    return Math.floor(Math.sqrt(deltaX * deltaX + deltaY * deltaY)) + 1;
+  }
+
+  calculateSpread(shotsPrev, distance) {
+    if (distance > 2000) return 100;
+    const spread = Math.floor(shotsPrev * distance ** 0.6);
+    if (spread >= 100) return 100;
+    return spread;
+  }
+
+  generatePlayerPosition(): { x: number; y: number } {
+    const x = Math.floor(Math.random() * 1000);
+    const y = Math.floor(Math.random() * 1000);
+    return { x, y };
+  }
+
+  calculateDamage(distance: number, damage: number): number {
+    const calcDamage = damage - (distance / 50) ** 2 + Math.random() * 5 - 5;
+    if (calcDamage <= 0) return 0;
+    return Math.floor(calcDamage);
+  }
+
+  generateRandomEnemies(): { x: number; y: number; name: string }[] {
+    const names = [
+      'Васян',
+      'Жора',
+      'Борян',
+      'Колян',
+      'Стасик',
+      'Петрос',
+      'Роберт',
+      'Андрюха',
+      'Асти',
+      'Максон',
+      'Максан',
+      'Денчик',
+      'Витян',
+    ];
+    const surNames = [
+      'Бобр',
+      'Жесткий',
+      'Кривой',
+      'Зануда',
+      'Мозила',
+      'Пес',
+      'Гангстер',
+      'Черный',
+      'Дикий',
+      'Цепной',
+      'Шальной',
+      'Зеленый',
+      'Маслинник',
+    ];
+    const enemies: { x: number; y: number; name: string }[] = [];
+    // const playersCount = Math.floor(Math.random() * 5) + 1;
+    const enemiesTargetCount = Math.floor(Math.random() * 2) + 1;
+    while (enemies?.length !== enemiesTargetCount) {
+      const x = Math.floor(Math.random() * 200);
+      const y = Math.floor(Math.random() * 200);
+      const nameIndex = Math.floor(Math.random() * names?.length);
+      const name = names[nameIndex];
+      names.splice(nameIndex, 1);
+      const surNameIndex = Math.floor(Math.random() * names?.length);
+      const surName = surNames[surNameIndex];
+      surNames.splice(surNameIndex, 1);
+      const pogonalo = `${name} ${surName}`;
+      enemies.push({ x, y, name: pogonalo });
     }
-    next();
+    return enemies;
+  }
+
+  buttlePart(enemyList?) {
+    let logs = '';
+    enemyList.forEach((enemyPos, index) => {
+      logs += `Враг: ${enemyPos.name}\n`;
+      const playerPos = { x: 0, y: 0 };
+      const distance = this.calculateDistance(enemyPos, playerPos);
+      const shoots = 3;
+      logs += `Вы стреляете очередью по ${shoots} выстрелов.\n`;
+      logs += 'Расстояние: ' + distance;
+      let totalDamage = 0;
+      for (let shootIndex = 1; shootIndex <= shoots; shootIndex++) {
+        if (totalDamage >= 100) {
+          logs += '\nВраг ' + enemyPos.name + ' убит.';
+          enemyList.splice(index, 1);
+          break;
+        }
+        logs += '\nВыстрел' + shootIndex + ': ';
+        const spread = this.calculateSpread(shootIndex, distance);
+        const damage = this.calculateDamage(distance, 120);
+        const chanceToShoot = 100 - spread;
+        const shootIsOk = 100 * Math.random() <= chanceToShoot;
+        if (shootIsOk) totalDamage += damage;
+        logs += 'Разброс: ' + spread + '%.  ';
+        logs += 'Урон: ' + damage + 'хп. ';
+        logs += 'Пападание: ' + (shootIsOk ? 'Есть!' : 'Мимо!');
+      }
+      logs += '\nИтоговый урон: ' + totalDamage + '\n\n';
+      totalDamage = 0;
+    });
+    return { logs, enemyList };
   }
 
   @SceneEnter()
   async onSceneEnter(@Ctx() ctx: TelegrafContext) {
-    const telegram_id: number =
-      ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
-    const user: UsersEntity = await this.usersRepository.findOne({
-      where: { telegram_id: telegram_id },
-    });
+    let enemies: any[] = this.generateRandomEnemies();
+    let log = `Вам на пути встретились бандиты. Началась перестрелка. Вы обнаружили врагов: ${enemies
+      .map((item) => item.name)
+      .join(', ')}.\n`;
+    let battle = null;
+    while (enemies.length !== 0) {
+      battle = this.buttlePart(enemies);
+      if (battle?.enemyList?.length >= 1) {
+        enemies = battle?.enemyList;
+      }
+      log += battle.logs;
+    }
+    const message = await ctx.reply(log + '\nБой окончен!');
+    try {
+      setTimeout(() => {
+        this.bot.telegram.deleteMessage(message.chat.id, message.message_id);
+      }, 25000);
+    } catch (error) {
+      console.log(error);
+    }
+    ctx.scene.leave();
   }
+
+  // переговоры бандитов - заходи, сбоку заходи
+  // инфо о позиции бандитов:
+  /**
+   * 1 бандит спереди-слева за насыпью
+   * 2 бандита не видно
+   * я за насыпью, правый бок открыт, левый бок открыт, дистрация 25 метров
+   */
+  // действия - сменить позицию, уйти дальше, укрытия нет
+  // действия - сменить позицию, атака 1 бандита
+  // действия - сменить позицию, атака 1 бандита
+  // }
 
   @Action('leave')
   async onLeaveCommand(@Ctx() ctx: Scenes.SceneContext) {
@@ -123,9 +224,6 @@ export class BanditScene {
 
   @SceneLeave()
   async onSceneLeave(@Ctx() ctx: Scenes.SceneContext) {
-    await ctx.reply(
-      'Диалог завершен.',
-      Markup.inlineKeyboard([Markup.button.callback('🍔Меню', 'menu')]),
-    );
+    //
   }
 }

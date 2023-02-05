@@ -23,6 +23,7 @@ import { QuestScene } from './scenes/quest.scene';
 import { MutantsEntity } from './user/entities/mutants.entity';
 import { PdaScene } from './scenes/pda.scene';
 import { QuestsEntity } from './user/entities/quests.entity';
+import { BanditScene } from './scenes/bandit.scene';
 
 const scenes = [
   TestWizard,
@@ -32,6 +33,7 @@ const scenes = [
   LocationScene,
   QuestScene,
   PdaScene,
+  BanditScene,
 ];
 
 @Module({

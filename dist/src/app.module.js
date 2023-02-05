@@ -32,6 +32,7 @@ const quest_scene_1 = require("./scenes/quest.scene");
 const mutants_entity_1 = require("./user/entities/mutants.entity");
 const pda_scene_1 = require("./scenes/pda.scene");
 const quests_entity_1 = require("./user/entities/quests.entity");
+const bandit_scene_1 = require("./scenes/bandit.scene");
 const scenes = [
     registration_wizzard_1.TestWizard,
     anomaly_scene_1.AnomalyRoadScene,
@@ -40,6 +41,7 @@ const scenes = [
     location_scene_1.LocationScene,
     quest_scene_1.QuestScene,
     pda_scene_1.PdaScene,
+    bandit_scene_1.BanditScene,
 ];
 let AppModule = class AppModule {
 };

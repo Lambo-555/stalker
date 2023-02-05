@@ -42,28 +42,61 @@ let AppUpdate = AppUpdate_1 = class AppUpdate {
         this.appService.commandListInit();
     }
     async onRegister(ctx, next) {
-        const telegram_id = this.appService.getTelegramId(ctx);
-        const user = await this.usersRepository.findOne({
-            where: { telegram_id: telegram_id },
-        });
-        if (!user) {
-            const location = await this.locationsRepository.findOne({
-                where: { id: 1 },
+        var _a, _b, _c, _d, _e, _f;
+        try {
+            const messageID = (_b = (_a = ctx === null || ctx === void 0 ? void 0 : ctx.update) === null || _a === void 0 ? void 0 : _a.message) === null || _b === void 0 ? void 0 : _b.message_id;
+            const chatID = (_d = (_c = ctx === null || ctx === void 0 ? void 0 : ctx.update) === null || _c === void 0 ? void 0 : _c.message) === null || _d === void 0 ? void 0 : _d.chat.id;
+            const menuMessage = (_f = (_e = ctx === null || ctx === void 0 ? void 0 : ctx.update) === null || _e === void 0 ? void 0 : _e.message) === null || _f === void 0 ? void 0 : _f.text;
+            if (menuMessage === '/menu' && chatID && messageID) {
+                await this.bot.telegram.deleteMessage(chatID, messageID);
+            }
+            const telegram_id = this.appService.getTelegramId(ctx);
+            let user = await this.usersRepository.findOne({
+                where: { telegram_id: telegram_id },
             });
-            const userRegistered = await this.usersRepository.save({
-                telegram_id: telegram_id,
-                location: location.id,
+            let progress = await this.progressRepository.findOne({
+                where: { user_id: user === null || user === void 0 ? void 0 : user.id },
             });
-            const lastChapter = await this.chaptersRepository.findOne({
-                where: { content: (0, typeorm_1.Like)('Один из грузовиков%') },
-            });
-            await this.progressRepository.save({
-                user_id: userRegistered.id,
-                chapter_id: lastChapter.id,
-                location: location.id,
-            });
+            if (!user) {
+                const location = await this.locationsRepository.findOne({
+                    where: { id: 1 },
+                });
+                user = await this.usersRepository.save({
+                    telegram_id: telegram_id,
+                    location: location.id,
+                });
+                const lastChapter = await this.chaptersRepository.findOne({
+                    where: { content: (0, typeorm_1.Like)('Один из грузовиков%') },
+                });
+                progress = await this.progressRepository.save({
+                    user_id: user.id,
+                    chapter_id: lastChapter.id,
+                    location: location.id,
+                });
+            }
+            if (!(progress === null || progress === void 0 ? void 0 : progress.chat_id) || !(progress === null || progress === void 0 ? void 0 : progress.message_display_id)) {
+                const imgLink = this.appService.escapeText('https://clck.ru/33PBvE');
+                const keyboard = telegraf_1.Markup.inlineKeyboard([
+                    telegraf_1.Markup.button.callback('Меню', 'menu'),
+                ]).reply_markup;
+                const messageDisplay = await ctx.replyWithPhoto(imgLink, {
+                    caption: 'Display',
+                    has_spoiler: true,
+                    reply_markup: keyboard,
+                });
+                await this.progressRepository.update(progress === null || progress === void 0 ? void 0 : progress.progress_id, {
+                    chat_id: messageDisplay.chat.id,
+                    message_display_id: messageDisplay.message_id,
+                });
+                progress = await this.progressRepository.findOne({
+                    where: { user_id: user === null || user === void 0 ? void 0 : user.id },
+                });
+            }
+            next();
         }
-        next();
+        catch (error) {
+            console.error(error);
+        }
     }
     async onMenu(ctx) {
         try {
@@ -87,19 +120,6 @@ let AppUpdate = AppUpdate_1 = class AppUpdate {
                     location: location.id,
                 });
             }
-            if (!(progress === null || progress === void 0 ? void 0 : progress.chat_id) || !(progress === null || progress === void 0 ? void 0 : progress.message_display_id)) {
-                const messageDisplay = await ctx.reply('display');
-                await this.progressRepository.update(progress === null || progress === void 0 ? void 0 : progress.progress_id, {
-                    chat_id: messageDisplay.chat.id,
-                    message_display_id: messageDisplay.message_id,
-                });
-                progress = await this.progressRepository.findOne({
-                    where: { user_id: user.id },
-                });
-            }
-            if (progress.chat_id && progress.message_display_id) {
-                await ctx.deleteMessage();
-            }
             let chapter = await this.chaptersRepository.findOne({
                 where: { id: progress.chapter_id },
             });
@@ -116,21 +136,15 @@ let AppUpdate = AppUpdate_1 = class AppUpdate {
             const nextChapter = await this.chaptersRepository.findOne({
                 where: { id: progress === null || progress === void 0 ? void 0 : progress.chapter_id, location: locations === null || locations === void 0 ? void 0 : locations.id },
             });
-            const pda = telegraf_1.Markup.button.callback('📟PDA', 'PDA');
-            const story = telegraf_1.Markup.button.callback('☢️История', scenes_enum_1.ScenesEnum.QUEST, !!!nextChapter);
-            const move = telegraf_1.Markup.button.callback('📍Перемещение', scenes_enum_1.ScenesEnum.LOCATION);
-            const markup = telegraf_1.Markup.inlineKeyboard([pda, story, move], {
+            const keyboard = telegraf_1.Markup.inlineKeyboard([
+                telegraf_1.Markup.button.callback('📍Перемещение', scenes_enum_1.ScenesEnum.LOCATION),
+                telegraf_1.Markup.button.callback('☠️Бандиты', scenes_enum_1.ScenesEnum.BANDIT),
+                telegraf_1.Markup.button.callback('📟PDA', 'PDA'),
+                telegraf_1.Markup.button.callback('☢️История', scenes_enum_1.ScenesEnum.QUEST, !!!nextChapter),
+            ], {
                 columns: 1,
             }).reply_markup;
-            await this.bot.telegram.editMessageText(progress.chat_id, progress.message_display_id, null, this.appService.escapeText(`Вы на локации: ${locations === null || locations === void 0 ? void 0 : locations.name}.`), {
-                reply_markup: markup,
-                parse_mode: 'MarkdownV2',
-            });
-            await this.bot.telegram.editMessageMedia(progress.chat_id, progress.message_display_id, null, {
-                type: 'photo',
-                media: '',
-                caption: 'space caption',
-            });
+            this.appService.updateDisplay(progress, keyboard, this.appService.escapeText(`Вы на локации: ${locations === null || locations === void 0 ? void 0 : locations.name}.`), locations.image);
         }
         catch (error) {
             console.error(error);

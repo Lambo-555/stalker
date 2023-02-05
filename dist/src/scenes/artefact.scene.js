@@ -103,7 +103,7 @@ let ArtefactScene = ArtefactScene_1 = class ArtefactScene {
             ...anomalyEffects.map((anomalyItem) => telegraf_1.Markup.button.callback(anomalyItem, anomalyItem === anomalyTarget.effects
                 ? 'anomalyTrue'
                 : 'anomalyFalse')),
-            telegraf_1.Markup.button.callback('🍔Меню', 'menu'),
+            telegraf_1.Markup.button.callback('Меню', 'menu'),
         ], {
             columns: 1,
         }));
@@ -120,14 +120,14 @@ let ArtefactScene = ArtefactScene_1 = class ArtefactScene {
         }
     }
     async anomalyFalse(ctx) {
-        await ctx.reply('Короб не подошел, артефакт разрушен.', telegraf_1.Markup.inlineKeyboard([telegraf_1.Markup.button.callback('🍔Меню', 'menu')]));
+        await ctx.reply('Короб не подошел, артефакт разрушен.', telegraf_1.Markup.inlineKeyboard([telegraf_1.Markup.button.callback('Меню', 'menu')]));
         await ctx.scene.leave();
     }
     async onLeaveCommand(ctx) {
         await ctx.scene.leave();
     }
     async onSceneLeave(ctx) {
-        await ctx.reply('Поиск артефакта завершен.', telegraf_1.Markup.inlineKeyboard([telegraf_1.Markup.button.callback('🍔Меню', 'menu')]));
+        await ctx.reply('Поиск артефакта завершен.', telegraf_1.Markup.inlineKeyboard([telegraf_1.Markup.button.callback('Меню', 'menu')]));
     }
 };
 __decorate([

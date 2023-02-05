@@ -449,7 +449,7 @@ export class AnomalyRoadScene {
   async onSceneLeave(@Ctx() ctx: Scenes.SceneContext) {
     await ctx.reply(
       'Вы выбрались из аномальной зоны.',
-      Markup.inlineKeyboard([Markup.button.callback('🍔Меню', 'menu')]),
+      Markup.inlineKeyboard([Markup.button.callback('Меню', 'menu')]),
     );
   }
 }

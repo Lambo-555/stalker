@@ -70,50 +70,74 @@ export class QuestScene {
     private readonly bot: Telegraf<Context>,
   ) { }
 
-
   @SceneEnter()
   async onSceneEnter(@Ctx() ctx: TelegrafContext) {
-    const telegram_id: number =
-      ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
-    const user: UsersEntity = await this.usersRepository.findOne({
-      where: { telegram_id: telegram_id },
-    });
-    const location: LocationsEntity = await this.locationsRepository.findOne({
-      where: {
-        id: user.location,
-      },
-    });
-    const progress: ProgressEntity = await this.progressRepository.findOne({
-      where: {
-        user_id: user.id,
-      },
-    });
-    const chapter: ChaptersEntity = await this.chaptersRepository.findOne({
-      where: {
-        id: progress.chapter_id,
-      },
-    });
-    if (chapter.location === location.id) {
-      const keyboard = Markup.inlineKeyboard([
-        Markup.button.callback('🤝Диалог', 'chapterXXX' + chapter.id),
-        Markup.button.callback('✋🏻Уйти', 'leave'),
-      ]).reply_markup;
-      await this.appService.updateDisplay(
-        progress,
-        keyboard,
-        chapter.content,
-        // chapter.image || null,
-      );
-    } else {
-      const keyboard = Markup.inlineKeyboard([
-        Markup.button.callback('✋🏻Уйти', 'leave'),
-      ]).reply_markup;
-      await this.appService.updateDisplay(
-        progress,
-        keyboard,
-        `Здесь не с кем взаимодействовать`,
-        // chapter.image || null,
-      );
+    try {
+      const telegram_id: number =
+        ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
+      const user: UsersEntity = await this.usersRepository.findOne({
+        where: { telegram_id: telegram_id },
+      });
+      const location: LocationsEntity = await this.locationsRepository.findOne({
+        where: {
+          id: user.location,
+        },
+      });
+      let progress: ProgressEntity = await this.progressRepository.findOne({
+        where: {
+          user_id: user.id,
+        },
+      });
+      const chapter: ChaptersEntity = await this.chaptersRepository.findOne({
+        where: {
+          id: progress.chapter_id,
+        },
+      });
+      if (!progress?.chat_id || !progress?.message_display_id) {
+        const imgLink = this.appService.escapeText('https://clck.ru/33PBvE');
+        const keyboard = Markup.inlineKeyboard([
+          Markup.button.callback('Меню', 'menu'),
+        ]).reply_markup;
+        const messageDisplay = await ctx.replyWithPhoto(imgLink, {
+          caption: 'Display',
+          // @ts-ignore 
+          has_spoiler: true,
+          // parse_mode: 'Markdown2',
+          //@ts-ignore
+          reply_markup: keyboard,
+        });
+        await this.progressRepository.update(progress?.progress_id, {
+          chat_id: messageDisplay.chat.id,
+          message_display_id: messageDisplay.message_id,
+        });
+        progress = await this.progressRepository.findOne({
+          where: { user_id: user?.id },
+        });
+      }
+      if (chapter.location === location.id) {
+        const keyboard = Markup.inlineKeyboard([
+          Markup.button.callback('🤝Диалог', 'chapterXXX' + chapter.id),
+          Markup.button.callback('✋🏻Уйти', 'leave'),
+        ]).reply_markup;
+        await this.appService.updateDisplay(
+          progress,
+          keyboard,
+          `${chapter?.character}: ` + chapter.content,
+          location.image,
+        );
+      } else {
+        const keyboard = Markup.inlineKeyboard([
+          Markup.button.callback('✋🏻Уйти', 'leave'),
+        ]).reply_markup;
+        await this.appService.updateDisplay(
+          progress,
+          keyboard,
+          `Здесь не с кем взаимодействовать`,
+          // location.image,
+        );
+      }
+    } catch (error) {
+      console.error(error);
     }
   }
 
@@ -122,79 +146,104 @@ export class QuestScene {
     @Ctx() ctx: TelegrafContext,
     @Next() next: NextFunction,
   ) {
-    const match = ctx.match[0];
-    if (!match) next();
-    const selectedChapterId = +match.split('XXX')[1]; // chapterXXX1
-    const telegram_id: number =
-      ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
-    const user: UsersEntity = await this.usersRepository.findOne({
-      where: { telegram_id: telegram_id },
-    });
-    let progress: ProgressEntity = await this.progressRepository.findOne({
-      where: {
-        user_id: user.id,
-      },
-    });
-    const location: LocationsEntity = await this.locationsRepository.findOne({
-      where: {
-        id: user.location,
-      },
-    });
-    await this.progressRepository.update(progress.progress_id, {
-      chapter_id: selectedChapterId,
-    });
-    progress = await this.progressRepository.findOne({
-      where: {
-        user_id: user.id,
-      },
-    });
-    const nextChapter: ChaptersEntity = await this.chaptersRepository.findOne({
-      where: { id: progress.chapter_id, location: location.id },
-    });
-    if (!nextChapter) {
-      const keyboard = Markup.inlineKeyboard([
-        Markup.button.callback('✋🏻Уйти', 'leave'),
-      ]).reply_markup;
-      await this.appService.updateDisplay(
-        progress,
-        keyboard,
-        `Здесь не с кем взаимодействовать`,
-      );
-    } else {
-      const choises: ChoicesEntity[] = await this.choicesRepository.find({
-        where: { chapter_id: nextChapter.id },
+    try {
+      const match = ctx.match[0];
+      if (!match) next();
+      const selectedChapterId = +match.split('XXX')[1]; // chapterXXX1
+      const telegram_id: number =
+        ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
+      const user: UsersEntity = await this.usersRepository.findOne({
+        where: { telegram_id: telegram_id },
       });
-      choises.forEach(async (item) => {
-        const chapter = await this.chaptersRepository.findOne({
-          where: { id: item.chapter_id },
-        });
-        return {
-          ...item,
-          description: chapter.character,
-        };
-      });
-      const keyboard = Markup.inlineKeyboard(
-        [
-          ...choises.map((item) =>
-            Markup.button.callback(
-              item?.description,
-              'chapterXXX' + item.next_chapter_id.toString(),
-            ),
-          ),
-          // Markup.button.callback('✋🏻Уйти', 'leave'),
-          // Markup.button.callback('Откат', 'back'),
-        ],
-        {
-          columns: 1,
+      let progress: ProgressEntity = await this.progressRepository.findOne({
+        where: {
+          user_id: user.id,
         },
-      ).reply_markup;
+      });
+      const location: LocationsEntity = await this.locationsRepository.findOne({
+        where: {
+          id: user.location,
+        },
+      });
+      await this.progressRepository.update(progress.progress_id, {
+        chapter_id: selectedChapterId,
+      });
+      progress = await this.progressRepository.findOne({
+        where: {
+          user_id: user.id,
+        },
+      });
+      const nextChapter: ChaptersEntity = await this.chaptersRepository.findOne({
+        where: { id: progress.chapter_id, location: location.id },
+      });
+      if (!progress?.chat_id || !progress?.message_display_id) {
+        const imgLink = this.appService.escapeText('https://clck.ru/33PBvE');
+        const keyboard = Markup.inlineKeyboard([
+          Markup.button.callback('Меню', 'menu'),
+        ]).reply_markup;
+        const messageDisplay = await ctx.replyWithPhoto(imgLink, {
+          caption: 'Display',
+          // @ts-ignore 
+          has_spoiler: true,
+          // parse_mode: 'Markdown2',
+          //@ts-ignore
+          reply_markup: keyboard,
+        });
+        await this.progressRepository.update(progress?.progress_id, {
+          chat_id: messageDisplay.chat.id,
+          message_display_id: messageDisplay.message_id,
+        });
+        progress = await this.progressRepository.findOne({
+          where: { user_id: user?.id },
+        });
+      }
+      if (!nextChapter) {
+        const keyboard = Markup.inlineKeyboard([
+          Markup.button.callback('✋🏻Уйти', 'leave'),
+        ]).reply_markup;
+        await this.appService.updateDisplay(
+          progress,
+          keyboard,
+          `Здесь не с кем взаимодействовать`,
+        );
+      } else {
+        const choises: ChoicesEntity[] = await this.choicesRepository.find({
+          where: { chapter_id: nextChapter.id },
+        });
+        choises.forEach(async (item) => {
+          const chapter = await this.chaptersRepository.findOne({
+            where: { id: item.chapter_id },
+          });
+          return {
+            ...item,
+            description: chapter.character,
+          };
+        });
+        const keyboard = Markup.inlineKeyboard(
+          [
+            ...choises.map((item) =>
+              Markup.button.callback(
+                this.appService.escapeText(item?.description),
+                'chapterXXX' + item.next_chapter_id.toString(),
+              ),
+            ),
+            // Markup.button.callback('✋🏻Уйти', 'leave'),
+            // Markup.button.callback('Откат', 'back'),
+          ],
+          {
+            columns: 1,
+          },
+        ).reply_markup;
 
-      await this.appService.updateDisplay(
-        progress,
-        keyboard,
-        nextChapter.content,
-        // nextChapter.image || null,
-      );
+        await this.appService.updateDisplay(
+          progress,
+          keyboard,
+          `${nextChapter?.character}: ` + nextChapter.content,
+          nextChapter?.image || location?.image,
+        );
+      }
+    } catch (error) {
+      console.error(error);
     }
   }
 
@@ -218,40 +267,40 @@ export class QuestScene {
     await this.progressRepository.update(progress, {
       chapter_id: choiceBack.chapter_id,
     });
-    const progressNew: ProgressEntity = await this.progressRepository.findOne({
-      where: {
-        user_id: user.id,
-      },
-    });
-    // await ctx.reply(
-    //   `Назад`,
-    //   Markup.inlineKeyboard(
-    //     [
-    //       Markup.button.callback('✋🏻Уйти', 'leave'),
-    //       Markup.button.callback('Откат', 'back'),
-    //       Markup.button.callback(
-    //         '🤝Поговорить chapter.id: ' + progressNew.chapter_id,
-    //         'chapterXXX' + progressNew.chapter_id,
-    //       ),
-    //     ],
-    //     {
-    //       columns: 1,
-    //     },
-    //   ),
-    // );
   }
 
   @Action('leave')
   async onLeaveCommand(@Ctx() ctx: Scenes.SceneContext) {
     await ctx.scene.leave();
-    // await ctx.scene.enter(ScenesEnum.QUEST);
   }
 
   @SceneLeave()
   async onSceneLeave(@Ctx() ctx: Scenes.SceneContext) {
-    await ctx.reply(
-      'Диалог завершен.',
-      Markup.inlineKeyboard([Markup.button.callback('🍔Меню', 'menu')]),
-    );
+    try {
+      const telegram_id: number =
+        ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
+      const user: UsersEntity = await this.usersRepository.findOne({
+        where: { telegram_id: telegram_id },
+      });
+      const progress: ProgressEntity = await this.progressRepository.findOne({
+        where: {
+          user_id: user.id,
+        },
+      });
+      const keyboard = Markup.inlineKeyboard([
+        Markup.button.callback('Меню', 'menu'),
+      ]).reply_markup;
+      const location: LocationsEntity = await this.locationsRepository.findOne({
+        where: { id: user.location },
+      });
+      await this.appService.updateDisplay(
+        progress,
+        keyboard,
+        `Диалог завершен...`,
+        location?.image,
+      );
+    } catch (error) {
+      console.error(error);
+    }
   }
 }

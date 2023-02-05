@@ -123,7 +123,7 @@ let AnomalyRoadScene = AnomalyRoadScene_1 = class AnomalyRoadScene {
         await ctx.scene.leave();
     }
     async onSceneLeave(ctx) {
-        await ctx.reply('Вы выбрались из аномальной зоны.', telegraf_1.Markup.inlineKeyboard([telegraf_1.Markup.button.callback('🍔Меню', 'menu')]));
+        await ctx.reply('Вы выбрались из аномальной зоны.', telegraf_1.Markup.inlineKeyboard([telegraf_1.Markup.button.callback('Меню', 'menu')]));
     }
 };
 __decorate([

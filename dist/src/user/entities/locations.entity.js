@@ -24,7 +24,7 @@ __decorate([
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
-], LocationsEntity.prototype, "about", void 0);
+], LocationsEntity.prototype, "image", void 0);
 LocationsEntity = __decorate([
     (0, typeorm_1.Entity)('locations')
 ], LocationsEntity);

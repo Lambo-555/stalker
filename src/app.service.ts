@@ -1,12 +1,16 @@
 import { Injectable } from '@nestjs/common';
-import { Telegraf } from 'telegraf';
+import { Markup, Telegraf } from 'telegraf';
 import { Scenes } from 'telegraf';
 import { Ctx, InjectBot } from 'nestjs-telegraf';
-import { BotCommand, InlineKeyboardMarkup } from 'telegraf/typings/core/types/typegram';
+import {
+  BotCommand,
+  InlineKeyboardMarkup,
+} from 'telegraf/typings/core/types/typegram';
 import { ExtraReplyMessage } from 'telegraf/typings/telegram-types';
 import crypto from 'crypto';
 import { TelegrafContext } from './interfaces/telegraf-context.interface';
 import { ProgressEntity } from './user/entities/progress.entity';
+import { ScenesEnum } from './scenes/enums/scenes.enum';
 
 @Injectable()
 export class AppService {
@@ -26,13 +30,11 @@ export class AppService {
 
   decrypt(hash) {
     try {
-      console.log('hashhashhashhash', hash);
       const decipher = crypto.createDecipheriv(
         this.algorithm,
         this.secretKey,
         Buffer.from(hash.iv, 'hex'),
       );
-      console.log('decipherdecipher', decipher);
       const decrpyted = Buffer.concat([
         decipher.update(Buffer.from(hash.content, 'hex')),
         decipher.final(),
@@ -55,48 +57,48 @@ export class AppService {
   }
 
   escapeText(escapedMsg: string) {
+    return escapedMsg;
     return escapedMsg
-      .replace(/_/g, '\\_')
-      .replace(/\*/g, '\\*')
-      .replace(/\*/g, '\\*')
-      .replace(/\(/g, '\\(')
-      .replace(/\)/g, '\\)')
-      .replace(/\[/g, '\\[')
-      .replace(/\!/g, '\\!')
-      .replace(/\`/g, '\\`')
-      .replace(/\-/g, '\\-')
-      .replace(/\./g, '\\.')
-      .replace(/\,/g, '\\,');
+      .replace(/_/gim, '\\_')
+      .replace(/\*\*/gim, '----------')
+      .replace(/\*/gim, '\\*')
+      .replace(/----------/gim, '*')
+      .replace(/\(/gim, '\\(')
+      .replace(/\)/gim, '\\)')
+      .replace(/\[/gim, '\\[')
+      .replace(/\!/gim, '\\!')
+      .replace(/\`/gim, '\\`')
+      .replace(/\-/gim, '\\-')
+      .replace(/\./gim, '\\.')
+      .replace(/\,/gim, '\\,');
   }
 
   async updateDisplay(
     progress: ProgressEntity,
     keyboard: InlineKeyboardMarkup,
-    text?: string,
-    mediaLink?: string,
-    mediaText?: string,
+    caption?: string,
+    photoLink?: string,
   ) {
-    await this.bot.telegram.editMessageText(
-      progress.chat_id,
-      progress.message_display_id,
-      null,
-      this.escapeText(text || '...'),
-      {
-        reply_markup: keyboard,
-        parse_mode: 'MarkdownV2',
-      },
-    );
-    if (mediaLink) {
+    try {
       await this.bot.telegram.editMessageMedia(
         progress.chat_id,
         progress.message_display_id,
         null,
         {
           type: 'photo',
-          media: mediaLink,
-          caption: mediaText || 'подпись медиа',
+          media: this.escapeText(photoLink) || this.escapeText('https://media2.giphy.com/media/z6UjsCa1Pq4QoMtkNR/giphy.gif?cid=790b76115ebeebe0c7ac50b73f0eb536c3f7dcaf33451941&rid=giphy.gif&ct=g'), // this.escapeText(photoLink) || 
+          caption: this.escapeText(caption) || 'подпись медиа',
+          // parse_mode: 'MarkdownV2',
         },
       );
+      await this.bot.telegram.editMessageReplyMarkup(
+        progress.chat_id,
+        progress.message_display_id,
+        null,
+        keyboard,
+      );
+    } catch (error) {
+      console.error(error);
     }
   }
 

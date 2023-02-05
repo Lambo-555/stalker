@@ -400,7 +400,7 @@ export class MutantScene {
   async onSceneLeave(@Ctx() ctx: Scenes.SceneContext) {
     await ctx.reply(
       'Встреча с мутантом окончена.',
-      Markup.inlineKeyboard([Markup.button.callback('🍔Меню', 'menu')]),
+      Markup.inlineKeyboard([Markup.button.callback('Меню', 'menu')]),
     );
   }
 }

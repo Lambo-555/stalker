@@ -9,5 +9,5 @@ export class LocationsEntity {
   name?: string;
 
   @Column({ nullable: true })
-  about?: string;
+  image?: string;
 }

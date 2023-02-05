@@ -155,7 +155,7 @@ export class ArtefactScene {
                 : 'anomalyFalse',
             ),
           ),
-          Markup.button.callback('🍔Меню', 'menu'),
+          Markup.button.callback('Меню', 'menu'),
         ],
         {
           columns: 1,
@@ -173,7 +173,7 @@ export class ArtefactScene {
     } else {
       await ctx.reply(
         'Отлично, короб подошел, но артефакт был нестабилен и иссяк.',
-        // Markup.inlineKeyboard([Markup.button.callback('🍔Меню', 'menu')]),
+        // Markup.inlineKeyboard([Markup.button.callback('Меню', 'menu')]),
       );
       await ctx.scene.leave();
     }
@@ -183,7 +183,7 @@ export class ArtefactScene {
   async anomalyFalse(@Ctx() ctx: TelegrafContext) {
     await ctx.reply(
       'Короб не подошел, артефакт разрушен.',
-      Markup.inlineKeyboard([Markup.button.callback('🍔Меню', 'menu')]),
+      Markup.inlineKeyboard([Markup.button.callback('Меню', 'menu')]),
     );
     await ctx.scene.leave();
   }
@@ -198,7 +198,7 @@ export class ArtefactScene {
   async onSceneLeave(@Ctx() ctx: Scenes.SceneContext) {
     await ctx.reply(
       'Поиск артефакта завершен.',
-      Markup.inlineKeyboard([Markup.button.callback('🍔Меню', 'menu')]),
+      Markup.inlineKeyboard([Markup.button.callback('Меню', 'menu')]),
     );
   }
 }
