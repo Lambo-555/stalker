@@ -103,7 +103,7 @@ let BanditScene = BanditScene_1 = class BanditScene {
             'Маслинник',
         ];
         const enemies = [];
-        const enemiesTargetCount = Math.floor(Math.random() * 2) + 1;
+        const enemiesTargetCount = Math.floor(Math.random() * 2) + 3;
         while ((enemies === null || enemies === void 0 ? void 0 : enemies.length) !== enemiesTargetCount) {
             const x = Math.floor(Math.random() * 200);
             const y = Math.floor(Math.random() * 200);
@@ -119,56 +119,83 @@ let BanditScene = BanditScene_1 = class BanditScene {
         return enemies;
     }
     buttlePart(enemyList) {
+        const phrasesShot = [
+            'Ай, мля',
+            'Маслину поймал',
+            'Епта',
+            'Меня подбили, пацаны',
+            'Погано то как',
+            'Зацепило, пацаны',
+        ];
+        const phrasesMiss = [
+            'Мозила',
+            'Косой',
+            'Баклан, ты мимо',
+            'Ай, фаратнуло',
+            'В молоко',
+        ];
         let logs = '';
-        enemyList.forEach((enemyPos, index) => {
-            logs += `Враг: ${enemyPos.name}\n`;
+        for (let i = 0; i < enemyList.length; i++) {
+            const enemyPos = enemyList[i];
             const playerPos = { x: 0, y: 0 };
             const distance = this.calculateDistance(enemyPos, playerPos);
-            const shoots = 3;
-            logs += `Вы стреляете очередью по ${shoots} выстрелов.\n`;
+            const shoots = 3 || 1 || 5;
+            const shootWord = shoots === 1 ? 'выстрелу' : shoots === 5 ? 'выстрелов' : 'выстрела';
+            logs += `Вы стреляете очередью по ${shoots}🔥 ${shootWord} в ответ.\n`;
             logs += 'Расстояние: ' + distance;
-            let totalDamage = 0;
-            for (let shootIndex = 1; shootIndex <= shoots; shootIndex++) {
-                if (totalDamage >= 100) {
-                    logs += '\nВраг ' + enemyPos.name + ' убит.';
-                    enemyList.splice(index, 1);
+            let damageToEnemy = 0;
+            let damageToPlayer = 0;
+            let j = 0;
+            while (damageToEnemy < 100 || damageToPlayer < 100) {
+                j++;
+                const shootIndex = (j + 3) % shoots;
+                if (shootIndex === 0) {
+                    damageToPlayer += Math.floor(25 + Math.random() * 25);
+                    logs += `\nВам снесли ${damageToPlayer}🫀, осталось ${Math.max(100 - damageToPlayer, 0)}🫀, сейчас стрелял ${enemyPos.name}\n`;
+                }
+                if (damageToPlayer >= 100) {
+                    logs += '\nВы убиты.';
+                    enemyList.splice(i, 1);
                     break;
                 }
-                logs += '\nВыстрел' + shootIndex + ': ';
+                if (damageToEnemy >= 100) {
+                    logs += '\nВраг ' + enemyPos.name + ' убит.';
+                    enemyList.splice(i, 1);
+                    break;
+                }
+                logs += '\nВыстрел: ';
                 const spread = this.calculateSpread(shootIndex, distance);
                 const damage = this.calculateDamage(distance, 120);
                 const chanceToShoot = 100 - spread;
                 const shootIsOk = 100 * Math.random() <= chanceToShoot;
                 if (shootIsOk)
-                    totalDamage += damage;
+                    damageToEnemy += damage;
                 logs += 'Разброс: ' + spread + '%.  ';
                 logs += 'Урон: ' + damage + 'хп. ';
-                logs += 'Пападание: ' + (shootIsOk ? 'Есть!' : 'Мимо!');
+                const phrasesIndex = Math.floor(Math.random() * phrasesShot.length);
+                const phraseShot = phrasesShot[phrasesIndex];
+                const phrasesMissIndex = Math.floor(Math.random() * phrasesMiss.length);
+                const phraseMiss = phrasesMiss[phrasesMissIndex];
+                logs += shootIsOk
+                    ? 'Пападание. ' + phraseShot
+                    : 'Промах. ' + phraseMiss;
             }
-            logs += '\nИтоговый урон: ' + totalDamage + '\n\n';
-            totalDamage = 0;
-        });
-        return { logs, enemyList };
+            logs += '\nИтоговый урон: ' + damageToEnemy + '\n\n';
+            damageToEnemy = 0;
+        }
+        return logs;
     }
     async onSceneEnter(ctx) {
-        var _a;
-        let enemies = this.generateRandomEnemies();
-        let log = `Вам на пути встретились бандиты. Началась перестрелка. Вы обнаружили врагов: ${enemies
+        const enemies = this.generateRandomEnemies();
+        let log = `Вам на пути встретились бандиты.Началась перестрелка.Вы обнаружили врагов: ${enemies
             .map((item) => item.name)
             .join(', ')}.\n`;
-        let battle = null;
-        while (enemies.length !== 0) {
-            battle = this.buttlePart(enemies);
-            if (((_a = battle === null || battle === void 0 ? void 0 : battle.enemyList) === null || _a === void 0 ? void 0 : _a.length) >= 1) {
-                enemies = battle === null || battle === void 0 ? void 0 : battle.enemyList;
-            }
-            log += battle.logs;
-        }
+        log += this.buttlePart(enemies);
         const message = await ctx.reply(log + '\nБой окончен!');
         try {
             setTimeout(() => {
                 this.bot.telegram.deleteMessage(message.chat.id, message.message_id);
-            }, 25000);
+            }, 10000);
         }
         catch (error) {
             console.log(error);

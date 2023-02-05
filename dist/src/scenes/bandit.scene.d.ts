@@ -45,10 +45,7 @@ export declare class BanditScene {
         y: number;
         name: string;
     }[];
-    buttlePart(enemyList?: any): {
-        logs: string;
-        enemyList: any;
-    };
+    buttlePart(enemyList: any): string;
     onSceneEnter(ctx: TelegrafContext): Promise<void>;
     onLeaveCommand(ctx: Scenes.SceneContext): Promise<void>;
     onSceneLeave(ctx: Scenes.SceneContext): Promise<void>;
