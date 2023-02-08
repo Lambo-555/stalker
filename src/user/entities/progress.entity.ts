@@ -9,7 +9,7 @@ export class ProgressEntity {
   user_id: number;
 
   @Column()
-  chapter_id: number;
+  chapter_code: string;
 
   @Column()
   chat_id: number;

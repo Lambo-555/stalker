@@ -15,10 +15,7 @@ export class UsersEntity {
   telegram_id?: number;
 
   @Column({ nullable: true })
-  location?: number;
-
-  @Column({ nullable: true })
-  inventory?: string;
+  location?: string;
 
   @Column()
   health?: number;

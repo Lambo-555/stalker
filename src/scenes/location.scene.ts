@@ -62,7 +62,7 @@ export class LocationScene {
     private readonly locationsRepository: Repository<LocationsEntity>,
     @InjectRepository(RoadsEntity)
     private readonly roadsRepository: Repository<RoadsEntity>,
-  ) { }
+  ) {}
 
   @SceneEnter()
   async onSceneEnter(@Ctx() ctx: TelegrafContext) {
@@ -77,7 +77,7 @@ export class LocationScene {
       },
     });
     const location: LocationsEntity = await this.locationsRepository.findOne({
-      where: { id: user.location },
+      where: { location: user.location },
     });
     const roads: RoadsEntity[] = await this.roadsRepository.find({
       where: { from: user.location },
@@ -85,7 +85,7 @@ export class LocationScene {
     const nextLocations: LocationsEntity[] = [];
     for await (const road of roads) {
       const locationsItem = await this.locationsRepository.findOne({
-        where: { id: road.to },
+        where: { location: road.to },
       });
       nextLocations.push(locationsItem);
     }
@@ -93,8 +93,8 @@ export class LocationScene {
       [
         ...nextLocations.map((locationItem) =>
           Markup.button.callback(
-            locationItem?.name,
-            'locationsXXX' + locationItem.id.toString(),
+            locationItem?.location,
+            'locationsXXX' + locationItem.location.toString(),
           ),
         ),
         Markup.button.callback('📍Остаться здесь', 'leave'),
@@ -106,7 +106,7 @@ export class LocationScene {
     await this.appService.updateDisplay(
       progress,
       keyboard,
-      `Вы находитесь в локации: "${location.name}". Куда вы хотите отправиться?`,
+      `Вы находитесь в локации: "${location.location}". Куда вы хотите отправиться?`,
       location.image,
     );
   }
@@ -115,17 +115,19 @@ export class LocationScene {
   async onChoose(@Ctx() ctx: TelegrafContext, @Next() next: NextFunction) {
     const match = ctx.match[0];
     if (!match) next();
-    const locationId = +match.split('XXX')[1]; // locationsXXX
+    const locationCode: string = match.split('XXX')[1]; // locationsXXX
     const location: LocationsEntity = await this.locationsRepository.findOne({
-      where: { id: locationId },
+      where: { location: locationCode },
     });
     const telegram_id: number =
       ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
     const user: UsersEntity = await this.usersRepository.findOne({
       where: { telegram_id: telegram_id },
     });
-    user.location = location.id || locationId;
-    await this.usersRepository.update({ id: user.id }, user);
+    await this.usersRepository.update(
+      { id: user.id },
+      { location: location.location || locationCode },
+    );
     await ctx.scene.reenter();
   }
 
@@ -147,7 +149,7 @@ export class LocationScene {
       },
     });
     const location: LocationsEntity = await this.locationsRepository.findOne({
-      where: { id: user.location },
+      where: { location: user.location },
     });
     const keyboard = Markup.inlineKeyboard([
       Markup.button.callback('Меню', 'menu'),

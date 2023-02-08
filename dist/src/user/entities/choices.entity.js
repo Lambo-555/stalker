@@ -19,16 +19,12 @@ __decorate([
 ], ChoicesEntity.prototype, "id", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
-    __metadata("design:type", Number)
-], ChoicesEntity.prototype, "chapter_id", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ default: 'default', nullable: true }),
     __metadata("design:type", String)
-], ChoicesEntity.prototype, "inventory_required", void 0);
+], ChoicesEntity.prototype, "code", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
-    __metadata("design:type", Number)
-], ChoicesEntity.prototype, "next_chapter_id", void 0);
+    __metadata("design:type", String)
+], ChoicesEntity.prototype, "next_code", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)

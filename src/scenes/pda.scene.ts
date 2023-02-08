@@ -66,7 +66,7 @@ export class PdaScene {
     });
     const userLocation: LocationsEntity =
       await this.locationsRepository.findOne({
-        where: { id: user.location },
+        where: { location: user.location },
       });
     const progress: ProgressEntity = await this.progressRepository.findOne({
       where: {
@@ -74,11 +74,11 @@ export class PdaScene {
       },
     });
     const nextChapter: ChaptersEntity = await this.chaptersRepository.findOne({
-      where: { id: progress.chapter_id },
+      where: { code: progress.chapter_code },
     });
     const locationId = nextChapter.location;
     const nextLocation = await this.locationsRepository.findOne({
-      where: { id: locationId },
+      where: { location: locationId },
     });
     const keyboard = Markup.inlineKeyboard([
       Markup.button.callback('Меню', 'menu'),
@@ -86,8 +86,8 @@ export class PdaScene {
     const pdaMenu = `
 📟 Вы смотрите в свой КПК(PDA)
 
-Текущая локация: ${userLocation.name}
-Целевая локация: ${nextLocation.name}`;
+Текущая локация: ${userLocation.location}
+Целевая локация: ${nextLocation.location}`;
     await this.appService.updateDisplay(
       progress,
       keyboard,

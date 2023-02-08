@@ -3,8 +3,7 @@ export declare class UsersEntity {
     name?: string;
     funds?: number;
     telegram_id?: number;
-    location?: number;
-    inventory?: string;
+    location?: string;
     health?: number;
     radiation?: number;
 }

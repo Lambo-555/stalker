@@ -6,12 +6,9 @@ export class RoadsEntity {
   id: number;
 
   @Column()
-  from?: number;
+  from?: string;
 
   @Column()
-  to?: number;
-
-  @Column()
-  is_open?: boolean;
+  to?: string;
 
 }

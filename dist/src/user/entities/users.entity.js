@@ -31,12 +31,8 @@ __decorate([
 ], UsersEntity.prototype, "telegram_id", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
-    __metadata("design:type", Number)
-], UsersEntity.prototype, "location", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
-], UsersEntity.prototype, "inventory", void 0);
+], UsersEntity.prototype, "location", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", Number)

@@ -38,151 +38,151 @@ import { ScenesEnum } from './enums/scenes.enum';
 
 @Scene(ScenesEnum.MUTANT)
 export class MutantScene {
-  private readonly logger = new Logger(MutantScene.name);
+  // private readonly logger = new Logger(MutantScene.name);
 
-  constructor(
-    private readonly appService: AppService,
-    @InjectRepository(UsersEntity)
-    private readonly usersRepository: Repository<UsersEntity>,
-    @InjectRepository(ChaptersEntity)
-    private readonly chaptersRepository: Repository<ChaptersEntity>,
-    @InjectRepository(ChoicesEntity)
-    private readonly choicesRepository: Repository<ChoicesEntity>,
-    @InjectRepository(ProgressEntity)
-    private readonly progressRepository: Repository<ProgressEntity>,
-    @InjectRepository(InventoryItems)
-    private readonly inventoryItemsRepository: Repository<InventoryItems>,
-    @InjectRepository(MutantsEntity)
-    private readonly mutantsRepository: Repository<MutantsEntity>,
-    @InjectRepository(LocationsEntity)
-    private readonly locationsRepository: Repository<LocationsEntity>,
+  // constructor(
+  //   private readonly appService: AppService,
+  //   @InjectRepository(UsersEntity)
+  //   private readonly usersRepository: Repository<UsersEntity>,
+  //   @InjectRepository(ChaptersEntity)
+  //   private readonly chaptersRepository: Repository<ChaptersEntity>,
+  //   @InjectRepository(ChoicesEntity)
+  //   private readonly choicesRepository: Repository<ChoicesEntity>,
+  //   @InjectRepository(ProgressEntity)
+  //   private readonly progressRepository: Repository<ProgressEntity>,
+  //   @InjectRepository(InventoryItems)
+  //   private readonly inventoryItemsRepository: Repository<InventoryItems>,
+  //   @InjectRepository(MutantsEntity)
+  //   private readonly mutantsRepository: Repository<MutantsEntity>,
+  //   @InjectRepository(LocationsEntity)
+  //   private readonly locationsRepository: Repository<LocationsEntity>,
 
-  ) {}
+  // ) {}
 
-  @Use()
-  async onRegister(@Ctx() ctx: TelegrafContext, @Next() next: NextFunction) {
-    const telegram_id: number =
-      ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
-    const user: UsersEntity = await this.usersRepository.findOne({
-      where: { telegram_id: telegram_id },
-    });
-    if (user) {
-      const progress = await this.progressRepository.findOne({
-        where: { user_id: user.id },
-      });
-      if (!progress) {
-        // const lastChapter = await this.chaptersRepository.findOne({
-        //   order: { id: 1 },
-        //   where: { content: Like('Один из грузовиков%') },
-        // });
-        await this.progressRepository.save({
-          user_id: user.id,
-          chapter_id: 90, //lastChapter.id,
-        });
-      }
-    } else {
-      const location = await this.locationsRepository.findOne({
-        where: { name: 'Кордон' },
-      });
-      const userRegistered: UsersEntity = await this.usersRepository.save({
-        telegram_id: telegram_id,
-        location: location.id,
-      });
-      const lastChapter = await this.chaptersRepository.findOne({
-        order: { id: 1 },
-        where: { content: Like('Один из грузовиков%') },
-      });
-      await this.progressRepository.save({
-        user_id: userRegistered.id,
-        chapter_id: 90, // lastChapter.id,
-        location: location.id,
-      });
-      this.logger.debug(JSON.stringify(userRegistered, null, 2));
-    }
-    next();
-  }
+  // @Use()
+  // async onRegister(@Ctx() ctx: TelegrafContext, @Next() next: NextFunction) {
+  //   const telegram_id: number =
+  //     ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
+  //   const user: UsersEntity = await this.usersRepository.findOne({
+  //     where: { telegram_id: telegram_id },
+  //   });
+  //   if (user) {
+  //     const progress = await this.progressRepository.findOne({
+  //       where: { user_id: user.id },
+  //     });
+  //     if (!progress) {
+  //       // const lastChapter = await this.chaptersRepository.findOne({
+  //       //   order: { id: 1 },
+  //       //   where: { content: Like('Один из грузовиков%') },
+  //       // });
+  //       await this.progressRepository.save({
+  //         user_id: user.id,
+  //         chapter_id: 90, //lastChapter.id,
+  //       });
+  //     }
+  //   } else {
+  //     const location = await this.locationsRepository.findOne({
+  //       where: { name: 'Кордон' },
+  //     });
+  //     const userRegistered: UsersEntity = await this.usersRepository.save({
+  //       telegram_id: telegram_id,
+  //       location: location.id,
+  //     });
+  //     const lastChapter = await this.chaptersRepository.findOne({
+  //       order: { id: 1 },
+  //       where: { content: Like('Один из грузовиков%') },
+  //     });
+  //     await this.progressRepository.save({
+  //       user_id: userRegistered.id,
+  //       chapter_id: 90, // lastChapter.id,
+  //       location: location.id,
+  //     });
+  //     this.logger.debug(JSON.stringify(userRegistered, null, 2));
+  //   }
+  //   next();
+  // }
 
-  @SceneEnter()
-  async onSceneEnter(@Ctx() ctx: TelegrafContext) {
-    const telegram_id: number =
-      ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
-    const user: UsersEntity = await this.usersRepository.findOne({
-      where: { telegram_id: telegram_id },
-    });
-    const mutantList = await this.mutantsRepository.find();
-    const partList = ['плечо', 'лицо', 'ноги', 'живот', 'грудь', 'руки'];
-    const mutant = this.appService.getRandomElInArr(mutantList);
-    await ctx.reply(
-      `Вы встретили мутанта: "${mutant.name}". Итоги боя\n` +
-        this.battle(mutant, user),
-    );
-    await ctx.scene.leave();
-  }
+  // @SceneEnter()
+  // async onSceneEnter(@Ctx() ctx: TelegrafContext) {
+  //   const telegram_id: number =
+  //     ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
+  //   const user: UsersEntity = await this.usersRepository.findOne({
+  //     where: { telegram_id: telegram_id },
+  //   });
+  //   const mutantList = await this.mutantsRepository.find();
+  //   const partList = ['плечо', 'лицо', 'ноги', 'живот', 'грудь', 'руки'];
+  //   const mutant = this.appService.getRandomElInArr(mutantList);
+  //   await ctx.reply(
+  //     `Вы встретили мутанта: "${mutant.name}". Итоги боя\n` +
+  //       this.battle(mutant, user),
+  //   );
+  //   await ctx.scene.leave();
+  // }
 
-  battleHitText(damage) {
-    const options = [
-      'нанес вам урон на ' + damage,
-      'нанес урон вашему телу на ' + damage,
-      'повредил вас, отобрав ' + damage,
-      'нанес увечья на ' + damage,
-      'нанес травмы ровно на ' + damage,
-      'вы впитали урон, равный ' + damage,
-      'покалечил вас ударом на ' + damage,
-    ];
-    return this.appService.getRandomElInArr(options);
-  }
+  // battleHitText(damage) {
+  //   const options = [
+  //     'нанес вам урон на ' + damage,
+  //     'нанес урон вашему телу на ' + damage,
+  //     'повредил вас, отобрав ' + damage,
+  //     'нанес увечья на ' + damage,
+  //     'нанес травмы ровно на ' + damage,
+  //     'вы впитали урон, равный ' + damage,
+  //     'покалечил вас ударом на ' + damage,
+  //   ];
+  //   return this.appService.getRandomElInArr(options);
+  // }
 
-  battle(enemy: MutantsEntity, user: UsersEntity, text = ''): string {
-    const agilityUser = 5;
-    const agilityEnemy = 1;
-    let dodgeUser = false;
-    let dodgeEnemy = false;
-    if (agilityUser >= agilityEnemy) {
-      dodgeUser =
-        Math.random() * ((agilityUser - agilityEnemy) * 10) >
-        Math.random() * 100;
-    } else {
-      dodgeEnemy =
-        Math.random() * ((agilityEnemy - agilityUser) * 10) >
-        Math.random() * 100;
-    }
-    let randomModifier = Math.random() * 0.5 + 0.75;
-    let enemyDamage = 0;
-    const userDamage = !dodgeEnemy ? Math.floor(250 * randomModifier) : 0;
-    for (let i = 0; i < enemy.actions; i++) {
-      randomModifier = Math.random() * 0.5 + 0.75;
-      dodgeUser =
-        Math.random() * ((agilityUser - agilityEnemy) * 10) >
-        Math.random() * 100;
-      dodgeEnemy =
-        Math.random() * ((agilityEnemy - agilityUser) * 10) >
-        Math.random() * 100;
-      enemyDamage = !dodgeUser
-        ? Math.floor((enemy.damage * randomModifier) / enemy.actions)
-        : 0;
-      user.health -= enemyDamage;
-      text += `\nХод врага ${i + 1}) ${enemy.name} - ${this.battleHitText(
-        enemyDamage,
-      )} HP.${dodgeUser ? '\n🍀 Уклонение.' : ''}\nВаше 🫀: ${
-        user.health <= 0 ? 0 : user.health
-      }\n`;
-      if (user.health <= 0) {
-        text += '\n☠️ Вы проиграли. Зона забрала вас.';
-        return text;
-      }
-    }
-    for (let i = 0; i < 7; i++) {
-      enemy.health -= userDamage;
-      text += `\nХод ${i + 1}) Вы нанесли ${enemyDamage} урона ▶️ ${enemy.name} ${dodgeEnemy ? '\nВраг уклониося 🍀.' : ''}\nВражеское 🫀: ${
-        enemy.health <= 0 ? 0 : enemy.health
-      }\n`;
-      if (enemy.health <= 0) {
-        text += `\n${enemy.name} теперь никого не побеспокоит.`;
-        return text;
-      }
-    }
-    return this.battle(enemy, user, text);
-  }
+  // battle(enemy: MutantsEntity, user: UsersEntity, text = ''): string {
+  //   const agilityUser = 5;
+  //   const agilityEnemy = 1;
+  //   let dodgeUser = false;
+  //   let dodgeEnemy = false;
+  //   if (agilityUser >= agilityEnemy) {
+  //     dodgeUser =
+  //       Math.random() * ((agilityUser - agilityEnemy) * 10) >
+  //       Math.random() * 100;
+  //   } else {
+  //     dodgeEnemy =
+  //       Math.random() * ((agilityEnemy - agilityUser) * 10) >
+  //       Math.random() * 100;
+  //   }
+  //   let randomModifier = Math.random() * 0.5 + 0.75;
+  //   let enemyDamage = 0;
+  //   const userDamage = !dodgeEnemy ? Math.floor(250 * randomModifier) : 0;
+  //   for (let i = 0; i < enemy.actions; i++) {
+  //     randomModifier = Math.random() * 0.5 + 0.75;
+  //     dodgeUser =
+  //       Math.random() * ((agilityUser - agilityEnemy) * 10) >
+  //       Math.random() * 100;
+  //     dodgeEnemy =
+  //       Math.random() * ((agilityEnemy - agilityUser) * 10) >
+  //       Math.random() * 100;
+  //     enemyDamage = !dodgeUser
+  //       ? Math.floor((enemy.damage * randomModifier) / enemy.actions)
+  //       : 0;
+  //     user.health -= enemyDamage;
+  //     text += `\nХод врага ${i + 1}) ${enemy.name} - ${this.battleHitText(
+  //       enemyDamage,
+  //     )} HP.${dodgeUser ? '\n🍀 Уклонение.' : ''}\nВаше 🫀: ${
+  //       user.health <= 0 ? 0 : user.health
+  //     }\n`;
+  //     if (user.health <= 0) {
+  //       text += '\n☠️ Вы проиграли. Зона забрала вас.';
+  //       return text;
+  //     }
+  //   }
+  //   for (let i = 0; i < 7; i++) {
+  //     enemy.health -= userDamage;
+  //     text += `\nХод ${i + 1}) Вы нанесли ${enemyDamage} урона ▶️ ${enemy.name} ${dodgeEnemy ? '\nВраг уклониося 🍀.' : ''}\nВражеское 🫀: ${
+  //       enemy.health <= 0 ? 0 : enemy.health
+  //     }\n`;
+  //     if (enemy.health <= 0) {
+  //       text += `\n${enemy.name} теперь никого не побеспокоит.`;
+  //       return text;
+  //     }
+  //   }
+  //   return this.battle(enemy, user, text);
+  // }
 
   //   @Use()
   //   async actionsMiddleware(

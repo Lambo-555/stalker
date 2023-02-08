@@ -1,7 +1,7 @@
 export declare class ChaptersEntity {
-    id: number;
+    code: string;
     character?: string;
     content?: string;
-    location: number;
     image?: string;
+    location?: string;
 }

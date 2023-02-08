@@ -64,7 +64,7 @@ let LocationScene = LocationScene_1 = class LocationScene {
             },
         });
         const location = await this.locationsRepository.findOne({
-            where: { id: user.location },
+            where: { location: user.location },
         });
         const roads = await this.roadsRepository.find({
             where: { from: user.location },
@@ -77,7 +77,7 @@ let LocationScene = LocationScene_1 = class LocationScene {
                 try {
                     const road = _c;
                     const locationsItem = await this.locationsRepository.findOne({
-                        where: { id: road.to },
+                        where: { location: road.to },
                     });
                     nextLocations.push(locationsItem);
                 }
@@ -94,28 +94,27 @@ let LocationScene = LocationScene_1 = class LocationScene {
             finally { if (e_1) throw e_1.error; }
         }
         const keyboard = telegraf_1.Markup.inlineKeyboard([
-            ...nextLocations.map((locationItem) => telegraf_1.Markup.button.callback(locationItem === null || locationItem === void 0 ? void 0 : locationItem.name, 'locationsXXX' + locationItem.id.toString())),
+            ...nextLocations.map((locationItem) => telegraf_1.Markup.button.callback(locationItem === null || locationItem === void 0 ? void 0 : locationItem.location, 'locationsXXX' + locationItem.location.toString())),
             telegraf_1.Markup.button.callback('📍Остаться здесь', 'leave'),
         ], {
             columns: 1,
         }).reply_markup;
-        await this.appService.updateDisplay(progress, keyboard, `Вы находитесь в локации: "${location.name}". Куда вы хотите отправиться?`, location.image);
+        await this.appService.updateDisplay(progress, keyboard, `Вы находитесь в локации: "${location.location}". Куда вы хотите отправиться?`, location.image);
     }
     async onChoose(ctx, next) {
         var _a, _b, _c;
         const match = ctx.match[0];
         if (!match)
             next();
-        const locationId = +match.split('XXX')[1];
+        const locationCode = match.split('XXX')[1];
         const location = await this.locationsRepository.findOne({
-            where: { id: locationId },
+            where: { location: locationCode },
         });
         const telegram_id = ((_a = ctx === null || ctx === void 0 ? void 0 : ctx.message) === null || _a === void 0 ? void 0 : _a.from.id) || ((_c = (_b = ctx === null || ctx === void 0 ? void 0 : ctx.callbackQuery) === null || _b === void 0 ? void 0 : _b.from) === null || _c === void 0 ? void 0 : _c.id);
         const user = await this.usersRepository.findOne({
             where: { telegram_id: telegram_id },
         });
-        user.location = location.id || locationId;
-        await this.usersRepository.update({ id: user.id }, user);
+        await this.usersRepository.update({ id: user.id }, { location: location.location || locationCode });
         await ctx.scene.reenter();
     }
     async onLeaveCommand(ctx) {
@@ -133,7 +132,7 @@ let LocationScene = LocationScene_1 = class LocationScene {
             },
         });
         const location = await this.locationsRepository.findOne({
-            where: { id: user.location },
+            where: { location: user.location },
         });
         const keyboard = telegraf_1.Markup.inlineKeyboard([
             telegraf_1.Markup.button.callback('Меню', 'menu'),

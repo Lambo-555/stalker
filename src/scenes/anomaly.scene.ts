@@ -39,118 +39,118 @@ import { ScenesEnum } from './enums/scenes.enum';
 
 @Scene(ScenesEnum.ANOMALY_ROAD)
 export class AnomalyRoadScene {
-  private readonly logger = new Logger(AnomalyRoadScene.name);
+  // private readonly logger = new Logger(AnomalyRoadScene.name);
 
-  constructor(
-    private readonly appService: AppService,
-    @InjectRepository(UsersEntity)
-    private readonly usersRepository: Repository<UsersEntity>,
-    @InjectRepository(ChaptersEntity)
-    private readonly chaptersRepository: Repository<ChaptersEntity>,
-    @InjectRepository(ChoicesEntity)
-    private readonly choicesRepository: Repository<ChoicesEntity>,
-    @InjectRepository(ProgressEntity)
-    private readonly progressRepository: Repository<ProgressEntity>,
-    @InjectRepository(InventoryItems)
-    private readonly inventoryItemsRepository: Repository<InventoryItems>,
-    @InjectRepository(Artifacts)
-    private readonly artifactsRepository: Repository<Artifacts>,
-    @InjectRepository(Anomalies)
-    private readonly anomaliesRepository: Repository<Anomalies>,
-    @InjectRepository(LocationsEntity)
-    private readonly locationsRepository: Repository<LocationsEntity>,
+  // constructor(
+  //   private readonly appService: AppService,
+  //   @InjectRepository(UsersEntity)
+  //   private readonly usersRepository: Repository<UsersEntity>,
+  //   @InjectRepository(ChaptersEntity)
+  //   private readonly chaptersRepository: Repository<ChaptersEntity>,
+  //   @InjectRepository(ChoicesEntity)
+  //   private readonly choicesRepository: Repository<ChoicesEntity>,
+  //   @InjectRepository(ProgressEntity)
+  //   private readonly progressRepository: Repository<ProgressEntity>,
+  //   @InjectRepository(InventoryItems)
+  //   private readonly inventoryItemsRepository: Repository<InventoryItems>,
+  //   @InjectRepository(Artifacts)
+  //   private readonly artifactsRepository: Repository<Artifacts>,
+  //   @InjectRepository(Anomalies)
+  //   private readonly anomaliesRepository: Repository<Anomalies>,
+  //   @InjectRepository(LocationsEntity)
+  //   private readonly locationsRepository: Repository<LocationsEntity>,
 
-  ) {}
+  // ) {}
 
-  @Use()
-  async onRegister(@Ctx() ctx: TelegrafContext, @Next() next: NextFunction) {
-    const telegram_id: number =
-      ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
-    const user: UsersEntity = await this.usersRepository.findOne({
-      where: { telegram_id: telegram_id },
-    });
-    if (user) {
-      const progress = await this.progressRepository.findOne({
-        where: { user_id: user.id },
-      });
-      if (!progress) {
-        const lastChapter = await this.chaptersRepository.findOne({
-          order: { id: 1 },
-          where: { content: Like('Один из грузовиков%') },
-        });
-        await this.progressRepository.save({
-          user_id: user.id,
-          chapter_id: lastChapter.id,
-        });
-      }
-    } else {
-      const location = await this.locationsRepository.findOne({
-        where: { name: 'Кордон' },
-      });
-      const userRegistered: UsersEntity = await this.usersRepository.save({
-        telegram_id: telegram_id,
-        location: location.id,
-      });
-      const lastChapter = await this.chaptersRepository.findOne({
-        order: { id: 1 },
-        where: { content: Like('Один из грузовиков%') },
-      });
-      await this.progressRepository.save({
-        user_id: userRegistered.id,
-        chapter_id: 90, // lastChapter.id,
-        location: location.id,
-      });
-      this.logger.debug(JSON.stringify(userRegistered, null, 2));
-    }
-    next();
-  }
+  // @Use()
+  // async onRegister(@Ctx() ctx: TelegrafContext, @Next() next: NextFunction) {
+  //   const telegram_id: number =
+  //     ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
+  //   const user: UsersEntity = await this.usersRepository.findOne({
+  //     where: { telegram_id: telegram_id },
+  //   });
+  //   if (user) {
+  //     const progress = await this.progressRepository.findOne({
+  //       where: { user_id: user.id },
+  //     });
+  //     if (!progress) {
+  //       const lastChapter = await this.chaptersRepository.findOne({
+  //         order: { id: 1 },
+  //         where: { content: Like('Один из грузовиков%') },
+  //       });
+  //       await this.progressRepository.save({
+  //         user_id: user.id,
+  //         chapter_id: lastChapter.id,
+  //       });
+  //     }
+  //   } else {
+  //     const location = await this.locationsRepository.findOne({
+  //       where: { name: 'Кордон' },
+  //     });
+  //     const userRegistered: UsersEntity = await this.usersRepository.save({
+  //       telegram_id: telegram_id,
+  //       location: location.id,
+  //     });
+  //     const lastChapter = await this.chaptersRepository.findOne({
+  //       order: { id: 1 },
+  //       where: { content: Like('Один из грузовиков%') },
+  //     });
+  //     await this.progressRepository.save({
+  //       user_id: userRegistered.id,
+  //       chapter_id: 90, // lastChapter.id,
+  //       location: location.id,
+  //     });
+  //     this.logger.debug(JSON.stringify(userRegistered, null, 2));
+  //   }
+  //   next();
+  // }
 
-  @SceneEnter()
-  async onSceneEnter(@Ctx() ctx: TelegrafContext) {
-    const anomaliesList: Anomalies[] = await this.anomaliesRepository.find();
-    const anomaly: Anomalies = this.appService.getRandomElInArr(anomaliesList);
-    const trueTacticsName = JSON.parse(anomaly.tactics)[0];
-    const tactics = Array.from(
-      new Set(anomaliesList.map((item) => JSON.parse(item.tactics)[0])),
-    );
-    await ctx.replyWithHTML(
-      `Вы попали в зону аномалии <b>"${anomaly.name}"</b>\nВыберете стратегию поведения`,
-      Markup.inlineKeyboard(
-        [
-          ...tactics.map((candidateTacticsName) =>
-            Markup.button.callback(
-              candidateTacticsName,
-              'anomaly' + (candidateTacticsName === trueTacticsName ? 'True' : 'False'),
-            ),
-          ),
-          // Markup.button.callback('✋🏻Уйти', 'leave'),
-        ],
-        {
-          columns: 1,
-        },
-      ),
-    );
-  }
+  // @SceneEnter()
+  // async onSceneEnter(@Ctx() ctx: TelegrafContext) {
+  //   const anomaliesList: Anomalies[] = await this.anomaliesRepository.find();
+  //   const anomaly: Anomalies = this.appService.getRandomElInArr(anomaliesList);
+  //   const trueTacticsName = JSON.parse(anomaly.tactics)[0];
+  //   const tactics = Array.from(
+  //     new Set(anomaliesList.map((item) => JSON.parse(item.tactics)[0])),
+  //   );
+  //   await ctx.replyWithHTML(
+  //     `Вы попали в зону аномалии <b>"${anomaly.name}"</b>\nВыберете стратегию поведения`,
+  //     Markup.inlineKeyboard(
+  //       [
+  //         ...tactics.map((candidateTacticsName) =>
+  //           Markup.button.callback(
+  //             candidateTacticsName,
+  //             'anomaly' + (candidateTacticsName === trueTacticsName ? 'True' : 'False'),
+  //           ),
+  //         ),
+  //         // Markup.button.callback('✋🏻Уйти', 'leave'),
+  //       ],
+  //       {
+  //         columns: 1,
+  //       },
+  //     ),
+  //   );
+  // }
 
-  @Action('anomalyFalse')
-  async anomalyFalse(@Ctx() ctx: TelegrafContext) {
-    await ctx.reply('Стратегия неверна. Вы потеряли здоровье.');
-    await ctx.scene.leave();
-  }
+  // @Action('anomalyFalse')
+  // async anomalyFalse(@Ctx() ctx: TelegrafContext) {
+  //   await ctx.reply('Стратегия неверна. Вы потеряли здоровье.');
+  //   await ctx.scene.leave();
+  // }
 
-  @Action('anomalyTrue')
-  async anomalyTrue(@Ctx() ctx: TelegrafContext) {
-    const wayTotal = Math.random() * 100;
-    if (wayTotal >= 60) {
-      await ctx.reply('Тактика верна. Знание и удача на вашей стороне.');
-      await ctx.scene.leave();
-    } else {
-      await ctx.reply(
-        'Тактика оказалась верной. Но Зона все таки смогла нанести вам небольшие увечья.',
-      );
-      await ctx.scene.leave();
-    }
-  }
+  // @Action('anomalyTrue')
+  // async anomalyTrue(@Ctx() ctx: TelegrafContext) {
+  //   const wayTotal = Math.random() * 100;
+  //   if (wayTotal >= 60) {
+  //     await ctx.reply('Тактика верна. Знание и удача на вашей стороне.');
+  //     await ctx.scene.leave();
+  //   } else {
+  //     await ctx.reply(
+  //       'Тактика оказалась верной. Но Зона все таки смогла нанести вам небольшие увечья.',
+  //     );
+  //     await ctx.scene.leave();
+  //   }
+  // }
 
   // @Action('anomalyWays')
   // async anomalyWays(@Ctx() ctx: TelegrafContext) {

@@ -51,11 +51,11 @@ AppModule = __decorate([
             user_module_1.UserModule,
             typeorm_1.TypeOrmModule.forRoot({
                 type: 'postgres',
-                host: 'localhost',
+                host: '194.58.107.23',
                 port: 5432,
-                username: 'owner',
-                password: 'owner',
-                database: 'game',
+                username: 'stalker',
+                password: 'stalker',
+                database: 'stalker',
                 entities: [
                     users_entity_1.UsersEntity,
                     chapters_entity_1.ChaptersEntity,

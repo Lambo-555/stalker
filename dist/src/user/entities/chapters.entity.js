@@ -15,8 +15,8 @@ let ChaptersEntity = class ChaptersEntity {
 };
 __decorate([
     (0, typeorm_1.PrimaryGeneratedColumn)(),
-    __metadata("design:type", Number)
-], ChaptersEntity.prototype, "id", void 0);
+    __metadata("design:type", String)
+], ChaptersEntity.prototype, "code", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
@@ -27,12 +27,12 @@ __decorate([
 ], ChaptersEntity.prototype, "content", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
-    __metadata("design:type", Number)
-], ChaptersEntity.prototype, "location", void 0);
+    __metadata("design:type", String)
+], ChaptersEntity.prototype, "image", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", String)
-], ChaptersEntity.prototype, "image", void 0);
+], ChaptersEntity.prototype, "location", void 0);
 ChaptersEntity = __decorate([
     (0, typeorm_1.Entity)('chapters')
 ], ChaptersEntity);

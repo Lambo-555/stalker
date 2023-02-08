@@ -1,5 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
-// import { MongoLibPlayerService } from 'libs/mongo-lib/src';
+import { Injectable, Logger } from '@nestjs/common';
 import {
   Update,
   Command,
@@ -7,9 +6,7 @@ import {
   Use,
   Next,
   Action,
-  Message,
   Start,
-  SceneEnter,
   InjectBot,
 } from 'nestjs-telegraf';
 import { Context, Markup, Scenes, Telegraf } from 'telegraf';
@@ -25,11 +22,6 @@ import { ProgressEntity } from './user/entities/progress.entity';
 import { InventoryItems } from './user/entities/inventory_items.entity';
 import { ScenesEnum } from './scenes/enums/scenes.enum';
 import { LocationsEntity } from './user/entities/locations.entity';
-import {
-  InlineKeyboardButton,
-  InlineKeyboardMarkup,
-} from 'telegraf/typings/core/types/typegram';
-import { inlineKeyboard, keyboard } from 'telegraf/typings/markup';
 
 @Update()
 @Injectable()
@@ -76,48 +68,58 @@ export default class AppUpdate {
         await this.bot.telegram.deleteMessage(chatID, messageID);
       }
       const telegram_id = this.appService.getTelegramId(ctx);
-      let user: UsersEntity = await this.usersRepository.findOne({
+
+      let player: UsersEntity = await this.usersRepository.findOne({
         where: { telegram_id: telegram_id },
       });
-      let progress: ProgressEntity = await this.progressRepository.findOne({
-        where: { user_id: user?.id },
+      let playerProgress: ProgressEntity =
+        await this.progressRepository.findOne({
+          where: { user_id: player?.id },
+        });
+      let playerLocation = await this.locationsRepository.findOne({
+        where: { location: player?.location },
       });
-      if (!user) {
-        const location = await this.locationsRepository.findOne({
-          where: { id: 1 },
+      if (!player || !playerLocation || !playerProgress) {
+        playerLocation = await this.locationsRepository.findOne({
+          where: { location: 'Кордон - Бункер Сидоровича' },
         });
-        user = await this.usersRepository.save({
+        player = await this.usersRepository.save({
           telegram_id: telegram_id,
-          location: location.id,
+          location: playerLocation.location,
         });
-        const lastChapter = await this.chaptersRepository.findOne({
-          where: { content: Like('Один из грузовиков%') },
-        });
-        progress = await this.progressRepository.save({
-          user_id: user.id,
-          chapter_id: lastChapter.id,
-          location: location.id,
-        });
+        if (!playerProgress) {
+          const lastChapter = await this.chaptersRepository.findOne({
+            where: { content: Like('Один из грузовиков%') },
+          });
+          playerProgress = await this.progressRepository.save({
+            user_id: player.id,
+            chapter_code: lastChapter.code,
+            location: playerLocation.location,
+          });
+        }
       }
-      if (!progress?.chat_id || !progress?.message_display_id) {
+      if (!playerProgress?.chat_id || !playerProgress?.message_display_id) {
         const imgLink = this.appService.escapeText('https://clck.ru/33PBvE');
         const keyboard = Markup.inlineKeyboard([
           Markup.button.callback('Меню', 'menu'),
         ]).reply_markup;
         const messageDisplay = await ctx.replyWithPhoto(imgLink, {
           caption: 'Display',
-          // @ts-ignore 
+          // @ts-ignore
           has_spoiler: true,
           // parse_mode: 'Markdown2',
           //@ts-ignore
           reply_markup: keyboard,
         });
-        await this.progressRepository.update(progress?.progress_id, {
-          chat_id: messageDisplay.chat.id,
-          message_display_id: messageDisplay.message_id,
-        });
-        progress = await this.progressRepository.findOne({
-          where: { user_id: user?.id },
+        const playerProgressUpdate = await this.progressRepository.update(
+          playerProgress.progress_id,
+          {
+            chat_id: messageDisplay.chat.id,
+            message_display_id: messageDisplay.message_id,
+          },
+        );
+        playerProgress = await this.progressRepository.findOne({
+          where: { user_id: player?.id },
         });
       }
       next();
@@ -142,20 +144,19 @@ export default class AppUpdate {
         where: { content: Like('Один из грузовиков%') },
       });
       const location = await this.locationsRepository.findOne({
-        where: { id: 1 },
+        where: { location: 'Кордон - Бункер Сидоровича' },
       });
       if (!progress) {
         progress = await this.progressRepository.save({
           user_id: user.id,
-          chapter_id: lastChapter.id,
-          location: location.id,
+          chapter_code: lastChapter.code,
+          location: location.location,
         });
       }
       let chapter: ChaptersEntity = await this.chaptersRepository.findOne({
-        where: { id: progress.chapter_id },
+        where: { code: progress.chapter_code },
       });
       const starterChapter = await this.chaptersRepository.findOne({
-        order: { id: 1 },
         where: { content: Like('Один из грузовиков%') },
       });
       if (!chapter && starterChapter) {
@@ -163,12 +164,15 @@ export default class AppUpdate {
       }
       const locations: LocationsEntity = await this.locationsRepository.findOne(
         {
-          where: { id: user.location },
+          where: { location: user.location },
         },
       );
-      const nextChapter: ChaptersEntity = await this.chaptersRepository.findOne(
+      const chapterNext: ChaptersEntity = await this.chaptersRepository.findOne(
         {
-          where: { id: progress?.chapter_id, location: locations?.id },
+          where: {
+            code: progress?.chapter_code,
+            location: locations?.location,
+          },
         },
       );
 
@@ -178,7 +182,7 @@ export default class AppUpdate {
           Markup.button.callback('📍Перемещение', ScenesEnum.LOCATION),
           Markup.button.callback('☠️Бандиты', ScenesEnum.BANDIT),
           Markup.button.callback('📟PDA', 'PDA'),
-          Markup.button.callback('☢️История', ScenesEnum.QUEST, !!!nextChapter),
+          Markup.button.callback('☢️История', ScenesEnum.QUEST, !!!chapterNext),
         ],
         {
           columns: 1,
@@ -187,7 +191,7 @@ export default class AppUpdate {
       this.appService.updateDisplay(
         progress,
         keyboard,
-        this.appService.escapeText(`Вы на локации: ${locations?.name}.`),
+        this.appService.escapeText(`Вы на локации: ${locations?.location}.`),
         locations.image,
       );
     } catch (error) {

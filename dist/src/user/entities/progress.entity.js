@@ -23,8 +23,8 @@ __decorate([
 ], ProgressEntity.prototype, "user_id", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
-    __metadata("design:type", Number)
-], ProgressEntity.prototype, "chapter_id", void 0);
+    __metadata("design:type", String)
+], ProgressEntity.prototype, "chapter_code", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", Number)

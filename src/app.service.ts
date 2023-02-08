@@ -16,7 +16,7 @@ import { ScenesEnum } from './scenes/enums/scenes.enum';
 export class AppService {
   private readonly algorithm = 'aes-256-ctr';
   private readonly secretKey = 'vOVH6sdmpNWjRRIqCc7rdxs01lwHzfr3';
-  constructor(@InjectBot() private bot: Telegraf<Scenes.SceneContext>) { }
+  constructor(@InjectBot() private bot: Telegraf<Scenes.SceneContext>) {}
 
   encrypt(text) {
     const iv = crypto.randomBytes(16);
@@ -86,7 +86,11 @@ export class AppService {
         null,
         {
           type: 'photo',
-          media: this.escapeText(photoLink) || this.escapeText('https://media2.giphy.com/media/z6UjsCa1Pq4QoMtkNR/giphy.gif?cid=790b76115ebeebe0c7ac50b73f0eb536c3f7dcaf33451941&rid=giphy.gif&ct=g'), // this.escapeText(photoLink) || 
+          media:
+            this.escapeText(photoLink) ||
+            this.escapeText(
+              'https://media2.giphy.com/media/z6UjsCa1Pq4QoMtkNR/giphy.gif?cid=790b76115ebeebe0c7ac50b73f0eb536c3f7dcaf33451941&rid=giphy.gif&ct=g',
+            ), // this.escapeText(photoLink) ||
           caption: this.escapeText(caption) || 'подпись медиа',
           // parse_mode: 'MarkdownV2',
         },

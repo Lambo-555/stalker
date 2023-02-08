@@ -103,7 +103,7 @@ let BanditScene = BanditScene_1 = class BanditScene {
             'Маслинник',
         ];
         const enemies = [];
-        const enemiesTargetCount = Math.floor(Math.random() * 2) + 3;
+        const enemiesTargetCount = Math.floor(Math.random() * 2) + 1;
         while ((enemies === null || enemies === void 0 ? void 0 : enemies.length) !== enemiesTargetCount) {
             const x = Math.floor(Math.random() * 200);
             const y = Math.floor(Math.random() * 200);
@@ -135,71 +135,71 @@ let BanditScene = BanditScene_1 = class BanditScene {
             'В молоко',
         ];
         let logs = '';
-        for (let i = 0; i < enemyList.length; i++) {
-            const enemyPos = enemyList[i];
-            const playerPos = { x: 0, y: 0 };
-            const distance = this.calculateDistance(enemyPos, playerPos);
-            const shoots = 3 || 1 || 5;
-            const shootWord = shoots === 1 ? 'выстрелу' : shoots === 5 ? 'выстрелов' : 'выстрела';
-            logs += `Вы стреляете очередью по ${shoots}🔥 ${shootWord} в ответ.\n`;
-            logs += 'Расстояние: ' + distance;
-            let damageToEnemy = 0;
-            let damageToPlayer = 0;
-            let j = 0;
-            while (damageToEnemy < 100 || damageToPlayer < 100) {
-                j++;
-                const shootIndex = (j + 3) % shoots;
-                if (shootIndex === 0) {
-                    damageToPlayer += Math.floor(25 + Math.random() * 25);
-                    logs += `\nВам снесли ${damageToPlayer}🫀, осталось ${Math.max(100 - damageToPlayer, 0)}🫀, сейчас стрелял ${enemyPos.name}\n`;
-                }
-                if (damageToPlayer >= 100) {
-                    logs += '\nВы убиты.';
-                    enemyList.splice(i, 1);
-                    break;
-                }
-                if (damageToEnemy >= 100) {
-                    logs += '\nВраг ' + enemyPos.name + ' убит.';
-                    enemyList.splice(i, 1);
-                    break;
-                }
-                logs += '\nВыстрел: ';
-                const spread = this.calculateSpread(shootIndex, distance);
-                const damage = this.calculateDamage(distance, 120);
-                const chanceToShoot = 100 - spread;
-                const shootIsOk = 100 * Math.random() <= chanceToShoot;
-                if (shootIsOk)
-                    damageToEnemy += damage;
-                logs += 'Разброс: ' + spread + '%.  ';
-                logs += 'Урон: ' + damage + 'хп. ';
-                const phrasesIndex = Math.floor(Math.random() * phrasesShot.length);
-                const phraseShot = phrasesShot[phrasesIndex];
-                const phrasesMissIndex = Math.floor(Math.random() * phrasesMiss.length);
-                const phraseMiss = phrasesMiss[phrasesMissIndex];
-                logs += shootIsOk
-                    ? 'Пападание. ' + phraseShot
-                    : 'Промах. ' + phraseMiss;
+        let damageToEnemy = 0;
+        let damageToPlayer = 0;
+        while (enemyList.length !== 0) {
+            const enemy = enemyList[0];
+            const distancePlayers = this.calculateDistance(enemy, { x: 0, y: 0 });
+            const spread = this.calculateSpread(1, distancePlayers);
+            logs += `\nДистанция:${distancePlayers}. Разлетность: ${spread}%`;
+            const phrasesIndex = Math.floor(Math.random() * phrasesShot.length);
+            const phraseShot = phrasesShot[phrasesIndex];
+            const phrasesMissIndex = Math.floor(Math.random() * phrasesMiss.length);
+            const phraseMiss = phrasesMiss[phrasesMissIndex];
+            const damageToEnemyNow = this.calculateDamage(distancePlayers, 120);
+            const isShotToEnemy = Math.random() * 100 >= spread;
+            if (isShotToEnemy) {
+                logs += `\n${enemy.name}: ${phraseShot}\n`;
+                damageToEnemy += damageToEnemyNow;
+                logs += `Урон по врагу: ${damageToEnemyNow}\n`;
             }
-            logs += '\nИтоговый урон: ' + damageToEnemy + '\n\n';
-            damageToEnemy = 0;
+            else {
+                logs += `\n${enemy.name}: ${phraseMiss}\n`;
+                logs += `Урон по врагу не прошел.\n`;
+            }
+            const damageToPlayerNow = this.calculateDamage(distancePlayers, 45);
+            const isShotToPlayer = Math.random() * 100 >= spread;
+            if (isShotToPlayer) {
+                damageToPlayer += damageToPlayerNow;
+                logs += `Ответный урон по вам: ${damageToPlayerNow}\n`;
+            }
+            else {
+                logs += `Ответный урон по вам не прошел\n`;
+            }
+            if (damageToEnemy >= 75) {
+                enemyList.splice(0, 1);
+                logs += `${enemy.name} погиб\n`;
+                damageToEnemy = 0;
+            }
+            if (damageToPlayer >= 126) {
+                enemyList.splice(0, 1);
+                logs += `\nВы погибли\n`;
+                break;
+            }
         }
         return logs;
     }
     async onSceneEnter(ctx) {
+        var _a, _b, _c;
+        const telegram_id = ((_a = ctx === null || ctx === void 0 ? void 0 : ctx.message) === null || _a === void 0 ? void 0 : _a.from.id) || ((_c = (_b = ctx === null || ctx === void 0 ? void 0 : ctx.callbackQuery) === null || _b === void 0 ? void 0 : _b.from) === null || _c === void 0 ? void 0 : _c.id);
+        const user = await this.usersRepository.findOne({
+            where: { telegram_id: telegram_id },
+        });
+        const progress = await this.progressRepository.findOne({
+            where: {
+                user_id: user.id,
+            },
+        });
+        const keyboard = telegraf_1.Markup.inlineKeyboard([
+            telegraf_1.Markup.button.callback('Меню', 'menu'),
+        ]).reply_markup;
         const enemies = this.generateRandomEnemies();
-        let log = `Вам на пути встретились бандиты.Началась перестрелка.Вы обнаружили врагов: ${enemies
+        let log = `Вам на пути встретились бандиты.Началась перестрелка. Вы обнаружили врагов: ${enemies
             .map((item) => item.name)
             .join(', ')}.\n`;
         log += this.buttlePart(enemies);
-        const message = await ctx.reply(log + '\nБой окончен!');
-        try {
-            setTimeout(() => {
-                this.bot.telegram.deleteMessage(message.chat.id, message.message_id);
-            }, 10000);
-        }
-        catch (error) {
-            console.log(error);
-        }
+        log += '\nБой окончен!';
+        this.appService.updateDisplay(progress, keyboard, log, null);
         ctx.scene.leave();
     }
     async onLeaveCommand(ctx) {

@@ -51,30 +51,35 @@ let AppUpdate = AppUpdate_1 = class AppUpdate {
                 await this.bot.telegram.deleteMessage(chatID, messageID);
             }
             const telegram_id = this.appService.getTelegramId(ctx);
-            let user = await this.usersRepository.findOne({
+            let player = await this.usersRepository.findOne({
                 where: { telegram_id: telegram_id },
             });
-            let progress = await this.progressRepository.findOne({
-                where: { user_id: user === null || user === void 0 ? void 0 : user.id },
+            let playerProgress = await this.progressRepository.findOne({
+                where: { user_id: player === null || player === void 0 ? void 0 : player.id },
             });
-            if (!user) {
-                const location = await this.locationsRepository.findOne({
-                    where: { id: 1 },
+            let playerLocation = await this.locationsRepository.findOne({
+                where: { location: player === null || player === void 0 ? void 0 : player.location },
+            });
+            if (!player || !playerLocation || !playerProgress) {
+                playerLocation = await this.locationsRepository.findOne({
+                    where: { location: 'Кордон - Бункер Сидоровича' },
                 });
-                user = await this.usersRepository.save({
+                player = await this.usersRepository.save({
                     telegram_id: telegram_id,
-                    location: location.id,
+                    location: playerLocation.location,
                 });
-                const lastChapter = await this.chaptersRepository.findOne({
-                    where: { content: (0, typeorm_1.Like)('Один из грузовиков%') },
-                });
-                progress = await this.progressRepository.save({
-                    user_id: user.id,
-                    chapter_id: lastChapter.id,
-                    location: location.id,
-                });
+                if (!playerProgress) {
+                    const lastChapter = await this.chaptersRepository.findOne({
+                        where: { content: (0, typeorm_1.Like)('Один из грузовиков%') },
+                    });
+                    playerProgress = await this.progressRepository.save({
+                        user_id: player.id,
+                        chapter_code: lastChapter.code,
+                        location: playerLocation.location,
+                    });
+                }
             }
-            if (!(progress === null || progress === void 0 ? void 0 : progress.chat_id) || !(progress === null || progress === void 0 ? void 0 : progress.message_display_id)) {
+            if (!(playerProgress === null || playerProgress === void 0 ? void 0 : playerProgress.chat_id) || !(playerProgress === null || playerProgress === void 0 ? void 0 : playerProgress.message_display_id)) {
                 const imgLink = this.appService.escapeText('https://clck.ru/33PBvE');
                 const keyboard = telegraf_1.Markup.inlineKeyboard([
                     telegraf_1.Markup.button.callback('Меню', 'menu'),
@@ -84,12 +89,12 @@ let AppUpdate = AppUpdate_1 = class AppUpdate {
                     has_spoiler: true,
                     reply_markup: keyboard,
                 });
-                await this.progressRepository.update(progress === null || progress === void 0 ? void 0 : progress.progress_id, {
+                const playerProgressUpdate = await this.progressRepository.update(playerProgress.progress_id, {
                     chat_id: messageDisplay.chat.id,
                     message_display_id: messageDisplay.message_id,
                 });
-                progress = await this.progressRepository.findOne({
-                    where: { user_id: user === null || user === void 0 ? void 0 : user.id },
+                playerProgress = await this.progressRepository.findOne({
+                    where: { user_id: player === null || player === void 0 ? void 0 : player.id },
                 });
             }
             next();
@@ -111,40 +116,42 @@ let AppUpdate = AppUpdate_1 = class AppUpdate {
                 where: { content: (0, typeorm_1.Like)('Один из грузовиков%') },
             });
             const location = await this.locationsRepository.findOne({
-                where: { id: 1 },
+                where: { location: 'Кордон - Бункер Сидоровича' },
             });
             if (!progress) {
                 progress = await this.progressRepository.save({
                     user_id: user.id,
-                    chapter_id: lastChapter.id,
-                    location: location.id,
+                    chapter_code: lastChapter.code,
+                    location: location.location,
                 });
             }
             let chapter = await this.chaptersRepository.findOne({
-                where: { id: progress.chapter_id },
+                where: { code: progress.chapter_code },
             });
             const starterChapter = await this.chaptersRepository.findOne({
-                order: { id: 1 },
                 where: { content: (0, typeorm_1.Like)('Один из грузовиков%') },
             });
             if (!chapter && starterChapter) {
                 chapter = starterChapter;
             }
             const locations = await this.locationsRepository.findOne({
-                where: { id: user.location },
+                where: { location: user.location },
             });
-            const nextChapter = await this.chaptersRepository.findOne({
-                where: { id: progress === null || progress === void 0 ? void 0 : progress.chapter_id, location: locations === null || locations === void 0 ? void 0 : locations.id },
+            const chapterNext = await this.chaptersRepository.findOne({
+                where: {
+                    code: progress === null || progress === void 0 ? void 0 : progress.chapter_code,
+                    location: locations === null || locations === void 0 ? void 0 : locations.location,
+                },
             });
             const keyboard = telegraf_1.Markup.inlineKeyboard([
                 telegraf_1.Markup.button.callback('📍Перемещение', scenes_enum_1.ScenesEnum.LOCATION),
                 telegraf_1.Markup.button.callback('☠️Бандиты', scenes_enum_1.ScenesEnum.BANDIT),
                 telegraf_1.Markup.button.callback('📟PDA', 'PDA'),
-                telegraf_1.Markup.button.callback('☢️История', scenes_enum_1.ScenesEnum.QUEST, !!!nextChapter),
+                telegraf_1.Markup.button.callback('☢️История', scenes_enum_1.ScenesEnum.QUEST, !!!chapterNext),
             ], {
                 columns: 1,
             }).reply_markup;
-            this.appService.updateDisplay(progress, keyboard, this.appService.escapeText(`Вы на локации: ${locations === null || locations === void 0 ? void 0 : locations.name}.`), locations.image);
+            this.appService.updateDisplay(progress, keyboard, this.appService.escapeText(`Вы на локации: ${locations === null || locations === void 0 ? void 0 : locations.location}.`), locations.image);
         }
         catch (error) {
             console.error(error);

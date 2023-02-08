@@ -56,7 +56,7 @@ let QuestScene = QuestScene_1 = class QuestScene {
             });
             const location = await this.locationsRepository.findOne({
                 where: {
-                    id: user.location,
+                    location: user.location,
                 },
             });
             let progress = await this.progressRepository.findOne({
@@ -66,7 +66,7 @@ let QuestScene = QuestScene_1 = class QuestScene {
             });
             const chapter = await this.chaptersRepository.findOne({
                 where: {
-                    id: progress.chapter_id,
+                    code: progress.chapter_code,
                 },
             });
             if (!(progress === null || progress === void 0 ? void 0 : progress.chat_id) || !(progress === null || progress === void 0 ? void 0 : progress.message_display_id)) {
@@ -87,9 +87,9 @@ let QuestScene = QuestScene_1 = class QuestScene {
                     where: { user_id: user === null || user === void 0 ? void 0 : user.id },
                 });
             }
-            if (chapter.location === location.id) {
+            if (chapter.location === location.location) {
                 const keyboard = telegraf_1.Markup.inlineKeyboard([
-                    telegraf_1.Markup.button.callback('🤝Диалог', 'chapterXXX' + chapter.id),
+                    telegraf_1.Markup.button.callback('🤝Диалог', 'chapterXXX' + chapter.code),
                     telegraf_1.Markup.button.callback('✋🏻Уйти', 'leave'),
                 ]).reply_markup;
                 await this.appService.updateDisplay(progress, keyboard, `${chapter === null || chapter === void 0 ? void 0 : chapter.character}: ` + chapter.content, location.image);
@@ -111,7 +111,7 @@ let QuestScene = QuestScene_1 = class QuestScene {
             const match = ctx.match[0];
             if (!match)
                 next();
-            const selectedChapterId = +match.split('XXX')[1];
+            const selectedChapterCode = match.split('XXX')[1];
             const telegram_id = ((_a = ctx === null || ctx === void 0 ? void 0 : ctx.message) === null || _a === void 0 ? void 0 : _a.from.id) || ((_c = (_b = ctx === null || ctx === void 0 ? void 0 : ctx.callbackQuery) === null || _b === void 0 ? void 0 : _b.from) === null || _c === void 0 ? void 0 : _c.id);
             const user = await this.usersRepository.findOne({
                 where: { telegram_id: telegram_id },
@@ -123,11 +123,11 @@ let QuestScene = QuestScene_1 = class QuestScene {
             });
             const location = await this.locationsRepository.findOne({
                 where: {
-                    id: user.location,
+                    location: user.location,
                 },
             });
             await this.progressRepository.update(progress.progress_id, {
-                chapter_id: selectedChapterId,
+                chapter_code: selectedChapterCode,
             });
             progress = await this.progressRepository.findOne({
                 where: {
@@ -135,7 +135,7 @@ let QuestScene = QuestScene_1 = class QuestScene {
                 },
             });
             const nextChapter = await this.chaptersRepository.findOne({
-                where: { id: progress.chapter_id, location: location.id },
+                where: { code: progress.chapter_code, location: location.location },
             });
             if (!(progress === null || progress === void 0 ? void 0 : progress.chat_id) || !(progress === null || progress === void 0 ? void 0 : progress.message_display_id)) {
                 const imgLink = this.appService.escapeText('https://clck.ru/33PBvE');
@@ -163,16 +163,16 @@ let QuestScene = QuestScene_1 = class QuestScene {
             }
             else {
                 const choises = await this.choicesRepository.find({
-                    where: { chapter_id: nextChapter.id },
+                    where: { code: nextChapter.code },
                 });
                 choises.forEach(async (item) => {
                     const chapter = await this.chaptersRepository.findOne({
-                        where: { id: item.chapter_id },
+                        where: { code: item.next_code },
                     });
                     return Object.assign(Object.assign({}, item), { description: chapter.character });
                 });
                 const keyboard = telegraf_1.Markup.inlineKeyboard([
-                    ...choises.map((item) => telegraf_1.Markup.button.callback(this.appService.escapeText(item === null || item === void 0 ? void 0 : item.description), 'chapterXXX' + item.next_chapter_id.toString())),
+                    ...choises.map((item) => telegraf_1.Markup.button.callback(this.appService.escapeText(item === null || item === void 0 ? void 0 : item.description), 'chapterXXX' + item.next_code.toString())),
                 ], {
                     columns: 1,
                 }).reply_markup;
@@ -196,11 +196,11 @@ let QuestScene = QuestScene_1 = class QuestScene {
         });
         const choiceBack = await this.choicesRepository.findOne({
             where: {
-                next_chapter_id: progress.chapter_id,
+                next_code: progress.chapter_code,
             },
         });
         await this.progressRepository.update(progress, {
-            chapter_id: choiceBack.chapter_id,
+            chapter_code: choiceBack.code,
         });
     }
     async onLeaveCommand(ctx) {
@@ -222,7 +222,7 @@ let QuestScene = QuestScene_1 = class QuestScene {
                 telegraf_1.Markup.button.callback('Меню', 'menu'),
             ]).reply_markup;
             const location = await this.locationsRepository.findOne({
-                where: { id: user.location },
+                where: { location: user.location },
             });
             await this.appService.updateDisplay(progress, keyboard, `Диалог завершен...`, location === null || location === void 0 ? void 0 : location.image);
         }

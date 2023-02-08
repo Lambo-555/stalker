@@ -1,5 +1,4 @@
 export declare class LocationsEntity {
-    id: number;
-    name?: string;
+    location: string;
     image?: string;
 }

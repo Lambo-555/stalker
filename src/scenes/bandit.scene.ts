@@ -26,10 +26,8 @@ import { QuestsEntity } from 'src/user/entities/quests.entity';
 import { RoadsEntity } from 'src/user/entities/roads.entity';
 import { UsersEntity } from 'src/user/entities/users.entity';
 import { Context, Markup, Scenes, Telegraf } from 'telegraf';
-import { InlineKeyboardButton } from 'telegraf/typings/core/types/typegram';
-import { Like, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { TelegrafContext } from '../interfaces/telegraf-context.interface';
-import { ActivityEnum } from './enums/activity.enum';
 import { ScenesEnum } from './enums/scenes.enum';
 
 // ганг карс
@@ -68,7 +66,7 @@ export class BanditScene {
     private readonly questsEntity: Repository<QuestsEntity>,
     @InjectBot()
     private readonly bot: Telegraf<Context>,
-  ) {}
+  ) { }
 
   calculateDistance(
     posOne: { x: number; y: number },
@@ -131,7 +129,7 @@ export class BanditScene {
     ];
     const enemies: { x: number; y: number; name: string }[] = [];
     // const playersCount = Math.floor(Math.random() * 5) + 1;
-    const enemiesTargetCount = Math.floor(Math.random() * 2) + 3;
+    const enemiesTargetCount = Math.floor(Math.random() * 2) + 1;
     while (enemies?.length !== enemiesTargetCount) {
       const x = Math.floor(Math.random() * 200);
       const y = Math.floor(Math.random() * 200);
@@ -164,75 +162,75 @@ export class BanditScene {
       'В молоко',
     ];
     let logs = '';
-    for (let i = 0; i < enemyList.length; i++) {
-      const enemyPos = enemyList[i];
-      const playerPos = { x: 0, y: 0 };
-      const distance = this.calculateDistance(enemyPos, playerPos);
-      const shoots = 3 || 1 || 5; // TODO
-      const shootWord =
-        shoots === 1 ? 'выстрелу' : shoots === 5 ? 'выстрелов' : 'выстрела';
-      logs += `Вы стреляете очередью по ${shoots}🔥 ${shootWord} в ответ.\n`;
-      logs += 'Расстояние: ' + distance;
-      let damageToEnemy = 0;
-      let damageToPlayer = 0;
-      let j = 0;
-      while (damageToEnemy < 100 || damageToPlayer < 100) {
-        j++;
-        const shootIndex = (j + 3) % shoots;
-        if (shootIndex === 0) {
-          damageToPlayer += Math.floor(25 + Math.random() * 25);
-          logs += `\nВам снесли ${damageToPlayer}🫀, осталось ${Math.max(
-            100 - damageToPlayer,
-            0,
-          )}🫀, сейчас стрелял ${enemyPos.name}\n`;
-        }
-        if (damageToPlayer >= 100) {
-          logs += '\nВы убиты.';
-          enemyList.splice(i, 1);
-          break;
-        }
-        if (damageToEnemy >= 100) {
-          logs += '\nВраг ' + enemyPos.name + ' убит.';
-          enemyList.splice(i, 1);
-          break;
-        }
-        logs += '\nВыстрел: ';
-        const spread = this.calculateSpread(shootIndex, distance);
-        const damage = this.calculateDamage(distance, 120);
-        const chanceToShoot = 100 - spread;
-        const shootIsOk = 100 * Math.random() <= chanceToShoot;
-        if (shootIsOk) damageToEnemy += damage;
-        logs += 'Разброс: ' + spread + '%.  ';
-        logs += 'Урон: ' + damage + 'хп. ';
-        const phrasesIndex = Math.floor(Math.random() * phrasesShot.length);
-        const phraseShot = phrasesShot[phrasesIndex];
-        const phrasesMissIndex = Math.floor(Math.random() * phrasesMiss.length);
-        const phraseMiss = phrasesMiss[phrasesMissIndex];
-        logs += shootIsOk
-          ? 'Пападание. ' + phraseShot
-          : 'Промах. ' + phraseMiss;
+    let damageToEnemy = 0;
+    let damageToPlayer = 0;
+    while (enemyList.length !== 0) {
+      const enemy = enemyList[0];
+      const distancePlayers = this.calculateDistance(enemy, { x: 0, y: 0 });
+      const spread = this.calculateSpread(1, distancePlayers);
+      logs += `\nДистанция:${distancePlayers}. Разлетность: ${spread}%`;
+
+      const phrasesIndex = Math.floor(Math.random() * phrasesShot.length);
+      const phraseShot = phrasesShot[phrasesIndex];
+      const phrasesMissIndex = Math.floor(Math.random() * phrasesMiss.length);
+      const phraseMiss = phrasesMiss[phrasesMissIndex];
+
+      const damageToEnemyNow = this.calculateDamage(distancePlayers, 120);
+      const isShotToEnemy = Math.random() * 100 >= spread;
+      if (isShotToEnemy) {
+        logs += `\n${enemy.name}: ${phraseShot}\n`;
+        damageToEnemy += damageToEnemyNow;
+        logs += `Урон по врагу: ${damageToEnemyNow}\n`;
+      } else {
+        logs += `\n${enemy.name}: ${phraseMiss}\n`;
+        logs += `Урон по врагу не прошел.\n`;
       }
-      logs += '\nИтоговый урон: ' + damageToEnemy + '\n\n';
-      damageToEnemy = 0;
+
+      const damageToPlayerNow = this.calculateDamage(distancePlayers, 45);
+      const isShotToPlayer = Math.random() * 100 >= spread;
+      if (isShotToPlayer) {
+        damageToPlayer += damageToPlayerNow;
+        logs += `Ответный урон по вам: ${damageToPlayerNow}\n`;
+      } else {
+        logs += `Ответный урон по вам не прошел\n`;
+      }
+
+      if (damageToEnemy >= 75) {
+        enemyList.splice(0, 1);
+        logs += `${enemy.name} погиб\n`;
+        damageToEnemy = 0;
+      }
+      if (damageToPlayer >= 126) {
+        enemyList.splice(0, 1);
+        logs += `\nВы погибли\n`;
+        break;
+      }
     }
     return logs;
   }
 
   @SceneEnter()
   async onSceneEnter(@Ctx() ctx: TelegrafContext) {
+    const telegram_id: number =
+      ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
+    const user: UsersEntity = await this.usersRepository.findOne({
+      where: { telegram_id: telegram_id },
+    });
+    const progress: ProgressEntity = await this.progressRepository.findOne({
+      where: {
+        user_id: user.id,
+      },
+    });
+    const keyboard = Markup.inlineKeyboard([
+      Markup.button.callback('Меню', 'menu'),
+    ]).reply_markup;
     const enemies: any[] = this.generateRandomEnemies();
-    let log = `Вам на пути встретились бандиты.Началась перестрелка.Вы обнаружили врагов: ${enemies
+    let log = `Вам на пути встретились бандиты.Началась перестрелка. Вы обнаружили врагов: ${enemies
       .map((item) => item.name)
       .join(', ')}.\n`;
     log += this.buttlePart(enemies);
-    const message = await ctx.reply(log + '\nБой окончен!');
-    try {
-      setTimeout(() => {
-        this.bot.telegram.deleteMessage(message.chat.id, message.message_id);
-      }, 10000);
-    } catch (error) {
-      console.log(error);
-    }
+    log += '\nБой окончен!';
+    this.appService.updateDisplay(progress, keyboard, log, null);
     ctx.scene.leave();
   }
 

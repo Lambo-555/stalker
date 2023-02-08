@@ -3,7 +3,7 @@ import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 @Entity('chapters')
 export class ChaptersEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  code: string;
 
   @Column({ nullable: true })
   character?: string;
@@ -12,16 +12,8 @@ export class ChaptersEntity {
   content?: string;
 
   @Column()
-  location: number;
+  image?: string;
 
   @Column()
-  image?: string;
+  location?: string;
 }
-
-// CREATE TABLE public.chapters (
-// 	id serial4 NOT NULL,
-// 	title varchar(255) NOT NULL,
-// 	"content" text NOT NULL,
-// 	inventory_required varchar(255) NOT NULL DEFAULT '{}'::character varying,
-// 	CONSTRAINT chapters_pkey PRIMARY KEY (id)
-// );

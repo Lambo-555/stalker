@@ -1,17 +1,13 @@
-import { Inject, Logger } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { NextFunction } from 'express';
 import {
   Scene,
   SceneEnter,
   SceneLeave,
-  Command,
-  Hears,
   Ctx,
   Action,
-  TELEGRAF_STAGE,
   Next,
-  Use,
   InjectBot,
 } from 'nestjs-telegraf';
 import { AppService } from 'src/app.service';
@@ -26,10 +22,8 @@ import { QuestsEntity } from 'src/user/entities/quests.entity';
 import { RoadsEntity } from 'src/user/entities/roads.entity';
 import { UsersEntity } from 'src/user/entities/users.entity';
 import { Context, Markup, Scenes, Telegraf } from 'telegraf';
-import { InlineKeyboardButton } from 'telegraf/typings/core/types/typegram';
-import { Like, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { TelegrafContext } from '../interfaces/telegraf-context.interface';
-import { ActivityEnum } from './enums/activity.enum';
 import { ScenesEnum } from './enums/scenes.enum';
 
 // ганг карс
@@ -68,7 +62,7 @@ export class QuestScene {
     private readonly questsEntity: Repository<QuestsEntity>,
     @InjectBot()
     private readonly bot: Telegraf<Context>,
-  ) { }
+  ) {}
 
   @SceneEnter()
   async onSceneEnter(@Ctx() ctx: TelegrafContext) {
@@ -80,7 +74,7 @@ export class QuestScene {
       });
       const location: LocationsEntity = await this.locationsRepository.findOne({
         where: {
-          id: user.location,
+          location: user.location,
         },
       });
       let progress: ProgressEntity = await this.progressRepository.findOne({
@@ -90,7 +84,7 @@ export class QuestScene {
       });
       const chapter: ChaptersEntity = await this.chaptersRepository.findOne({
         where: {
-          id: progress.chapter_id,
+          code: progress.chapter_code,
         },
       });
       if (!progress?.chat_id || !progress?.message_display_id) {
@@ -100,7 +94,7 @@ export class QuestScene {
         ]).reply_markup;
         const messageDisplay = await ctx.replyWithPhoto(imgLink, {
           caption: 'Display',
-          // @ts-ignore 
+          // @ts-ignore
           has_spoiler: true,
           // parse_mode: 'Markdown2',
           //@ts-ignore
@@ -114,9 +108,9 @@ export class QuestScene {
           where: { user_id: user?.id },
         });
       }
-      if (chapter.location === location.id) {
+      if (chapter.location === location.location) {
         const keyboard = Markup.inlineKeyboard([
-          Markup.button.callback('🤝Диалог', 'chapterXXX' + chapter.id),
+          Markup.button.callback('🤝Диалог', 'chapterXXX' + chapter.code),
           Markup.button.callback('✋🏻Уйти', 'leave'),
         ]).reply_markup;
         await this.appService.updateDisplay(
@@ -149,7 +143,7 @@ export class QuestScene {
     try {
       const match = ctx.match[0];
       if (!match) next();
-      const selectedChapterId = +match.split('XXX')[1]; // chapterXXX1
+      const selectedChapterCode: string = match.split('XXX')[1]; // chapterXXX1
       const telegram_id: number =
         ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
       const user: UsersEntity = await this.usersRepository.findOne({
@@ -162,20 +156,22 @@ export class QuestScene {
       });
       const location: LocationsEntity = await this.locationsRepository.findOne({
         where: {
-          id: user.location,
+          location: user.location,
         },
       });
       await this.progressRepository.update(progress.progress_id, {
-        chapter_id: selectedChapterId,
+        chapter_code: selectedChapterCode,
       });
       progress = await this.progressRepository.findOne({
         where: {
           user_id: user.id,
         },
       });
-      const nextChapter: ChaptersEntity = await this.chaptersRepository.findOne({
-        where: { id: progress.chapter_id, location: location.id },
-      });
+      const nextChapter: ChaptersEntity = await this.chaptersRepository.findOne(
+        {
+          where: { code: progress.chapter_code, location: location.location },
+        },
+      );
       if (!progress?.chat_id || !progress?.message_display_id) {
         const imgLink = this.appService.escapeText('https://clck.ru/33PBvE');
         const keyboard = Markup.inlineKeyboard([
@@ -183,7 +179,7 @@ export class QuestScene {
         ]).reply_markup;
         const messageDisplay = await ctx.replyWithPhoto(imgLink, {
           caption: 'Display',
-          // @ts-ignore 
+          // @ts-ignore
           has_spoiler: true,
           // parse_mode: 'Markdown2',
           //@ts-ignore
@@ -208,11 +204,11 @@ export class QuestScene {
         );
       } else {
         const choises: ChoicesEntity[] = await this.choicesRepository.find({
-          where: { chapter_id: nextChapter.id },
+          where: { code: nextChapter.code },
         });
         choises.forEach(async (item) => {
           const chapter = await this.chaptersRepository.findOne({
-            where: { id: item.chapter_id },
+            where: { code: item.next_code },
           });
           return {
             ...item,
@@ -224,7 +220,7 @@ export class QuestScene {
             ...choises.map((item) =>
               Markup.button.callback(
                 this.appService.escapeText(item?.description),
-                'chapterXXX' + item.next_chapter_id.toString(),
+                'chapterXXX' + item.next_code.toString(),
               ),
             ),
             // Markup.button.callback('✋🏻Уйти', 'leave'),
@@ -261,11 +257,11 @@ export class QuestScene {
     });
     const choiceBack: ChoicesEntity = await this.choicesRepository.findOne({
       where: {
-        next_chapter_id: progress.chapter_id,
+        next_code: progress.chapter_code,
       },
     });
     await this.progressRepository.update(progress, {
-      chapter_id: choiceBack.chapter_id,
+      chapter_code: choiceBack.code,
     });
   }
 
@@ -291,7 +287,7 @@ export class QuestScene {
         Markup.button.callback('Меню', 'menu'),
       ]).reply_markup;
       const location: LocationsEntity = await this.locationsRepository.findOne({
-        where: { id: user.location },
+        where: { location: user.location },
       });
       await this.appService.updateDisplay(
         progress,

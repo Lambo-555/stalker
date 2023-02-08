@@ -15,12 +15,8 @@ let LocationsEntity = class LocationsEntity {
 };
 __decorate([
     (0, typeorm_1.PrimaryGeneratedColumn)(),
-    __metadata("design:type", Number)
-], LocationsEntity.prototype, "id", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
-], LocationsEntity.prototype, "name", void 0);
+], LocationsEntity.prototype, "location", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)

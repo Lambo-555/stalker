@@ -19,16 +19,12 @@ __decorate([
 ], RoadsEntity.prototype, "id", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
-    __metadata("design:type", Number)
+    __metadata("design:type", String)
 ], RoadsEntity.prototype, "from", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
-    __metadata("design:type", Number)
+    __metadata("design:type", String)
 ], RoadsEntity.prototype, "to", void 0);
-__decorate([
-    (0, typeorm_1.Column)(),
-    __metadata("design:type", Boolean)
-], RoadsEntity.prototype, "is_open", void 0);
 RoadsEntity = __decorate([
     (0, typeorm_1.Entity)('roads')
 ], RoadsEntity);
