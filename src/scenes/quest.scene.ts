@@ -116,7 +116,7 @@ export class QuestScene {
         await this.appService.updateDisplay(
           progress,
           keyboard,
-          `${chapter?.character}: ` + chapter.content,
+          `${chapter?.character}`, 
           location.image,
         );
       } else {

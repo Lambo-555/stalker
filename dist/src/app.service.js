@@ -48,6 +48,7 @@ let AppService = class AppService {
     async commandListInit() {
         await this.bot.telegram.setMyCommands([
             { command: 'menu', description: 'Главное меню' },
+            { command: 'display', description: 'Создать новый игровой дисплей' },
         ]);
     }
     escapeText(escapedMsg) {

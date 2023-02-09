@@ -47,8 +47,10 @@ let AppUpdate = AppUpdate_1 = class AppUpdate {
             const messageID = (_b = (_a = ctx === null || ctx === void 0 ? void 0 : ctx.update) === null || _a === void 0 ? void 0 : _a.message) === null || _b === void 0 ? void 0 : _b.message_id;
             const chatID = (_d = (_c = ctx === null || ctx === void 0 ? void 0 : ctx.update) === null || _c === void 0 ? void 0 : _c.message) === null || _d === void 0 ? void 0 : _d.chat.id;
             const menuMessage = (_f = (_e = ctx === null || ctx === void 0 ? void 0 : ctx.update) === null || _e === void 0 ? void 0 : _e.message) === null || _f === void 0 ? void 0 : _f.text;
-            if (menuMessage === '/menu' && chatID && messageID) {
-                await this.bot.telegram.deleteMessage(chatID, messageID);
+            if ((menuMessage === '/menu' || menuMessage === '/display') &&
+                chatID &&
+                messageID) {
+                this.bot.telegram.deleteMessage(chatID, messageID);
             }
             const telegram_id = this.appService.getTelegramId(ctx);
             let player = await this.usersRepository.findOne({
@@ -61,6 +63,7 @@ let AppUpdate = AppUpdate_1 = class AppUpdate {
                 where: { location: player === null || player === void 0 ? void 0 : player.location },
             });
             if (!player || !playerLocation || !playerProgress) {
+                await ctx.reply('Вы зарегистрированы. Введите команду для создания или пересоздания игрового дисплея /display');
                 playerLocation = await this.locationsRepository.findOne({
                     where: { location: 'Кордон - Бункер Сидоровича' },
                 });
@@ -79,27 +82,38 @@ let AppUpdate = AppUpdate_1 = class AppUpdate {
                     });
                 }
             }
-            if (!(playerProgress === null || playerProgress === void 0 ? void 0 : playerProgress.chat_id) || !(playerProgress === null || playerProgress === void 0 ? void 0 : playerProgress.message_display_id)) {
-                const imgLink = this.appService.escapeText('https://clck.ru/33PBvE');
-                const keyboard = telegraf_1.Markup.inlineKeyboard([
-                    telegraf_1.Markup.button.callback('Меню', 'menu'),
-                ]).reply_markup;
-                const messageDisplay = await ctx.replyWithPhoto(imgLink, {
-                    caption: 'Display',
-                    has_spoiler: true,
-                    reply_markup: keyboard,
-                });
-                const playerProgressUpdate = await this.progressRepository.update(playerProgress.progress_id, {
-                    chat_id: messageDisplay.chat.id,
-                    message_display_id: messageDisplay.message_id,
-                });
-                playerProgress = await this.progressRepository.findOne({
-                    where: { user_id: player === null || player === void 0 ? void 0 : player.id },
-                });
-            }
             next();
         }
         catch (error) {
+            console.error(error);
+        }
+    }
+    async onDisplay(ctx) {
+        try {
+            const telegram_id = this.appService.getTelegramId(ctx);
+            const player = await this.usersRepository.findOne({
+                where: { telegram_id: telegram_id },
+            });
+            const playerProgress = await this.progressRepository.findOne({
+                where: { user_id: player === null || player === void 0 ? void 0 : player.id },
+            });
+            const imgLink = this.appService.escapeText('https://clck.ru/33PBvE');
+            const keyboard = telegraf_1.Markup.inlineKeyboard([
+                telegraf_1.Markup.button.callback('Начало', 'menu'),
+            ]).reply_markup;
+            const messageDisplay = await ctx.replyWithPhoto(imgLink, {
+                caption: 'display',
+                has_spoiler: true,
+                reply_markup: keyboard,
+            });
+            const playerProgressUpdate = await this.progressRepository.update(playerProgress === null || playerProgress === void 0 ? void 0 : playerProgress.progress_id, {
+                chat_id: messageDisplay.chat.id,
+                message_display_id: messageDisplay.message_id,
+            });
+        }
+        catch (error) {
+            await ctx.reply('Ошибка создания монитора');
+            console.log('cant create monitor');
             console.error(error);
         }
     }
@@ -187,6 +201,13 @@ __decorate([
     __metadata("design:paramtypes", [Object, Function]),
     __metadata("design:returntype", Promise)
 ], AppUpdate.prototype, "onRegister", null);
+__decorate([
+    (0, nestjs_telegraf_1.Command)('/display'),
+    __param(0, (0, nestjs_telegraf_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AppUpdate.prototype, "onDisplay", null);
 __decorate([
     (0, nestjs_telegraf_1.Start)(),
     (0, nestjs_telegraf_1.Action)('menu'),

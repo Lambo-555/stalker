@@ -66,7 +66,7 @@ export class BanditScene {
     private readonly questsEntity: Repository<QuestsEntity>,
     @InjectBot()
     private readonly bot: Telegraf<Context>,
-  ) { }
+  ) {}
 
   calculateDistance(
     posOne: { x: number; y: number },
@@ -197,12 +197,12 @@ export class BanditScene {
 
       if (damageToEnemy >= 75) {
         enemyList.splice(0, 1);
-        logs += `${enemy.name} погиб\n`;
+        logs += `${enemy.name} более не опасен...\n`;
         damageToEnemy = 0;
       }
       if (damageToPlayer >= 126) {
         enemyList.splice(0, 1);
-        logs += `\nВы погибли\n`;
+        logs += `\nВы погибли...(На данном этапе это не влияет на прогресс)\n`;
         break;
       }
     }
@@ -222,15 +222,20 @@ export class BanditScene {
       },
     });
     const keyboard = Markup.inlineKeyboard([
-      Markup.button.callback('Меню', 'menu'),
+      Markup.button.callback('Вернуться', 'menu'),
     ]).reply_markup;
     const enemies: any[] = this.generateRandomEnemies();
-    let log = `Вам на пути встретились бандиты.Началась перестрелка. Вы обнаружили врагов: ${enemies
+    let log = `Вам на пути встретились бандиты. Началась перестрелка. Вы обнаружили врагов: ${enemies
       .map((item) => item.name)
       .join(', ')}.\n`;
     log += this.buttlePart(enemies);
     log += '\nБой окончен!';
-    this.appService.updateDisplay(progress, keyboard, log, null);
+    this.appService.updateDisplay(
+      progress,
+      keyboard,
+      log,
+      'https://sun9-40.userapi.com/impg/TdhFr4WwGgSQrY-68V5oP_iivWfv18ye2cs2UA/DQ5jU6dsKuM.jpg?size=1024x1024&quality=95&sign=314289bfceb91c4d013d1e4829d58d68&type=album',
+    );
     ctx.scene.leave();
   }
 

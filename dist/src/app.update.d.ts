@@ -22,6 +22,7 @@ export default class AppUpdate {
     constructor(appService: AppService, usersRepository: Repository<UsersEntity>, chaptersRepository: Repository<ChaptersEntity>, choicesRepository: Repository<ChoicesEntity>, progressRepository: Repository<ProgressEntity>, inventoryItemsRepository: Repository<InventoryItems>, locationsRepository: Repository<LocationsEntity>, bot: Telegraf<Context>);
     onApplicationBootstrap(): void;
     onRegister(ctx: TelegrafContext, next: NextFunction): Promise<void>;
+    onDisplay(ctx: TelegrafContext): Promise<void>;
     onMenu(ctx: TelegrafContext): Promise<void>;
     enterBanditScene(ctx: Scenes.SceneContext): Promise<void>;
     enterPdaScene(ctx: Scenes.SceneContext): Promise<void>;

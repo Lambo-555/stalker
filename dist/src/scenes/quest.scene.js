@@ -92,7 +92,7 @@ let QuestScene = QuestScene_1 = class QuestScene {
                     telegraf_1.Markup.button.callback('🤝Диалог', 'chapterXXX' + chapter.code),
                     telegraf_1.Markup.button.callback('✋🏻Уйти', 'leave'),
                 ]).reply_markup;
-                await this.appService.updateDisplay(progress, keyboard, `${chapter === null || chapter === void 0 ? void 0 : chapter.character}: ` + chapter.content, location.image);
+                await this.appService.updateDisplay(progress, keyboard, `${chapter === null || chapter === void 0 ? void 0 : chapter.character}`, location.image);
             }
             else {
                 const keyboard = telegraf_1.Markup.inlineKeyboard([

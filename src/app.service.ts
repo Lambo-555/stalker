@@ -48,6 +48,7 @@ export class AppService {
   async commandListInit() {
     await this.bot.telegram.setMyCommands([
       { command: 'menu', description: 'Главное меню' },
+      { command: 'display', description: 'Создать новый игровой дисплей' },
       // { command: 'start', description: 'Главное меню' },
       // { command: 'registration', description: 'Регистрация' },
       // { command: 'game', description: 'Start Cobalt game. Play2Earn.' },

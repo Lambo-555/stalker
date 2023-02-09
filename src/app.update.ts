@@ -44,7 +44,7 @@ export default class AppUpdate {
     private readonly locationsRepository: Repository<LocationsEntity>,
     @InjectBot()
     private readonly bot: Telegraf<Context>,
-  ) { }
+  ) {}
 
   onApplicationBootstrap() {
     this.appService.commandListInit();
@@ -62,13 +62,20 @@ export default class AppUpdate {
       const messageID = ctx?.update?.message?.message_id;
       // @ts-ignore
       const chatID = ctx?.update?.message?.chat.id;
-      // @ts-ignore
-      const menuMessage = ctx?.update?.message?.text;
-      if (menuMessage === '/menu' && chatID && messageID) {
-        await this.bot.telegram.deleteMessage(chatID, messageID);
-      }
-      const telegram_id = this.appService.getTelegramId(ctx);
 
+      // @ts-ignore
+      const menuMessage = ctx?.update?.message?.text; 
+      if (
+        (menuMessage === '/menu' || menuMessage === '/display') &&
+        chatID &&
+        messageID
+      ) {
+        // setTimeout(() => {
+        this.bot.telegram.deleteMessage(chatID, messageID);
+        // }, 500);
+      }
+
+      const telegram_id = this.appService.getTelegramId(ctx);
       let player: UsersEntity = await this.usersRepository.findOne({
         where: { telegram_id: telegram_id },
       });
@@ -80,6 +87,9 @@ export default class AppUpdate {
         where: { location: player?.location },
       });
       if (!player || !playerLocation || !playerProgress) {
+        await ctx.reply(
+          'Вы зарегистрированы. Введите команду для создания или пересоздания игрового дисплея /display',
+        );
         playerLocation = await this.locationsRepository.findOne({
           where: { location: 'Кордон - Бункер Сидоровича' },
         });
@@ -98,32 +108,45 @@ export default class AppUpdate {
           });
         }
       }
-      if (!playerProgress?.chat_id || !playerProgress?.message_display_id) {
-        const imgLink = this.appService.escapeText('https://clck.ru/33PBvE');
-        const keyboard = Markup.inlineKeyboard([
-          Markup.button.callback('Меню', 'menu'),
-        ]).reply_markup;
-        const messageDisplay = await ctx.replyWithPhoto(imgLink, {
-          caption: 'Display',
-          // @ts-ignore
-          has_spoiler: true,
-          // parse_mode: 'Markdown2',
-          //@ts-ignore
-          reply_markup: keyboard,
-        });
-        const playerProgressUpdate = await this.progressRepository.update(
-          playerProgress.progress_id,
-          {
-            chat_id: messageDisplay.chat.id,
-            message_display_id: messageDisplay.message_id,
-          },
-        );
-        playerProgress = await this.progressRepository.findOne({
-          where: { user_id: player?.id },
-        });
-      }
       next();
     } catch (error) {
+      console.error(error);
+    }
+  }
+
+  @Command('/display')
+  async onDisplay(@Ctx() ctx: TelegrafContext) {
+    try {
+      const telegram_id = this.appService.getTelegramId(ctx);
+      const player: UsersEntity = await this.usersRepository.findOne({
+        where: { telegram_id: telegram_id },
+      });
+      const playerProgress: ProgressEntity =
+        await this.progressRepository.findOne({
+          where: { user_id: player?.id },
+        });
+      const imgLink = this.appService.escapeText('https://clck.ru/33PBvE');
+      const keyboard = Markup.inlineKeyboard([
+        Markup.button.callback('Начало', 'menu'),
+      ]).reply_markup;
+      const messageDisplay = await ctx.replyWithPhoto(imgLink, {
+        caption: 'display',
+        // @ts-ignore
+        has_spoiler: true,
+        // parse_mode: 'Markdown2',
+        // @ts-ignore
+        reply_markup: keyboard,
+      });
+      const playerProgressUpdate = await this.progressRepository.update(
+        playerProgress?.progress_id,
+        {
+          chat_id: messageDisplay.chat.id,
+          message_display_id: messageDisplay.message_id,
+        },
+      );
+    } catch (error) {
+      await ctx.reply('Ошибка создания монитора');
+      console.log('cant create monitor');
       console.error(error);
     }
   }
