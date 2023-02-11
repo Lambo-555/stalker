@@ -84,7 +84,6 @@ let AppUpdate = AppUpdate_1 = class AppUpdate {
     }
     async enterBanditScene(ctx) {
         const match = ctx.match[0];
-        console.log(match);
         if (match) {
             const scene = match;
             await ctx.scene.enter(scene);

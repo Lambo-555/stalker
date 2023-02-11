@@ -84,11 +84,23 @@ let AppService = class AppService {
         });
         return locationData;
     }
+    async getChapterByCode(code) {
+        const chapterData = await this.chaptersRepository.findOne({
+            where: { code: code },
+        });
+        return chapterData;
+    }
     async getRoadList(location) {
         const roadList = await this.roadsRepository.find({
             where: { from: location },
         });
         return roadList;
+    }
+    async getChoiceList(code) {
+        const choices = await this.choicesRepository.find({
+            where: { code: code },
+        });
+        return choices;
     }
     async getStorePlayerData(ctx) {
         var _a;
@@ -117,7 +129,6 @@ let AppService = class AppService {
         return ctx.scene.state[telegram_id];
     }
     async getNextChapter(playerData) {
-        console.log(playerData);
         const chapterNext = await this.chaptersRepository.findOne({
             where: {
                 location: playerData.playerLocation.location,

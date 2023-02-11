@@ -95,11 +95,25 @@ export class AppService {
     return locationData;
   }
 
+  async getChapterByCode(code: string): Promise<ChaptersEntity> {
+    const chapterData: ChaptersEntity = await this.chaptersRepository.findOne({
+      where: { code: code },
+    });
+    return chapterData;
+  }
+
   async getRoadList(location: string): Promise<RoadsEntity[]> {
     const roadList: RoadsEntity[] = await this.roadsRepository.find({
       where: { from: location },
     });
     return roadList;
+  }
+
+  async getChoiceList(code: string): Promise<ChoicesEntity[]> {
+    const choices: ChoicesEntity[] = await this.choicesRepository.find({
+      where: { code: code },
+    });
+    return choices;
   }
 
   async getStorePlayerData(
@@ -133,7 +147,6 @@ export class AppService {
   }
 
   async getNextChapter(playerData: PlayerDataDto): Promise<ChaptersEntity> {
-    console.log(playerData);
     const chapterNext: ChaptersEntity = await this.chaptersRepository.findOne({
       where: {
         location: playerData.playerLocation.location,

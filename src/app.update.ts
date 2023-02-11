@@ -122,7 +122,6 @@ export default class AppUpdate {
   async enterBanditScene(@Ctx() ctx: Scenes.SceneContext) {
     // @ts-ignore
     const match = ctx.match[0];
-    console.log(match);
     if (match) {
       const scene: ScenesEnum = match;
       await ctx.scene.enter(scene);

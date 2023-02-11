@@ -31,7 +31,9 @@ export declare class AppService {
     updateStorePlayerProgress(ctx: TelegrafContext, playerProgress: ProgressEntity): Promise<any>;
     connectPlayerMonitor(): Promise<void>;
     getLocation(location: string): Promise<LocationsEntity>;
+    getChapterByCode(code: string): Promise<ChaptersEntity>;
     getRoadList(location: string): Promise<RoadsEntity[]>;
+    getChoiceList(code: string): Promise<ChoicesEntity[]>;
     getStorePlayerData(ctx: TelegrafContext): Promise<PlayerDataDto>;
     getNextChapter(playerData: PlayerDataDto): Promise<ChaptersEntity>;
     getGoalChapter(playerData: PlayerDataDto): Promise<ChaptersEntity>;
