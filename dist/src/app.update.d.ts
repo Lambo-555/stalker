@@ -1,34 +1,14 @@
-import { Context, Scenes, Telegraf } from 'telegraf';
+import { Scenes } from 'telegraf';
 import { NextFunction } from 'express';
 import { TelegrafContext } from 'src/interfaces/telegraf-context.interface';
-import { UsersEntity } from './user/entities/users.entity';
 import { AppService } from './app.service';
-import { Repository } from 'typeorm';
-import { ChaptersEntity } from './user/entities/chapters.entity';
-import { ChoicesEntity } from './user/entities/choices.entity';
-import { ProgressEntity } from './user/entities/progress.entity';
-import { InventoryItems } from './user/entities/inventory_items.entity';
-import { LocationsEntity } from './user/entities/locations.entity';
 export default class AppUpdate {
     private readonly appService;
-    private readonly usersRepository;
-    private readonly chaptersRepository;
-    private readonly choicesRepository;
-    private readonly progressRepository;
-    private readonly inventoryItemsRepository;
-    private readonly locationsRepository;
-    private readonly bot;
     private readonly logger;
-    constructor(appService: AppService, usersRepository: Repository<UsersEntity>, chaptersRepository: Repository<ChaptersEntity>, choicesRepository: Repository<ChoicesEntity>, progressRepository: Repository<ProgressEntity>, inventoryItemsRepository: Repository<InventoryItems>, locationsRepository: Repository<LocationsEntity>, bot: Telegraf<Context>);
+    constructor(appService: AppService);
     onApplicationBootstrap(): void;
-    onRegister(ctx: TelegrafContext, next: NextFunction): Promise<void>;
+    onUse(ctx: TelegrafContext, next: NextFunction): Promise<void>;
     onDisplay(ctx: TelegrafContext): Promise<void>;
     onMenu(ctx: TelegrafContext): Promise<void>;
     enterBanditScene(ctx: Scenes.SceneContext): Promise<void>;
-    enterPdaScene(ctx: Scenes.SceneContext): Promise<void>;
-    enterAnomalyRoadScene(ctx: Scenes.SceneContext): Promise<void>;
-    enterMutantScene(ctx: Scenes.SceneContext): Promise<void>;
-    enterArtefactScene(ctx: Scenes.SceneContext): Promise<void>;
-    enterLocationScene(ctx: Scenes.SceneContext): Promise<void>;
-    enterQuestScene(ctx: Scenes.SceneContext): Promise<void>;
 }

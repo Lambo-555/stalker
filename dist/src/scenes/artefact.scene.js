@@ -26,6 +26,7 @@ const inventory_items_entity_1 = require("../user/entities/inventory_items.entit
 const locations_entity_1 = require("../user/entities/locations.entity");
 const progress_entity_1 = require("../user/entities/progress.entity");
 const users_entity_1 = require("../user/entities/users.entity");
+const telegraf_1 = require("telegraf");
 const typeorm_2 = require("typeorm");
 const scenes_enum_1 = require("./enums/scenes.enum");
 let ArtefactScene = ArtefactScene_1 = class ArtefactScene {
@@ -40,20 +41,121 @@ let ArtefactScene = ArtefactScene_1 = class ArtefactScene {
         this.anomaliesRepository = anomaliesRepository;
         this.locationsRepository = locationsRepository;
         this.logger = new common_1.Logger(ArtefactScene_1.name);
+        this.userData = [{}];
     }
-    async onRegister(ctx, next) {
+    async onSceneEnter(ctx) {
+        var _a, _b, _c;
+        const telegram_id = ((_a = ctx === null || ctx === void 0 ? void 0 : ctx.message) === null || _a === void 0 ? void 0 : _a.from.id) || ((_c = (_b = ctx === null || ctx === void 0 ? void 0 : ctx.callbackQuery) === null || _b === void 0 ? void 0 : _b.from) === null || _c === void 0 ? void 0 : _c.id);
+        const user = await this.usersRepository.findOne({
+            where: { telegram_id: telegram_id },
+        });
+        console.log(ctx.scene.session.state);
+        return;
+        const artList = await this.artifactsRepository.find();
+        const randArt = this.appService.getRandomElInArr(artList);
+        this.userData[user.telegram_id] = {
+            artefactName: randArt
+        };
+        await ctx.reply(`Вы возле куска от артефакта "${randArt.name}". Нужно его правильно запереть в короб. Материал покрытия крайне важен.`, telegraf_1.Markup.inlineKeyboard([
+            telegraf_1.Markup.button.callback('Выбор короба.', 'artifactXXX' + randArt.anomaly),
+        ]));
+    }
+    async onChoose(ctx, next) {
+        var _a, _b, _c;
+        const match = ctx.match[0];
+        if (!match)
+            next();
+        const anomalyId = +match.split('XXX')[1];
+        const anomalyAll = await this.anomaliesRepository.find();
+        const anomalyTarget = anomalyAll.filter((item) => item.id === anomalyId)[0];
+        const anomalyEffects = Array.from(new Set(anomalyAll.map((item) => item.effects)));
+        const telegram_id = ((_a = ctx === null || ctx === void 0 ? void 0 : ctx.message) === null || _a === void 0 ? void 0 : _a.from.id) || ((_c = (_b = ctx === null || ctx === void 0 ? void 0 : ctx.callbackQuery) === null || _b === void 0 ? void 0 : _b.from) === null || _c === void 0 ? void 0 : _c.id);
+        const user = await this.usersRepository.findOne({
+            where: { telegram_id: telegram_id },
+        });
+        const progress = await this.progressRepository.findOne({
+            where: {
+                user_id: user.id,
+            },
+        });
+        const keyboard = telegraf_1.Markup.inlineKeyboard([
+            ...anomalyEffects.map((anomalyItem) => telegraf_1.Markup.button.callback(anomalyItem, anomalyItem === anomalyTarget.effects
+                ? 'anomalyTrue'
+                : 'anomalyFalse')),
+            telegraf_1.Markup.button.callback('Меню', 'menu'),
+        ], {
+            columns: 1,
+        }).reply_markup;
+        const log = `Аномалия, в которой находится артефакт: ${anomalyTarget.name}`;
+        this.appService.updateDisplay(progress, keyboard, log, 'https://sun9-40.userapi.com/impg/TdhFr4WwGgSQrY-68V5oP_iivWfv18ye2cs2UA/DQ5jU6dsKuM.jpg?size=1024x1024&quality=95&sign=314289bfceb91c4d013d1e4829d58d68&type=album');
+    }
+    async anomalyTrue(ctx) {
+        const wayTotal = Math.random() * 100;
+        if (wayTotal >= 60) {
+            await ctx.reply('Отлично, короб подошел, артефакт ведет себя стабильно.');
+            await ctx.scene.leave();
+        }
+        else {
+            await ctx.reply('Отлично, короб подошел, но артефакт был нестабилен и иссяк.');
+            await ctx.scene.leave();
+        }
+    }
+    async anomalyFalse(ctx) {
+        await ctx.reply('Короб не подошел, артефакт разрушен.', telegraf_1.Markup.inlineKeyboard([telegraf_1.Markup.button.callback('Меню', 'menu')]));
+        await ctx.scene.leave();
+    }
+    async onLeaveCommand(ctx) {
+        await ctx.scene.leave();
+    }
+    async onSceneLeave(ctx) {
+        await ctx.reply('Поиск артефакта завершен.', telegraf_1.Markup.inlineKeyboard([telegraf_1.Markup.button.callback('Меню', 'menu')]));
     }
 };
 __decorate([
-    (0, nestjs_telegraf_1.Use)(),
+    (0, nestjs_telegraf_1.SceneEnter)(),
+    __param(0, (0, nestjs_telegraf_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], ArtefactScene.prototype, "onSceneEnter", null);
+__decorate([
+    (0, nestjs_telegraf_1.Action)(/artifactXXX.*/gim),
     __param(0, (0, nestjs_telegraf_1.Ctx)()),
     __param(1, (0, nestjs_telegraf_1.Next)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, Function]),
     __metadata("design:returntype", Promise)
-], ArtefactScene.prototype, "onRegister", null);
+], ArtefactScene.prototype, "onChoose", null);
+__decorate([
+    (0, nestjs_telegraf_1.Action)('anomalyTrue'),
+    __param(0, (0, nestjs_telegraf_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], ArtefactScene.prototype, "anomalyTrue", null);
+__decorate([
+    (0, nestjs_telegraf_1.Action)('anomalyFalse'),
+    __param(0, (0, nestjs_telegraf_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], ArtefactScene.prototype, "anomalyFalse", null);
+__decorate([
+    (0, nestjs_telegraf_1.Action)('leave'),
+    __param(0, (0, nestjs_telegraf_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], ArtefactScene.prototype, "onLeaveCommand", null);
+__decorate([
+    (0, nestjs_telegraf_1.SceneLeave)(),
+    __param(0, (0, nestjs_telegraf_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], ArtefactScene.prototype, "onSceneLeave", null);
 ArtefactScene = ArtefactScene_1 = __decorate([
-    (0, nestjs_telegraf_1.Scene)(scenes_enum_1.ScenesEnum.ARTIFACT),
+    (0, nestjs_telegraf_1.Scene)(scenes_enum_1.ScenesEnum.SCENE_ARTIFACT),
     __param(1, (0, typeorm_1.InjectRepository)(users_entity_1.UsersEntity)),
     __param(2, (0, typeorm_1.InjectRepository)(chapters_entity_1.ChaptersEntity)),
     __param(3, (0, typeorm_1.InjectRepository)(choices_entity_1.ChoicesEntity)),

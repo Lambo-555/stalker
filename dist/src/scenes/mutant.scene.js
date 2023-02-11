@@ -77,7 +77,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], MutantScene.prototype, "onSceneLeave", null);
 MutantScene = __decorate([
-    (0, nestjs_telegraf_1.Scene)(scenes_enum_1.ScenesEnum.MUTANT)
+    (0, nestjs_telegraf_1.Scene)(scenes_enum_1.ScenesEnum.SCENE_MUTANT)
 ], MutantScene);
 exports.MutantScene = MutantScene;
 //# sourceMappingURL=mutant.scene.js.map

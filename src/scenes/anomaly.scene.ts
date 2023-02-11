@@ -37,7 +37,7 @@ import { ScenesEnum } from './enums/scenes.enum';
 // сделать район богаче - новая миссия
 // чем богаче и умнее район, тем больше примочек на автоматы
 
-@Scene(ScenesEnum.ANOMALY_ROAD)
+@Scene(ScenesEnum.SCENE_ANOMALY_ROAD)
 export class AnomalyRoadScene {
   // private readonly logger = new Logger(AnomalyRoadScene.name);
 

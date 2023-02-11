@@ -162,17 +162,17 @@ let QuestScene = QuestScene_1 = class QuestScene {
                 await this.appService.updateDisplay(progress, keyboard, `Здесь не с кем взаимодействовать`);
             }
             else {
-                const choises = await this.choicesRepository.find({
+                const choices = await this.choicesRepository.find({
                     where: { code: nextChapter.code },
                 });
-                choises.forEach(async (item) => {
+                choices.forEach(async (item) => {
                     const chapter = await this.chaptersRepository.findOne({
                         where: { code: item.next_code },
                     });
                     return Object.assign(Object.assign({}, item), { description: chapter.character });
                 });
                 const keyboard = telegraf_1.Markup.inlineKeyboard([
-                    ...choises.map((item) => telegraf_1.Markup.button.callback(this.appService.escapeText(item === null || item === void 0 ? void 0 : item.description), 'chapterXXX' + item.next_code.toString())),
+                    ...choices.map((item) => telegraf_1.Markup.button.callback(this.appService.escapeText(item === null || item === void 0 ? void 0 : item.description), 'chapterXXX' + item.next_code.toString())),
                 ], {
                     columns: 1,
                 }).reply_markup;
@@ -268,7 +268,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], QuestScene.prototype, "onSceneLeave", null);
 QuestScene = QuestScene_1 = __decorate([
-    (0, nestjs_telegraf_1.Scene)(scenes_enum_1.ScenesEnum.QUEST),
+    (0, nestjs_telegraf_1.Scene)(scenes_enum_1.ScenesEnum.SCENE_QUEST),
     __param(1, (0, typeorm_1.InjectRepository)(users_entity_1.UsersEntity)),
     __param(2, (0, typeorm_1.InjectRepository)(chapters_entity_1.ChaptersEntity)),
     __param(3, (0, typeorm_1.InjectRepository)(choices_entity_1.ChoicesEntity)),

@@ -7,44 +7,21 @@ import {
   Next,
   Action,
   Start,
-  InjectBot,
 } from 'nestjs-telegraf';
-import { Context, Markup, Scenes, Telegraf } from 'telegraf';
+import { Markup, Scenes } from 'telegraf';
 import { NextFunction } from 'express';
 import { TelegrafContext } from 'src/interfaces/telegraf-context.interface';
-import { UsersEntity } from './user/entities/users.entity';
 import { AppService } from './app.service';
-import { Like, Repository } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
 import { ChaptersEntity } from './user/entities/chapters.entity';
-import { ChoicesEntity } from './user/entities/choices.entity';
-import { ProgressEntity } from './user/entities/progress.entity';
-import { InventoryItems } from './user/entities/inventory_items.entity';
 import { ScenesEnum } from './scenes/enums/scenes.enum';
-import { LocationsEntity } from './user/entities/locations.entity';
+import { PlayerDataDto } from './common/player-data.dto';
 
 @Update()
 @Injectable()
 export default class AppUpdate {
   private readonly logger = new Logger(AppUpdate.name);
 
-  constructor(
-    private readonly appService: AppService,
-    @InjectRepository(UsersEntity)
-    private readonly usersRepository: Repository<UsersEntity>,
-    @InjectRepository(ChaptersEntity)
-    private readonly chaptersRepository: Repository<ChaptersEntity>,
-    @InjectRepository(ChoicesEntity)
-    private readonly choicesRepository: Repository<ChoicesEntity>,
-    @InjectRepository(ProgressEntity)
-    private readonly progressRepository: Repository<ProgressEntity>,
-    @InjectRepository(InventoryItems)
-    private readonly inventoryItemsRepository: Repository<InventoryItems>,
-    @InjectRepository(LocationsEntity)
-    private readonly locationsRepository: Repository<LocationsEntity>,
-    @InjectBot()
-    private readonly bot: Telegraf<Context>,
-  ) {}
+  constructor(private readonly appService: AppService) {}
 
   onApplicationBootstrap() {
     this.appService.commandListInit();
@@ -56,58 +33,18 @@ export default class AppUpdate {
    * @param next Продолжение игры
    */
   @Use()
-  async onRegister(@Ctx() ctx: TelegrafContext, @Next() next: NextFunction) {
+  async onUse(@Ctx() ctx: TelegrafContext, @Next() next: NextFunction) {
     try {
       // @ts-ignore
-      const messageID = ctx?.update?.message?.message_id;
+      const messageId = ctx?.update?.message?.message_id;
       // @ts-ignore
-      const chatID = ctx?.update?.message?.chat.id;
-
+      const chatId = ctx?.update?.message?.chat.id;
       // @ts-ignore
-      const menuMessage = ctx?.update?.message?.text; 
-      if (
-        (menuMessage === '/menu' || menuMessage === '/display') &&
-        chatID &&
-        messageID
-      ) {
-        // setTimeout(() => {
-        this.bot.telegram.deleteMessage(chatID, messageID);
-        // }, 500);
+      const menuMessage = ctx?.update?.message?.text;
+      if (menuMessage) {
+        await this.appService.clearMenuCommands(menuMessage, chatId, messageId);
       }
-
-      const telegram_id = this.appService.getTelegramId(ctx);
-      let player: UsersEntity = await this.usersRepository.findOne({
-        where: { telegram_id: telegram_id },
-      });
-      let playerProgress: ProgressEntity =
-        await this.progressRepository.findOne({
-          where: { user_id: player?.id },
-        });
-      let playerLocation = await this.locationsRepository.findOne({
-        where: { location: player?.location },
-      });
-      if (!player || !playerLocation || !playerProgress) {
-        await ctx.reply(
-          'Вы зарегистрированы. Введите команду для создания или пересоздания игрового дисплея /display',
-        );
-        playerLocation = await this.locationsRepository.findOne({
-          where: { location: 'Кордон - Бункер Сидоровича' },
-        });
-        player = await this.usersRepository.save({
-          telegram_id: telegram_id,
-          location: playerLocation.location,
-        });
-        if (!playerProgress) {
-          const lastChapter = await this.chaptersRepository.findOne({
-            where: { content: Like('Один из грузовиков%') },
-          });
-          playerProgress = await this.progressRepository.save({
-            user_id: player.id,
-            chapter_code: lastChapter.code,
-            location: playerLocation.location,
-          });
-        }
-      }
+      await this.appService.getStorePlayerData(ctx);
       next();
     } catch (error) {
       console.error(error);
@@ -117,14 +54,8 @@ export default class AppUpdate {
   @Command('/display')
   async onDisplay(@Ctx() ctx: TelegrafContext) {
     try {
-      const telegram_id = this.appService.getTelegramId(ctx);
-      const player: UsersEntity = await this.usersRepository.findOne({
-        where: { telegram_id: telegram_id },
-      });
-      const playerProgress: ProgressEntity =
-        await this.progressRepository.findOne({
-          where: { user_id: player?.id },
-        });
+      const playerData: PlayerDataDto =
+        await this.appService.getStorePlayerData(ctx);
       const imgLink = this.appService.escapeText('https://clck.ru/33PBvE');
       const keyboard = Markup.inlineKeyboard([
         Markup.button.callback('Начало', 'menu'),
@@ -133,17 +64,15 @@ export default class AppUpdate {
         caption: 'display',
         // @ts-ignore
         has_spoiler: true,
-        // parse_mode: 'Markdown2',
         // @ts-ignore
         reply_markup: keyboard,
       });
-      const playerProgressUpdate = await this.progressRepository.update(
-        playerProgress?.progress_id,
-        {
+      ctx.scene.state[playerData.player.telegram_id] =
+        await this.appService.updateStorePlayerProgress(ctx, {
+          ...playerData.playerProgress,
           chat_id: messageDisplay.chat.id,
           message_display_id: messageDisplay.message_id,
-        },
-      );
+        });
     } catch (error) {
       await ctx.reply('Ошибка создания монитора');
       console.log('cant create monitor');
@@ -156,114 +85,81 @@ export default class AppUpdate {
   @Command('menu')
   async onMenu(@Ctx() ctx: TelegrafContext) {
     try {
-      const telegram_id = this.appService.getTelegramId(ctx);
-      const user: UsersEntity = await this.usersRepository.findOne({
-        where: { telegram_id: telegram_id },
-      });
-      let progress: ProgressEntity = await this.progressRepository.findOne({
-        where: { user_id: user.id },
-      });
-      const lastChapter = await this.chaptersRepository.findOne({
-        where: { content: Like('Один из грузовиков%') },
-      });
-      const location = await this.locationsRepository.findOne({
-        where: { location: 'Кордон - Бункер Сидоровича' },
-      });
-      if (!progress) {
-        progress = await this.progressRepository.save({
-          user_id: user.id,
-          chapter_code: lastChapter.code,
-          location: location.location,
-        });
-      }
-      let chapter: ChaptersEntity = await this.chaptersRepository.findOne({
-        where: { code: progress.chapter_code },
-      });
-      const starterChapter = await this.chaptersRepository.findOne({
-        where: { content: Like('Один из грузовиков%') },
-      });
-      if (!chapter && starterChapter) {
-        chapter = starterChapter;
-      }
-      const locations: LocationsEntity = await this.locationsRepository.findOne(
-        {
-          where: { location: user.location },
-        },
+      const playerData: PlayerDataDto =
+        await this.appService.getStorePlayerData(ctx);
+      const chapterNext: ChaptersEntity = await this.appService.getNextChapter(
+        playerData,
       );
-      const chapterNext: ChaptersEntity = await this.chaptersRepository.findOne(
-        {
-          where: {
-            code: progress?.chapter_code,
-            location: locations?.location,
-          },
-        },
-      );
-
       const keyboard = Markup.inlineKeyboard(
         [
-          // Markup.button.callback('✋🏻Уйти', 'leave'),
-          Markup.button.callback('📍Перемещение', ScenesEnum.LOCATION),
-          Markup.button.callback('☠️Бандиты', ScenesEnum.BANDIT),
-          Markup.button.callback('📟PDA', 'PDA'),
-          Markup.button.callback('☢️История', ScenesEnum.QUEST, !!!chapterNext),
+          Markup.button.callback('📍Перемещение', ScenesEnum.SCENE_LOCATION),
+          Markup.button.callback('☠️Бандиты', ScenesEnum.SCENE_BANDIT),
+          Markup.button.callback('📟PDA', ScenesEnum.SCENE_PDA),
+          Markup.button.callback(
+            '☢️Взаимодействие',
+            ScenesEnum.SCENE_QUEST,
+            !!!chapterNext,
+          ),
         ],
         {
           columns: 1,
         },
       ).reply_markup;
       this.appService.updateDisplay(
-        progress,
+        playerData?.playerProgress,
         keyboard,
-        this.appService.escapeText(`Вы на локации: ${locations?.location}.`),
-        locations.image,
+        this.appService.escapeText(
+          `Вы на локации: ${playerData?.playerLocation?.location}.`,
+        ),
+        playerData?.playerLocation?.image,
       );
     } catch (error) {
       console.error(error);
     }
   }
 
-  @Action(ScenesEnum.BANDIT)
-  @Command(ScenesEnum.BANDIT)
+  @Action(/^scene.*/gim)
   async enterBanditScene(@Ctx() ctx: Scenes.SceneContext) {
-    await ctx.scene.enter(ScenesEnum.BANDIT);
+    // @ts-ignore
+    const match = ctx.match[0];
+    console.log(match);
+    if (match) {
+      const scene: ScenesEnum = match;
+      await ctx.scene.enter(scene);
+    }
+    return;
   }
 
-  @Action(ScenesEnum.PDA)
-  @Command(ScenesEnum.PDA)
-  async enterPdaScene(@Ctx() ctx: Scenes.SceneContext) {
-    await ctx.scene.enter(ScenesEnum.PDA);
-  }
-
-  @Action(ScenesEnum.ANOMALY_ROAD)
-  @Command(ScenesEnum.ANOMALY_ROAD)
-  async enterAnomalyRoadScene(@Ctx() ctx: Scenes.SceneContext) {
-    await ctx.scene.enter(ScenesEnum.ANOMALY_ROAD);
-  }
-
-  @Action(ScenesEnum.MUTANT)
-  @Command(ScenesEnum.MUTANT)
-  async enterMutantScene(@Ctx() ctx: Scenes.SceneContext) {
-    await ctx.scene.enter(ScenesEnum.MUTANT);
-  }
-
-  @Action(ScenesEnum.ARTIFACT)
-  @Command(ScenesEnum.ARTIFACT)
-  async enterArtefactScene(@Ctx() ctx: Scenes.SceneContext) {
-    await ctx.scene.enter(ScenesEnum.ARTIFACT);
-  }
-
-  @Action(ScenesEnum.LOCATION)
-  @Command(ScenesEnum.LOCATION)
-  async enterLocationScene(@Ctx() ctx: Scenes.SceneContext) {
-    await ctx.scene.enter(ScenesEnum.LOCATION);
-  }
-
-  @Action(ScenesEnum.QUEST)
-  @Command(ScenesEnum.QUEST)
-  async enterQuestScene(@Ctx() ctx: Scenes.SceneContext) {
-    await ctx.scene.enter(ScenesEnum.QUEST);
-  }
-
+  // @Action(ScenesEnum.SCENE_PDA)
+  // @Command(ScenesEnum.SCENE_PDA)
+  // async enterPdaScene(@Ctx() ctx: Scenes.SceneContext) {
+  //   await ctx.scene.enter(ScenesEnum.SCENE_PDA);
+  // }
+  // @Action(ScenesEnum.SCENE_ANOMALY_ROAD)
+  // @Command(ScenesEnum.SCENE_ANOMALY_ROAD)
+  // async enterAnomalyRoadScene(@Ctx() ctx: Scenes.SceneContext) {
+  //   await ctx.scene.enter(ScenesEnum.SCENE_ANOMALY_ROAD);
+  // }
+  // @Action(ScenesEnum.SCENE_MUTANT)
+  // @Command(ScenesEnum.SCENE_MUTANT)
+  // async enterMutantScene(@Ctx() ctx: Scenes.SceneContext) {
+  //   await ctx.scene.enter(ScenesEnum.SCENE_MUTANT);
+  // }
+  // @Action(ScenesEnum.SCENE_ARTIFACT)
+  // @Command(ScenesEnum.SCENE_ARTIFACT)
+  // async enterArtefactScene(@Ctx() ctx: Scenes.SceneContext) {
+  //   await ctx.scene.enter(ScenesEnum.SCENE_ARTIFACT);
+  // }
+  // @Action(ScenesEnum.SCENE_LOCATION)
+  // @Command(ScenesEnum.SCENE_LOCATION)
+  // async enterLocationScene(@Ctx() ctx: Scenes.SceneContext) {
+  //   await ctx.scene.enter(ScenesEnum.SCENE_LOCATION);
+  // }
+  // @Action(ScenesEnum.SCENE_QUEST)
+  // @Command(ScenesEnum.SCENE_QUEST)
+  // async enterQuestScene(@Ctx() ctx: Scenes.SceneContext) {
+  //   await ctx.scene.enter(ScenesEnum.SCENE_QUEST);
+  // }
   // Markup.button.callback('🔩Аномалия', ScenesEnum.ANOMALY_ROAD),
   // Markup.button.callback('🐫Мутант', ScenesEnum.MUTANT),
   // Markup.button.callback('🤷Бандиты', ScenesEnum.BANDIT),
@@ -369,7 +265,6 @@ export default class AppUpdate {
   //     ),
   //   );
   // }
-
   /**
    * Выберите сумму вашей ставки.
 Вращайте барабаны, нажав на кнопку "Spin".

@@ -1,22 +1,49 @@
 import { Injectable } from '@nestjs/common';
-import { Markup, Telegraf } from 'telegraf';
+import { Telegraf } from 'telegraf';
 import { Scenes } from 'telegraf';
 import { Ctx, InjectBot } from 'nestjs-telegraf';
-import {
-  BotCommand,
-  InlineKeyboardMarkup,
-} from 'telegraf/typings/core/types/typegram';
+import { InlineKeyboardMarkup } from 'telegraf/typings/core/types/typegram';
 import { ExtraReplyMessage } from 'telegraf/typings/telegram-types';
 import crypto from 'crypto';
 import { TelegrafContext } from './interfaces/telegraf-context.interface';
 import { ProgressEntity } from './user/entities/progress.entity';
-import { ScenesEnum } from './scenes/enums/scenes.enum';
+import { InjectRepository } from '@nestjs/typeorm';
+import { UsersEntity } from './user/entities/users.entity';
+import { ChaptersEntity } from './user/entities/chapters.entity';
+import { ChoicesEntity } from './user/entities/choices.entity';
+import { LocationsEntity } from './user/entities/locations.entity';
+import { Like, Repository } from 'typeorm';
+import { PlayerDataDto } from './common/player-data.dto';
+import { RoadsEntity } from './user/entities/roads.entity';
 
 @Injectable()
 export class AppService {
   private readonly algorithm = 'aes-256-ctr';
   private readonly secretKey = 'vOVH6sdmpNWjRRIqCc7rdxs01lwHzfr3';
-  constructor(@InjectBot() private bot: Telegraf<Scenes.SceneContext>) {}
+  private readonly commandList = [
+    { command: 'menu', description: 'Главное меню' },
+    { command: 'display', description: 'Создать новый игровой дисплей' },
+    // { command: 'start', description: 'Главное меню' },
+    // { command: 'registration', description: 'Регистрация' },
+    // { command: 'game', description: 'Start Cobalt game. Play2Earn.' },
+    // { command: 'gambling', description: 'Get list of reached gambling machines. Play slots and other games. You can find more in Cobalt game series' },
+    // { command: 'registration', description: 'Send your Ethereum wallet data for user gambling games authomats.' },
+  ];
+  constructor(
+    @InjectBot() private bot: Telegraf<Scenes.SceneContext>,
+    @InjectRepository(UsersEntity)
+    private readonly usersRepository: Repository<UsersEntity>,
+    @InjectRepository(ChaptersEntity)
+    private readonly chaptersRepository: Repository<ChaptersEntity>,
+    @InjectRepository(ChoicesEntity)
+    private readonly choicesRepository: Repository<ChoicesEntity>,
+    @InjectRepository(ProgressEntity)
+    private readonly progressRepository: Repository<ProgressEntity>,
+    @InjectRepository(RoadsEntity)
+    private readonly roadsRepository: Repository<RoadsEntity>,
+    @InjectRepository(LocationsEntity)
+    private readonly locationsRepository: Repository<LocationsEntity>,
+  ) {}
 
   encrypt(text) {
     const iv = crypto.randomBytes(16);
@@ -26,6 +53,176 @@ export class AppService {
       iv: iv.toString('hex'),
       content: encrypted.toString('hex'),
     };
+  }
+
+  async updateStorePlayerLocation(
+    @Ctx() ctx: TelegrafContext,
+    playerLocation: UsersEntity,
+  ) {
+    const telegram_id = this.getTelegramId(ctx);
+    const { id, ...dataToUpdate } = playerLocation;
+    await this.usersRepository.update(id, dataToUpdate);
+    ctx.scene.state[telegram_id] = {
+      ...ctx.scene.state[telegram_id],
+      playerLocation,
+    };
+    console.log('player update location. telegram_id: ', telegram_id);
+    return ctx.scene.state[telegram_id];
+  }
+
+  async updateStorePlayerProgress(
+    @Ctx() ctx: TelegrafContext,
+    playerProgress: ProgressEntity,
+  ) {
+    const telegram_id = this.getTelegramId(ctx);
+    const { progress_id, ...dataToUpdate } = playerProgress;
+    await this.progressRepository.update(progress_id, dataToUpdate);
+    ctx.scene.state[telegram_id] = {
+      ...ctx.scene.state[telegram_id],
+      playerProgress,
+    };
+    console.log('player update progress. telegram_id: ', telegram_id);
+    return ctx.scene.state[telegram_id];
+  }
+
+  async connectPlayerMonitor() {}
+
+  async getLocation(location: string): Promise<LocationsEntity> {
+    const locationData: LocationsEntity =
+      await this.locationsRepository.findOne({
+        where: { location: location },
+      });
+    return locationData;
+  }
+
+  async getRoadList(location: string): Promise<RoadsEntity[]> {
+    const roadList: RoadsEntity[] = await this.roadsRepository.find({
+      where: { from: location },
+    });
+    return roadList;
+  }
+
+  async getStorePlayerData(
+    @Ctx() ctx: TelegrafContext,
+  ): Promise<PlayerDataDto> {
+    const telegram_id = this.getTelegramId(ctx);
+    if (!ctx.scene?.state[telegram_id]) {
+      let player: UsersEntity = await this.usersRepository.findOne({
+        where: { telegram_id: telegram_id },
+      });
+      if (!player) {
+        player = (await this.registerNewPlayer(ctx)).player;
+      }
+      const playerLocation: LocationsEntity =
+        await this.locationsRepository.findOne({
+          where: { location: player?.location },
+        });
+      const playerProgress: ProgressEntity =
+        await this.progressRepository.findOne({
+          where: { user_id: player?.id },
+        });
+      const playerData: PlayerDataDto = {
+        player,
+        playerLocation,
+        playerProgress,
+      };
+      ctx.scene.state[telegram_id] = playerData;
+      console.log('store initiated for telegram_id: ', telegram_id);
+    }
+    return ctx.scene.state[telegram_id];
+  }
+
+  async getNextChapter(playerData: PlayerDataDto): Promise<ChaptersEntity> {
+    console.log(playerData);
+    const chapterNext: ChaptersEntity = await this.chaptersRepository.findOne({
+      where: {
+        location: playerData.playerLocation.location,
+        code: playerData.playerProgress.chapter_code,
+      },
+    });
+    return chapterNext;
+  }
+
+  async getGoalChapter(playerData: PlayerDataDto) {
+    const chapterNext: ChaptersEntity = await this.chaptersRepository.findOne({
+      where: {
+        code: playerData.playerProgress.chapter_code,
+      },
+    });
+    return chapterNext;
+  }
+
+  async getCurrentChapter(playerData: PlayerDataDto): Promise<ChaptersEntity> {
+    const currentChapter: ChaptersEntity =
+      await this.chaptersRepository.findOne({
+        where: {
+          code: playerData.playerProgress.chapter_code,
+        },
+      });
+    return currentChapter;
+  }
+
+  async clearMenuCommands(
+    messageText: string,
+    chatId: number,
+    messageId: number,
+  ) {
+    const commandList = this.commandList.map((item) => item.command);
+    if (
+      commandList.includes(messageText.slice(1, messageText.length)) &&
+      chatId &&
+      messageId
+    ) {
+      await this.bot.telegram.deleteMessage(chatId, messageId);
+    }
+  }
+
+  async registerNewPlayer(@Ctx() ctx: TelegrafContext): Promise<PlayerDataDto> {
+    try {
+      const telegram_id = this.getTelegramId(ctx);
+      const playerLocation = await this.locationsRepository.findOne({
+        where: { location: 'Кордон - Бункер Сидоровича' },
+      });
+      const player = await this.usersRepository.save({
+        telegram_id: telegram_id,
+        location: playerLocation.location,
+      });
+      const startChapter = await this.chaptersRepository.findOne({
+        where: { content: Like('Один из грузовиков%') },
+      });
+      const playerProgress = await this.progressRepository.save({
+        user_id: player.id,
+        chapter_code: startChapter.code,
+        location: playerLocation.location,
+      });
+      const playerData: PlayerDataDto = {
+        player,
+        playerLocation,
+        playerProgress,
+      };
+      ctx.scene.state[telegram_id] = playerData;
+      console.log('Player registered. Telegram_id: ', telegram_id);
+      await ctx.reply(
+        `Вы зарегистрированы в новелле. Используйте команду /display для создания меню игры.
+Дисплей и его команды:
+
+- Двигайтесь по сюжету через меню "Взаимодействие". Оно доступно в определенных локациях.
+
+- Меняйте локации с помощью меню "Перемещение".
+
+- Команда "PDA" подскажет где вы находитесь и куда вам нужно отправиться.
+
+Остальные команды находятся в разработке, такие как "Бандиты".
+
+Наш чат в телеграмме https://t.me/stalker_novella
+Наша группа в ВК: https://vk.com/stalker_novella
+`,
+      );
+      return playerData;
+    } catch (error) {
+      console.log(error);
+      return null;
+    }
   }
 
   decrypt(hash) {
@@ -46,15 +243,7 @@ export class AppService {
   }
 
   async commandListInit() {
-    await this.bot.telegram.setMyCommands([
-      { command: 'menu', description: 'Главное меню' },
-      { command: 'display', description: 'Создать новый игровой дисплей' },
-      // { command: 'start', description: 'Главное меню' },
-      // { command: 'registration', description: 'Регистрация' },
-      // { command: 'game', description: 'Start Cobalt game. Play2Earn.' },
-      // { command: 'gambling', description: 'Get list of reached gambling machines. Play slots and other games. You can find more in Cobalt game series' },
-      // { command: 'registration', description: 'Send your Ethereum wallet data for user gambling games authomats.' },
-    ]);
+    await this.bot.telegram.setMyCommands(this.commandList);
   }
 
   escapeText(escapedMsg: string) {
@@ -93,7 +282,6 @@ export class AppService {
               'https://media2.giphy.com/media/z6UjsCa1Pq4QoMtkNR/giphy.gif?cid=790b76115ebeebe0c7ac50b73f0eb536c3f7dcaf33451941&rid=giphy.gif&ct=g',
             ), // this.escapeText(photoLink) ||
           caption: this.escapeText(caption) || 'подпись медиа',
-          // parse_mode: 'MarkdownV2',
         },
       );
       await this.bot.telegram.editMessageReplyMarkup(

@@ -1,33 +1,22 @@
-import { Inject, Logger } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { NextFunction } from 'express';
 import {
   Scene,
   SceneEnter,
   SceneLeave,
-  Command,
-  Hears,
   Ctx,
   Action,
-  TELEGRAF_STAGE,
   Next,
-  Use,
 } from 'nestjs-telegraf';
 import { AppService } from 'src/app.service';
-import { Anomalies } from 'src/user/entities/anomalies.entity';
-import { Artifacts } from 'src/user/entities/artifacts.entity';
+import { PlayerDataDto } from 'src/common/player-data.dto';
 import { ChaptersEntity } from 'src/user/entities/chapters.entity';
-import { ChoicesEntity } from 'src/user/entities/choices.entity';
-import { InventoryItems } from 'src/user/entities/inventory_items.entity';
 import { LocationsEntity } from 'src/user/entities/locations.entity';
-import { ProgressEntity } from 'src/user/entities/progress.entity';
 import { RoadsEntity } from 'src/user/entities/roads.entity';
-import { UsersEntity } from 'src/user/entities/users.entity';
-import { Markup, Scenes } from 'telegraf';
-import { InlineKeyboardButton } from 'telegraf/typings/core/types/typegram';
-import { Like, Repository } from 'typeorm';
+import { Markup } from 'telegraf';
+import { Repository } from 'typeorm';
 import { TelegrafContext } from '../interfaces/telegraf-context.interface';
-import { ActivityEnum } from './enums/activity.enum';
 import { ScenesEnum } from './enums/scenes.enum';
 
 // ганг карс
@@ -38,55 +27,30 @@ import { ScenesEnum } from './enums/scenes.enum';
 // сделать район богаче - новая миссия
 // чем богаче и умнее район, тем больше примочек на автоматы
 
-@Scene(ScenesEnum.LOCATION)
+@Scene(ScenesEnum.SCENE_LOCATION)
 export class LocationScene {
   private readonly logger = new Logger(LocationScene.name);
 
   constructor(
     private readonly appService: AppService,
-    @InjectRepository(UsersEntity)
-    private readonly usersRepository: Repository<UsersEntity>,
-    @InjectRepository(ChaptersEntity)
-    private readonly chaptersRepository: Repository<ChaptersEntity>,
-    @InjectRepository(ChoicesEntity)
-    private readonly choicesRepository: Repository<ChoicesEntity>,
-    @InjectRepository(ProgressEntity)
-    private readonly progressRepository: Repository<ProgressEntity>,
-    @InjectRepository(InventoryItems)
-    private readonly inventoryItemsRepository: Repository<InventoryItems>,
-    @InjectRepository(Artifacts)
-    private readonly artifactsRepository: Repository<Artifacts>,
-    @InjectRepository(Anomalies)
-    private readonly anomaliesRepository: Repository<Anomalies>,
     @InjectRepository(LocationsEntity)
-    private readonly locationsRepository: Repository<LocationsEntity>,
     @InjectRepository(RoadsEntity)
     private readonly roadsRepository: Repository<RoadsEntity>,
   ) {}
 
   @SceneEnter()
   async onSceneEnter(@Ctx() ctx: TelegrafContext) {
-    const telegram_id: number =
-      ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
-    const user: UsersEntity = await this.usersRepository.findOne({
-      where: { telegram_id: telegram_id },
-    });
-    const progress: ProgressEntity = await this.progressRepository.findOne({
-      where: {
-        user_id: user.id,
-      },
-    });
-    const location: LocationsEntity = await this.locationsRepository.findOne({
-      where: { location: user.location },
-    });
-    const roads: RoadsEntity[] = await this.roadsRepository.find({
-      where: { from: user.location },
-    });
+    const playerData: PlayerDataDto = await this.appService.getStorePlayerData(
+      ctx,
+    );
+    const roads: RoadsEntity[] = await this.appService.getRoadList(
+      playerData.playerLocation.location,
+    );
     const nextLocations: LocationsEntity[] = [];
     for await (const road of roads) {
-      const locationsItem = await this.locationsRepository.findOne({
-        where: { location: road.to },
-      });
+      const locationsItem: LocationsEntity = await this.appService.getLocation(
+        road.to,
+      );
       nextLocations.push(locationsItem);
     }
     const keyboard = Markup.inlineKeyboard(
@@ -104,10 +68,10 @@ export class LocationScene {
       },
     ).reply_markup;
     await this.appService.updateDisplay(
-      progress,
+      playerData.playerProgress,
       keyboard,
-      `Вы находитесь в локации: "${location.location}". Куда вы хотите отправиться?`,
-      location.image,
+      `Вы находитесь в локации: "${playerData.playerLocation.location}". Куда вы хотите отправиться?`,
+      playerData.playerLocation.image,
     );
   }
 
@@ -116,49 +80,51 @@ export class LocationScene {
     const match = ctx.match[0];
     if (!match) next();
     const locationCode: string = match.split('XXX')[1]; // locationsXXX
-    const location: LocationsEntity = await this.locationsRepository.findOne({
-      where: { location: locationCode },
-    });
-    const telegram_id: number =
-      ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
-    const user: UsersEntity = await this.usersRepository.findOne({
-      where: { telegram_id: telegram_id },
-    });
-    await this.usersRepository.update(
-      { id: user.id },
-      { location: location.location || locationCode },
+    const playerData: PlayerDataDto = await this.appService.getStorePlayerData(
+      ctx,
     );
+    const location: LocationsEntity = await this.appService.getLocation(
+      locationCode,
+    );
+    ctx.scene.state[playerData.player.telegram_id] =
+      await this.appService.updateStorePlayerLocation(ctx, {
+        ...playerData.player,
+        location: location.location,
+      });
     await ctx.scene.reenter();
   }
 
   @Action('leave')
-  async onLeaveCommand(@Ctx() ctx: Scenes.SceneContext) {
+  async onLeaveCommand(@Ctx() ctx: TelegrafContext) {
     await ctx.scene.leave();
-  }
-
-  @SceneLeave()
-  async onSceneLeave(@Ctx() ctx: Scenes.SceneContext) {
-    const telegram_id: number =
-      ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
-    const user: UsersEntity = await this.usersRepository.findOne({
-      where: { telegram_id: telegram_id },
-    });
-    const progress: ProgressEntity = await this.progressRepository.findOne({
-      where: {
-        user_id: user.id,
+    const playerData: PlayerDataDto = await this.appService.getStorePlayerData(
+      ctx,
+    );
+    const chapterNext: ChaptersEntity = await this.appService.getNextChapter(
+      playerData,
+    );
+    const keyboard = Markup.inlineKeyboard(
+      [
+        Markup.button.callback('📍Перемещение', ScenesEnum.SCENE_LOCATION),
+        Markup.button.callback('☠️Бандиты', ScenesEnum.SCENE_BANDIT),
+        Markup.button.callback('📟PDA', ScenesEnum.SCENE_PDA),
+        Markup.button.callback(
+          '☢️Взаимодействие',
+          ScenesEnum.SCENE_QUEST,
+          !!!chapterNext,
+        ),
+      ],
+      {
+        columns: 1,
       },
-    });
-    const location: LocationsEntity = await this.locationsRepository.findOne({
-      where: { location: user.location },
-    });
-    const keyboard = Markup.inlineKeyboard([
-      Markup.button.callback('Меню', 'menu'),
-    ]).reply_markup;
-    await this.appService.updateDisplay(
-      progress,
+    ).reply_markup;
+    this.appService.updateDisplay(
+      playerData?.playerProgress,
       keyboard,
-      `Перемещение завершено`,
-      location?.image,
+      this.appService.escapeText(
+        `Вы на локации: ${playerData?.playerLocation?.location}.`,
+      ),
+      playerData?.playerLocation?.image,
     );
   }
 }

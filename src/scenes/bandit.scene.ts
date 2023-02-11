@@ -1,32 +1,8 @@
-import { Inject, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { NextFunction } from 'express';
-import {
-  Scene,
-  SceneEnter,
-  SceneLeave,
-  Command,
-  Hears,
-  Ctx,
-  Action,
-  TELEGRAF_STAGE,
-  Next,
-  Use,
-  InjectBot,
-} from 'nestjs-telegraf';
+import { Logger } from '@nestjs/common';
+import { Scene, SceneEnter, Ctx, Action } from 'nestjs-telegraf';
 import { AppService } from 'src/app.service';
-import { Anomalies } from 'src/user/entities/anomalies.entity';
-import { Artifacts } from 'src/user/entities/artifacts.entity';
-import { ChaptersEntity } from 'src/user/entities/chapters.entity';
-import { ChoicesEntity } from 'src/user/entities/choices.entity';
-import { InventoryItems } from 'src/user/entities/inventory_items.entity';
-import { LocationsEntity } from 'src/user/entities/locations.entity';
-import { ProgressEntity } from 'src/user/entities/progress.entity';
-import { QuestsEntity } from 'src/user/entities/quests.entity';
-import { RoadsEntity } from 'src/user/entities/roads.entity';
-import { UsersEntity } from 'src/user/entities/users.entity';
-import { Context, Markup, Scenes, Telegraf } from 'telegraf';
-import { Repository } from 'typeorm';
+import { PlayerDataDto } from 'src/common/player-data.dto';
+import { Markup } from 'telegraf';
 import { TelegrafContext } from '../interfaces/telegraf-context.interface';
 import { ScenesEnum } from './enums/scenes.enum';
 
@@ -38,35 +14,11 @@ import { ScenesEnum } from './enums/scenes.enum';
 // сделать район богаче - новая миссия
 // чем богаче и умнее район, тем больше примочек на автоматы
 
-@Scene(ScenesEnum.BANDIT)
+@Scene(ScenesEnum.SCENE_BANDIT)
 export class BanditScene {
   private readonly logger = new Logger(BanditScene.name);
 
-  constructor(
-    private readonly appService: AppService,
-    @InjectRepository(UsersEntity)
-    private readonly usersRepository: Repository<UsersEntity>,
-    @InjectRepository(ChaptersEntity)
-    private readonly chaptersRepository: Repository<ChaptersEntity>,
-    @InjectRepository(ChoicesEntity)
-    private readonly choicesRepository: Repository<ChoicesEntity>,
-    @InjectRepository(ProgressEntity)
-    private readonly progressRepository: Repository<ProgressEntity>,
-    @InjectRepository(InventoryItems)
-    private readonly inventoryItemsRepository: Repository<InventoryItems>,
-    @InjectRepository(Artifacts)
-    private readonly artifactsRepository: Repository<Artifacts>,
-    @InjectRepository(Anomalies)
-    private readonly anomaliesRepository: Repository<Anomalies>,
-    @InjectRepository(LocationsEntity)
-    private readonly locationsRepository: Repository<LocationsEntity>,
-    @InjectRepository(RoadsEntity)
-    private readonly roadsRepository: Repository<RoadsEntity>,
-    @InjectRepository(QuestsEntity)
-    private readonly questsEntity: Repository<QuestsEntity>,
-    @InjectBot()
-    private readonly bot: Telegraf<Context>,
-  ) {}
+  constructor(private readonly appService: AppService) {}
 
   calculateDistance(
     posOne: { x: number; y: number },
@@ -145,7 +97,7 @@ export class BanditScene {
     return enemies;
   }
 
-  buttlePart(enemyList) {
+  battlePart(enemyList) {
     const phrasesShot = [
       'Ай, мля',
       'Маслину поймал',
@@ -211,16 +163,9 @@ export class BanditScene {
 
   @SceneEnter()
   async onSceneEnter(@Ctx() ctx: TelegrafContext) {
-    const telegram_id: number =
-      ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
-    const user: UsersEntity = await this.usersRepository.findOne({
-      where: { telegram_id: telegram_id },
-    });
-    const progress: ProgressEntity = await this.progressRepository.findOne({
-      where: {
-        user_id: user.id,
-      },
-    });
+    const playerData: PlayerDataDto = await this.appService.getStorePlayerData(
+      ctx,
+    );
     const keyboard = Markup.inlineKeyboard([
       Markup.button.callback('Вернуться', 'menu'),
     ]).reply_markup;
@@ -228,10 +173,10 @@ export class BanditScene {
     let log = `Вам на пути встретились бандиты. Началась перестрелка. Вы обнаружили врагов: ${enemies
       .map((item) => item.name)
       .join(', ')}.\n`;
-    log += this.buttlePart(enemies);
+    log += this.battlePart(enemies);
     log += '\nБой окончен!';
     this.appService.updateDisplay(
-      progress,
+      playerData.playerProgress,
       keyboard,
       log,
       'https://sun9-40.userapi.com/impg/TdhFr4WwGgSQrY-68V5oP_iivWfv18ye2cs2UA/DQ5jU6dsKuM.jpg?size=1024x1024&quality=95&sign=314289bfceb91c4d013d1e4829d58d68&type=album',
@@ -252,13 +197,8 @@ export class BanditScene {
   // }
 
   @Action('leave')
-  async onLeaveCommand(@Ctx() ctx: Scenes.SceneContext) {
+  async onLeaveCommand(@Ctx() ctx: TelegrafContext) {
     await ctx.scene.leave();
     // await ctx.scene.enter(ScenesEnum.QUEST);
-  }
-
-  @SceneLeave()
-  async onSceneLeave(@Ctx() ctx: Scenes.SceneContext) {
-    //
   }
 }

@@ -34,7 +34,7 @@ import { ScenesEnum } from './enums/scenes.enum';
 // сделать район богаче - новая миссия
 // чем богаче и умнее район, тем больше примочек на автоматы
 
-@Scene(ScenesEnum.QUEST)
+@Scene(ScenesEnum.SCENE_QUEST)
 export class QuestScene {
   private readonly logger = new Logger(QuestScene.name);
 
@@ -203,10 +203,10 @@ export class QuestScene {
           `Здесь не с кем взаимодействовать`,
         );
       } else {
-        const choises: ChoicesEntity[] = await this.choicesRepository.find({
+        const choices: ChoicesEntity[] = await this.choicesRepository.find({
           where: { code: nextChapter.code },
         });
-        choises.forEach(async (item) => {
+        choices.forEach(async (item) => {
           const chapter = await this.chaptersRepository.findOne({
             where: { code: item.next_code },
           });
@@ -217,7 +217,7 @@ export class QuestScene {
         });
         const keyboard = Markup.inlineKeyboard(
           [
-            ...choises.map((item) =>
+            ...choices.map((item) =>
               Markup.button.callback(
                 this.appService.escapeText(item?.description),
                 'chapterXXX' + item.next_code.toString(),

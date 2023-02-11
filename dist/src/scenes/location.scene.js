@@ -25,71 +25,40 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const nestjs_telegraf_1 = require("nestjs-telegraf");
 const app_service_1 = require("../app.service");
-const anomalies_entity_1 = require("../user/entities/anomalies.entity");
-const artifacts_entity_1 = require("../user/entities/artifacts.entity");
-const chapters_entity_1 = require("../user/entities/chapters.entity");
-const choices_entity_1 = require("../user/entities/choices.entity");
-const inventory_items_entity_1 = require("../user/entities/inventory_items.entity");
 const locations_entity_1 = require("../user/entities/locations.entity");
-const progress_entity_1 = require("../user/entities/progress.entity");
 const roads_entity_1 = require("../user/entities/roads.entity");
-const users_entity_1 = require("../user/entities/users.entity");
 const telegraf_1 = require("telegraf");
 const typeorm_2 = require("typeorm");
 const scenes_enum_1 = require("./enums/scenes.enum");
 let LocationScene = LocationScene_1 = class LocationScene {
-    constructor(appService, usersRepository, chaptersRepository, choicesRepository, progressRepository, inventoryItemsRepository, artifactsRepository, anomaliesRepository, locationsRepository, roadsRepository) {
+    constructor(appService, roadsRepository) {
         this.appService = appService;
-        this.usersRepository = usersRepository;
-        this.chaptersRepository = chaptersRepository;
-        this.choicesRepository = choicesRepository;
-        this.progressRepository = progressRepository;
-        this.inventoryItemsRepository = inventoryItemsRepository;
-        this.artifactsRepository = artifactsRepository;
-        this.anomaliesRepository = anomaliesRepository;
-        this.locationsRepository = locationsRepository;
         this.roadsRepository = roadsRepository;
         this.logger = new common_1.Logger(LocationScene_1.name);
     }
     async onSceneEnter(ctx) {
         var _a, e_1, _b, _c;
-        var _d, _e, _f;
-        const telegram_id = ((_d = ctx === null || ctx === void 0 ? void 0 : ctx.message) === null || _d === void 0 ? void 0 : _d.from.id) || ((_f = (_e = ctx === null || ctx === void 0 ? void 0 : ctx.callbackQuery) === null || _e === void 0 ? void 0 : _e.from) === null || _f === void 0 ? void 0 : _f.id);
-        const user = await this.usersRepository.findOne({
-            where: { telegram_id: telegram_id },
-        });
-        const progress = await this.progressRepository.findOne({
-            where: {
-                user_id: user.id,
-            },
-        });
-        const location = await this.locationsRepository.findOne({
-            where: { location: user.location },
-        });
-        const roads = await this.roadsRepository.find({
-            where: { from: user.location },
-        });
+        const playerData = await this.appService.getStorePlayerData(ctx);
+        const roads = await this.appService.getRoadList(playerData.playerLocation.location);
         const nextLocations = [];
         try {
-            for (var _g = true, roads_1 = __asyncValues(roads), roads_1_1; roads_1_1 = await roads_1.next(), _a = roads_1_1.done, !_a;) {
+            for (var _d = true, roads_1 = __asyncValues(roads), roads_1_1; roads_1_1 = await roads_1.next(), _a = roads_1_1.done, !_a;) {
                 _c = roads_1_1.value;
-                _g = false;
+                _d = false;
                 try {
                     const road = _c;
-                    const locationsItem = await this.locationsRepository.findOne({
-                        where: { location: road.to },
-                    });
+                    const locationsItem = await this.appService.getLocation(road.to);
                     nextLocations.push(locationsItem);
                 }
                 finally {
-                    _g = true;
+                    _d = true;
                 }
             }
         }
         catch (e_1_1) { e_1 = { error: e_1_1 }; }
         finally {
             try {
-                if (!_g && !_a && (_b = roads_1.return)) await _b.call(roads_1);
+                if (!_d && !_a && (_b = roads_1.return)) await _b.call(roads_1);
             }
             finally { if (e_1) throw e_1.error; }
         }
@@ -99,45 +68,33 @@ let LocationScene = LocationScene_1 = class LocationScene {
         ], {
             columns: 1,
         }).reply_markup;
-        await this.appService.updateDisplay(progress, keyboard, `Вы находитесь в локации: "${location.location}". Куда вы хотите отправиться?`, location.image);
+        await this.appService.updateDisplay(playerData.playerProgress, keyboard, `Вы находитесь в локации: "${playerData.playerLocation.location}". Куда вы хотите отправиться?`, playerData.playerLocation.image);
     }
     async onChoose(ctx, next) {
-        var _a, _b, _c;
         const match = ctx.match[0];
         if (!match)
             next();
         const locationCode = match.split('XXX')[1];
-        const location = await this.locationsRepository.findOne({
-            where: { location: locationCode },
-        });
-        const telegram_id = ((_a = ctx === null || ctx === void 0 ? void 0 : ctx.message) === null || _a === void 0 ? void 0 : _a.from.id) || ((_c = (_b = ctx === null || ctx === void 0 ? void 0 : ctx.callbackQuery) === null || _b === void 0 ? void 0 : _b.from) === null || _c === void 0 ? void 0 : _c.id);
-        const user = await this.usersRepository.findOne({
-            where: { telegram_id: telegram_id },
-        });
-        await this.usersRepository.update({ id: user.id }, { location: location.location || locationCode });
+        const playerData = await this.appService.getStorePlayerData(ctx);
+        const location = await this.appService.getLocation(locationCode);
+        ctx.scene.state[playerData.player.telegram_id] =
+            await this.appService.updateStorePlayerLocation(ctx, Object.assign(Object.assign({}, playerData.player), { location: location.location }));
         await ctx.scene.reenter();
     }
     async onLeaveCommand(ctx) {
+        var _a, _b;
         await ctx.scene.leave();
-    }
-    async onSceneLeave(ctx) {
-        var _a, _b, _c;
-        const telegram_id = ((_a = ctx === null || ctx === void 0 ? void 0 : ctx.message) === null || _a === void 0 ? void 0 : _a.from.id) || ((_c = (_b = ctx === null || ctx === void 0 ? void 0 : ctx.callbackQuery) === null || _b === void 0 ? void 0 : _b.from) === null || _c === void 0 ? void 0 : _c.id);
-        const user = await this.usersRepository.findOne({
-            where: { telegram_id: telegram_id },
-        });
-        const progress = await this.progressRepository.findOne({
-            where: {
-                user_id: user.id,
-            },
-        });
-        const location = await this.locationsRepository.findOne({
-            where: { location: user.location },
-        });
+        const playerData = await this.appService.getStorePlayerData(ctx);
+        const chapterNext = await this.appService.getNextChapter(playerData);
         const keyboard = telegraf_1.Markup.inlineKeyboard([
-            telegraf_1.Markup.button.callback('Меню', 'menu'),
-        ]).reply_markup;
-        await this.appService.updateDisplay(progress, keyboard, `Перемещение завершено`, location === null || location === void 0 ? void 0 : location.image);
+            telegraf_1.Markup.button.callback('📍Перемещение', scenes_enum_1.ScenesEnum.SCENE_LOCATION),
+            telegraf_1.Markup.button.callback('☠️Бандиты', scenes_enum_1.ScenesEnum.SCENE_BANDIT),
+            telegraf_1.Markup.button.callback('📟PDA', scenes_enum_1.ScenesEnum.SCENE_PDA),
+            telegraf_1.Markup.button.callback('☢️Взаимодействие', scenes_enum_1.ScenesEnum.SCENE_QUEST, !!!chapterNext),
+        ], {
+            columns: 1,
+        }).reply_markup;
+        this.appService.updateDisplay(playerData === null || playerData === void 0 ? void 0 : playerData.playerProgress, keyboard, this.appService.escapeText(`Вы на локации: ${(_a = playerData === null || playerData === void 0 ? void 0 : playerData.playerLocation) === null || _a === void 0 ? void 0 : _a.location}.`), (_b = playerData === null || playerData === void 0 ? void 0 : playerData.playerLocation) === null || _b === void 0 ? void 0 : _b.image);
     }
 };
 __decorate([
@@ -162,33 +119,11 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], LocationScene.prototype, "onLeaveCommand", null);
-__decorate([
-    (0, nestjs_telegraf_1.SceneLeave)(),
-    __param(0, (0, nestjs_telegraf_1.Ctx)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", Promise)
-], LocationScene.prototype, "onSceneLeave", null);
 LocationScene = LocationScene_1 = __decorate([
-    (0, nestjs_telegraf_1.Scene)(scenes_enum_1.ScenesEnum.LOCATION),
-    __param(1, (0, typeorm_1.InjectRepository)(users_entity_1.UsersEntity)),
-    __param(2, (0, typeorm_1.InjectRepository)(chapters_entity_1.ChaptersEntity)),
-    __param(3, (0, typeorm_1.InjectRepository)(choices_entity_1.ChoicesEntity)),
-    __param(4, (0, typeorm_1.InjectRepository)(progress_entity_1.ProgressEntity)),
-    __param(5, (0, typeorm_1.InjectRepository)(inventory_items_entity_1.InventoryItems)),
-    __param(6, (0, typeorm_1.InjectRepository)(artifacts_entity_1.Artifacts)),
-    __param(7, (0, typeorm_1.InjectRepository)(anomalies_entity_1.Anomalies)),
-    __param(8, (0, typeorm_1.InjectRepository)(locations_entity_1.LocationsEntity)),
-    __param(9, (0, typeorm_1.InjectRepository)(roads_entity_1.RoadsEntity)),
+    (0, nestjs_telegraf_1.Scene)(scenes_enum_1.ScenesEnum.SCENE_LOCATION),
+    __param(1, (0, typeorm_1.InjectRepository)(locations_entity_1.LocationsEntity)),
+    __param(1, (0, typeorm_1.InjectRepository)(roads_entity_1.RoadsEntity)),
     __metadata("design:paramtypes", [app_service_1.AppService,
-        typeorm_2.Repository,
-        typeorm_2.Repository,
-        typeorm_2.Repository,
-        typeorm_2.Repository,
-        typeorm_2.Repository,
-        typeorm_2.Repository,
-        typeorm_2.Repository,
-        typeorm_2.Repository,
         typeorm_2.Repository])
 ], LocationScene);
 exports.LocationScene = LocationScene;
