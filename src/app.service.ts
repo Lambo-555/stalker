@@ -217,19 +217,19 @@ export class AppService {
       console.log('Player registered. Telegram_id: ', telegram_id);
       await ctx.reply(
         `Вы зарегистрированы в новелле. Используйте команду /display для создания меню игры.
-Дисплей и его команды:
+  Дисплей и его команды:
 
-- Двигайтесь по сюжету через меню "Взаимодействие". Оно доступно в определенных локациях.
+  - Двигайтесь по сюжету через меню "Взаимодействие". Оно доступно в определенных локациях.
 
-- Меняйте локации с помощью меню "Перемещение".
+  - Меняйте локации с помощью меню "Перемещение".
 
-- Команда "PDA" подскажет где вы находитесь и куда вам нужно отправиться.
+  - Команда "PDA" подскажет где вы находитесь и куда вам нужно отправиться.
 
-Остальные команды находятся в разработке, такие как "Бандиты".
+  Остальные команды находятся в разработке, такие как "Бандиты".
 
-Наш чат в телеграмме https://t.me/stalker_novella
-Наша группа в ВК: https://vk.com/stalker_novella
-`,
+  Наш чат в телеграмме https://t.me/stalker_novella
+  Наша группа в ВК: https://vk.com/stalker_novella
+  `,
       );
       return playerData;
     } catch (error) {
@@ -261,20 +261,42 @@ export class AppService {
 
   escapeText(escapedMsg: string) {
     return escapedMsg;
-    return escapedMsg
-      .replace(/_/gim, '\\_')
-      .replace(/\*\*/gim, '----------')
-      .replace(/\*/gim, '\\*')
-      .replace(/----------/gim, '*')
-      .replace(/\(/gim, '\\(')
-      .replace(/\)/gim, '\\)')
-      .replace(/\[/gim, '\\[')
-      .replace(/\!/gim, '\\!')
-      .replace(/\`/gim, '\\`')
-      .replace(/\-/gim, '\\-')
-      .replace(/\./gim, '\\.')
-      .replace(/\,/gim, '\\,');
+    const specialChars = /[.*+?^${}()|[\]\\]/g;
+    const replacements = {
+      _: '\\_',
+      '**': '----------',
+      '*': '\\*',
+      '-': '\\-',
+      '`': '\\`',
+      '(': '\\(',
+      ')': '\\)',
+      '[': '\\[',
+      '!': '\\!',
+      '.': '\\.',
+      ',': '\\,',
+    };
+    return escapedMsg.replace(
+      specialChars,
+      (match) => replacements[match] || match,
+    );
   }
+
+  // escapeText(escapedMsg: string) {
+  //   return escapedMsg;
+  //   return escapedMsg
+  //     .replace(/_/gim, '\\_')
+  //     .replace(/\*\*/gim, '----------')
+  //     .replace(/\*/gim, '\\*')
+  //     .replace(/----------/gim, '*')
+  //     .replace(/\(/gim, '\\(')
+  //     .replace(/\)/gim, '\\)')
+  //     .replace(/\[/gim, '\\[')
+  //     .replace(/\!/gim, '\\!')
+  //     .replace(/\`/gim, '\\`')
+  //     .replace(/\-/gim, '\\-')
+  //     .replace(/\./gim, '\\.')
+  //     .replace(/\,/gim, '\\,');
+  // }
 
   async updateDisplay(
     progress: ProgressEntity,

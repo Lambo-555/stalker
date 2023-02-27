@@ -25,6 +25,7 @@ let QuestScene = QuestScene_1 = class QuestScene {
         this.logger = new common_1.Logger(QuestScene_1.name);
     }
     async onSceneEnter(ctx) {
+        var _a, _b;
         try {
             const playerData = await this.appService.getStorePlayerData(ctx);
             const chapter = await this.appService.getNextChapter(playerData);
@@ -33,13 +34,17 @@ let QuestScene = QuestScene_1 = class QuestScene {
                     telegraf_1.Markup.button.callback('🤝Диалог', 'chapterXXX' + chapter.code),
                     telegraf_1.Markup.button.callback('✋🏻Уйти', 'leave'),
                 ]).reply_markup;
-                await this.appService.updateDisplay(playerData.playerProgress, keyboard, `${chapter === null || chapter === void 0 ? void 0 : chapter.character}`, playerData.playerLocation.image);
+                await this.appService.updateDisplay(playerData.playerProgress, keyboard, `${chapter === null || chapter === void 0 ? void 0 : chapter.character}`, ((_a = chapter === null || chapter === void 0 ? void 0 : chapter.image) === null || _a === void 0 ? void 0 : _a.length)
+                    ? chapter === null || chapter === void 0 ? void 0 : chapter.image
+                    : playerData.playerLocation.image);
             }
             else {
                 const keyboard = telegraf_1.Markup.inlineKeyboard([
                     telegraf_1.Markup.button.callback('✋🏻Уйти', 'leave'),
                 ]).reply_markup;
-                await this.appService.updateDisplay(playerData.playerProgress, keyboard, `Здесь не с кем взаимодействовать`, playerData.playerLocation.image);
+                await this.appService.updateDisplay(playerData.playerProgress, keyboard, `Здесь не с кем взаимодействовать`, ((_b = chapter === null || chapter === void 0 ? void 0 : chapter.image) === null || _b === void 0 ? void 0 : _b.length)
+                    ? chapter === null || chapter === void 0 ? void 0 : chapter.image
+                    : playerData.playerLocation.image);
             }
         }
         catch (error) {
@@ -47,6 +52,7 @@ let QuestScene = QuestScene_1 = class QuestScene {
         }
     }
     async onChooseChapter(ctx, next) {
+        var _a, _b;
         try {
             const match = ctx.match[0];
             if (!match)
@@ -61,7 +67,9 @@ let QuestScene = QuestScene_1 = class QuestScene {
                 const keyboard = telegraf_1.Markup.inlineKeyboard([
                     telegraf_1.Markup.button.callback('✋🏻Уйти', 'leave'),
                 ]).reply_markup;
-                await this.appService.updateDisplay(playerData.playerProgress, keyboard, `Здесь не с кем взаимодействовать`, playerData.playerLocation.image);
+                await this.appService.updateDisplay(playerData.playerProgress, keyboard, `Здесь не с кем взаимодействовать`, ((_a = nextChapter === null || nextChapter === void 0 ? void 0 : nextChapter.image) === null || _a === void 0 ? void 0 : _a.length)
+                    ? nextChapter === null || nextChapter === void 0 ? void 0 : nextChapter.image
+                    : playerData.playerLocation.image);
             }
             else {
                 const choices = await this.appService.getChoiceList(nextChapter.code);
@@ -74,7 +82,9 @@ let QuestScene = QuestScene_1 = class QuestScene {
                 ], {
                     columns: 1,
                 }).reply_markup;
-                await this.appService.updateDisplay(playerData.playerProgress, keyboard, `${nextChapter === null || nextChapter === void 0 ? void 0 : nextChapter.character}: ` + nextChapter.content, playerData.playerLocation.image);
+                await this.appService.updateDisplay(playerData.playerProgress, keyboard, `${nextChapter === null || nextChapter === void 0 ? void 0 : nextChapter.character}: ` + nextChapter.content, ((_b = nextChapter === null || nextChapter === void 0 ? void 0 : nextChapter.image) === null || _b === void 0 ? void 0 : _b.length)
+                    ? nextChapter === null || nextChapter === void 0 ? void 0 : nextChapter.image
+                    : playerData.playerLocation.image);
             }
         }
         catch (error) {
@@ -92,7 +102,6 @@ let QuestScene = QuestScene_1 = class QuestScene {
             const chapterNext = await this.appService.getNextChapter(playerData);
             const keyboard = telegraf_1.Markup.inlineKeyboard([
                 telegraf_1.Markup.button.callback('📍Перемещение', scenes_enum_1.ScenesEnum.SCENE_LOCATION),
-                telegraf_1.Markup.button.callback('☠️Бандиты', scenes_enum_1.ScenesEnum.SCENE_BANDIT),
                 telegraf_1.Markup.button.callback('📟PDA', scenes_enum_1.ScenesEnum.SCENE_PDA),
                 telegraf_1.Markup.button.callback('☢️Взаимодействие', scenes_enum_1.ScenesEnum.SCENE_QUEST, !!!chapterNext),
             ], {
@@ -103,6 +112,14 @@ let QuestScene = QuestScene_1 = class QuestScene {
         catch (error) {
             console.error(error);
         }
+    }
+    async enterBanditScene(ctx) {
+        const match = ctx.match[0];
+        if (match) {
+            const scene = match;
+            await ctx.scene.enter(scene);
+        }
+        return;
     }
 };
 __decorate([
@@ -134,6 +151,13 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], QuestScene.prototype, "onSceneLeave", null);
+__decorate([
+    (0, nestjs_telegraf_1.Action)(/^scene.*/gim),
+    __param(0, (0, nestjs_telegraf_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], QuestScene.prototype, "enterBanditScene", null);
 QuestScene = QuestScene_1 = __decorate([
     (0, nestjs_telegraf_1.Scene)(scenes_enum_1.ScenesEnum.SCENE_QUEST),
     __metadata("design:paramtypes", [app_service_1.AppService])

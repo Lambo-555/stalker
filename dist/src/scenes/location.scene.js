@@ -37,28 +37,21 @@ let LocationScene = LocationScene_1 = class LocationScene {
         this.logger = new common_1.Logger(LocationScene_1.name);
     }
     async onSceneEnter(ctx) {
-        var _a, e_1, _b, _c;
+        var e_1, _a;
         const playerData = await this.appService.getStorePlayerData(ctx);
         const roads = await this.appService.getRoadList(playerData.playerLocation.location);
         const nextLocations = [];
         try {
-            for (var _d = true, roads_1 = __asyncValues(roads), roads_1_1; roads_1_1 = await roads_1.next(), _a = roads_1_1.done, !_a;) {
-                _c = roads_1_1.value;
-                _d = false;
-                try {
-                    const road = _c;
-                    const locationsItem = await this.appService.getLocation(road.to);
-                    nextLocations.push(locationsItem);
-                }
-                finally {
-                    _d = true;
-                }
+            for (var roads_1 = __asyncValues(roads), roads_1_1; roads_1_1 = await roads_1.next(), !roads_1_1.done;) {
+                const road = roads_1_1.value;
+                const locationsItem = await this.appService.getLocation(road.to);
+                nextLocations.push(locationsItem);
             }
         }
         catch (e_1_1) { e_1 = { error: e_1_1 }; }
         finally {
             try {
-                if (!_d && !_a && (_b = roads_1.return)) await _b.call(roads_1);
+                if (roads_1_1 && !roads_1_1.done && (_a = roads_1.return)) await _a.call(roads_1);
             }
             finally { if (e_1) throw e_1.error; }
         }

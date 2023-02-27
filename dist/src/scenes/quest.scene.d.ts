@@ -1,5 +1,6 @@
 import { NextFunction } from 'express';
 import { AppService } from 'src/app.service';
+import { Scenes } from 'telegraf';
 import { TelegrafContext } from '../interfaces/telegraf-context.interface';
 export declare class QuestScene {
     private readonly appService;
@@ -9,4 +10,5 @@ export declare class QuestScene {
     onChooseChapter(ctx: TelegrafContext, next: NextFunction): Promise<void>;
     onLeaveCommand(ctx: TelegrafContext): Promise<void>;
     onSceneLeave(ctx: TelegrafContext): Promise<void>;
+    enterBanditScene(ctx: Scenes.SceneContext): Promise<void>;
 }

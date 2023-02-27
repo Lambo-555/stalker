@@ -12,7 +12,7 @@ import { AppService } from 'src/app.service';
 import { PlayerDataDto } from 'src/common/player-data.dto';
 import { ChaptersEntity } from 'src/user/entities/chapters.entity';
 import { ChoicesEntity } from 'src/user/entities/choices.entity';
-import { Markup } from 'telegraf';
+import { Markup, Scenes } from 'telegraf';
 import { TelegrafContext } from '../interfaces/telegraf-context.interface';
 import { ScenesEnum } from './enums/scenes.enum';
 
@@ -47,7 +47,9 @@ export class QuestScene {
           playerData.playerProgress,
           keyboard,
           `${chapter?.character}`,
-          playerData.playerLocation.image,
+          chapter?.image?.length
+            ? chapter?.image
+            : playerData.playerLocation.image,
         );
       } else {
         const keyboard = Markup.inlineKeyboard([
@@ -57,7 +59,9 @@ export class QuestScene {
           playerData.playerProgress,
           keyboard,
           `Здесь не с кем взаимодействовать`,
-          playerData.playerLocation.image,
+          chapter?.image?.length
+            ? chapter?.image
+            : playerData.playerLocation.image,
         );
       }
     } catch (error) {
@@ -94,7 +98,9 @@ export class QuestScene {
           playerData.playerProgress,
           keyboard,
           `Здесь не с кем взаимодействовать`,
-          playerData.playerLocation.image,
+          nextChapter?.image?.length
+            ? nextChapter?.image
+            : playerData.playerLocation.image,
         );
       } else {
         const choices: ChoicesEntity[] = await this.appService.getChoiceList(
@@ -125,7 +131,9 @@ export class QuestScene {
           playerData.playerProgress,
           keyboard,
           `${nextChapter?.character}: ` + nextChapter.content,
-          playerData.playerLocation.image,
+          nextChapter?.image?.length
+            ? nextChapter?.image
+            : playerData.playerLocation.image,
         );
       }
     } catch (error) {
@@ -150,7 +158,6 @@ export class QuestScene {
       const keyboard = Markup.inlineKeyboard(
         [
           Markup.button.callback('📍Перемещение', ScenesEnum.SCENE_LOCATION),
-          Markup.button.callback('☠️Бандиты', ScenesEnum.SCENE_BANDIT),
           Markup.button.callback('📟PDA', ScenesEnum.SCENE_PDA),
           Markup.button.callback(
             '☢️Взаимодействие',
@@ -173,5 +180,16 @@ export class QuestScene {
     } catch (error) {
       console.error(error);
     }
+  }
+
+  @Action(/^scene.*/gim)
+  async enterBanditScene(@Ctx() ctx: Scenes.SceneContext) {
+    // @ts-ignore
+    const match = ctx.match[0];
+    if (match) {
+      const scene: ScenesEnum = match;
+      await ctx.scene.enter(scene);
+    }
+    return;
   }
 }
