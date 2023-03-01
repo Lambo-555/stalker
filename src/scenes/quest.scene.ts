@@ -38,9 +38,12 @@ export class QuestScene {
       const chapter: ChaptersEntity = await this.appService.getNextChapter(
         playerData,
       );
-      if (chapter.location === playerData.playerLocation.location) {
+      if (chapter?.location === playerData.playerLocation.location) {
         const keyboard = Markup.inlineKeyboard([
-          Markup.button.callback('🤝Диалог', 'chapterXXX' + chapter.code),
+          Markup.button.callback(
+            '🤝Взаимодействие',
+            'chapterXXX' + chapter.code,
+          ),
           Markup.button.callback('✋🏻Уйти', 'leave'),
         ]).reply_markup;
         await this.appService.updateDisplay(
@@ -111,7 +114,7 @@ export class QuestScene {
             await this.appService.getChapterByCode(item.next_code);
           return {
             ...item,
-            description: chapter.character,
+            description: chapter?.character,
           };
         });
         const keyboard = Markup.inlineKeyboard(

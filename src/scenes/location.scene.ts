@@ -91,7 +91,17 @@ export class LocationScene {
         ...playerData.player,
         location: location.location,
       });
-    await ctx.scene.reenter();
+    const nextChapter = await this.appService.getChapterByCode(
+      playerData.playerProgress.chapter_code,
+    );
+    if (
+      nextChapter?.character === 'Бандиты (враги)' &&
+      nextChapter?.location === location?.location
+    ) {
+      return ctx.scene.enter(ScenesEnum.SCENE_BANDIT);
+    } else {
+      await ctx.scene.reenter();
+    }
   }
 
   @Action('leave')
@@ -106,7 +116,7 @@ export class LocationScene {
     const keyboard = Markup.inlineKeyboard(
       [
         Markup.button.callback('📍Перемещение', ScenesEnum.SCENE_LOCATION),
-        Markup.button.callback('☠️Бандиты', ScenesEnum.SCENE_BANDIT),
+        // Markup.button.callback('☠️Бандиты', ScenesEnum.SCENE_BANDIT),
         Markup.button.callback('📟PDA', ScenesEnum.SCENE_PDA),
         Markup.button.callback(
           '☢️Взаимодействие',

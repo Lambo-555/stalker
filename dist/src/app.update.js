@@ -68,12 +68,11 @@ let AppUpdate = AppUpdate_1 = class AppUpdate {
         try {
             const playerData = await this.appService.getStorePlayerData(ctx);
             const chapterNext = await this.appService.getNextChapter(playerData);
-            const keyboard = telegraf_1.Markup.inlineKeyboard([
-                telegraf_1.Markup.button.callback('📍Перемещение', scenes_enum_1.ScenesEnum.SCENE_LOCATION),
-                telegraf_1.Markup.button.callback('☠️Бандиты', scenes_enum_1.ScenesEnum.SCENE_BANDIT),
-                telegraf_1.Markup.button.callback('📟PDA', scenes_enum_1.ScenesEnum.SCENE_PDA),
-                telegraf_1.Markup.button.callback('☢️Взаимодействие', scenes_enum_1.ScenesEnum.SCENE_QUEST, !!!chapterNext),
-            ], {
+            const keyboardButtons = [];
+            keyboardButtons.push(telegraf_1.Markup.button.callback('📍Перемещение', scenes_enum_1.ScenesEnum.SCENE_LOCATION));
+            keyboardButtons.push(telegraf_1.Markup.button.callback('📟PDA', scenes_enum_1.ScenesEnum.SCENE_PDA));
+            keyboardButtons.push(telegraf_1.Markup.button.callback('☢️Взаимодействие', scenes_enum_1.ScenesEnum.SCENE_QUEST, !!!chapterNext));
+            const keyboard = telegraf_1.Markup.inlineKeyboard(keyboardButtons, {
                 columns: 1,
             }).reply_markup;
             this.appService.updateDisplay(playerData === null || playerData === void 0 ? void 0 : playerData.playerProgress, keyboard, this.appService.escapeText(`Вы на локации: ${(_a = playerData === null || playerData === void 0 ? void 0 : playerData.playerLocation) === null || _a === void 0 ? void 0 : _a.location}.`), (_b = playerData === null || playerData === void 0 ? void 0 : playerData.playerLocation) === null || _b === void 0 ? void 0 : _b.image);

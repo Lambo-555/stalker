@@ -9,6 +9,6 @@ export declare class LocationScene {
     private readonly logger;
     constructor(appService: AppService, roadsRepository: Repository<RoadsEntity>);
     onSceneEnter(ctx: TelegrafContext): Promise<void>;
-    onChoose(ctx: TelegrafContext, next: NextFunction): Promise<void>;
+    onChoose(ctx: TelegrafContext, next: NextFunction): Promise<unknown>;
     onLeaveCommand(ctx: TelegrafContext): Promise<void>;
 }

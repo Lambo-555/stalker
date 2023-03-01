@@ -90,21 +90,24 @@ export default class AppUpdate {
       const chapterNext: ChaptersEntity = await this.appService.getNextChapter(
         playerData,
       );
-      const keyboard = Markup.inlineKeyboard(
-        [
-          Markup.button.callback('📍Перемещение', ScenesEnum.SCENE_LOCATION),
-          Markup.button.callback('☠️Бандиты', ScenesEnum.SCENE_BANDIT),
-          Markup.button.callback('📟PDA', ScenesEnum.SCENE_PDA),
-          Markup.button.callback(
-            '☢️Взаимодействие',
-            ScenesEnum.SCENE_QUEST,
-            !!!chapterNext,
-          ),
-        ],
-        {
-          columns: 1,
-        },
-      ).reply_markup;
+      const keyboardButtons: any[] = [];
+      keyboardButtons.push(
+        Markup.button.callback('📍Перемещение', ScenesEnum.SCENE_LOCATION),
+      );
+      keyboardButtons.push(
+        Markup.button.callback('📟PDA', ScenesEnum.SCENE_PDA),
+      );
+      keyboardButtons.push(
+        Markup.button.callback(
+          '☢️Взаимодействие',
+          ScenesEnum.SCENE_QUEST,
+          !!!chapterNext,
+        ),
+      );
+      const keyboard = Markup.inlineKeyboard(keyboardButtons, {
+        columns: 1,
+      }).reply_markup;
+
       this.appService.updateDisplay(
         playerData?.playerProgress,
         keyboard,

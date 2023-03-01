@@ -29,9 +29,9 @@ let QuestScene = QuestScene_1 = class QuestScene {
         try {
             const playerData = await this.appService.getStorePlayerData(ctx);
             const chapter = await this.appService.getNextChapter(playerData);
-            if (chapter.location === playerData.playerLocation.location) {
+            if ((chapter === null || chapter === void 0 ? void 0 : chapter.location) === playerData.playerLocation.location) {
                 const keyboard = telegraf_1.Markup.inlineKeyboard([
-                    telegraf_1.Markup.button.callback('🤝Диалог', 'chapterXXX' + chapter.code),
+                    telegraf_1.Markup.button.callback('🤝Взаимодействие', 'chapterXXX' + chapter.code),
                     telegraf_1.Markup.button.callback('✋🏻Уйти', 'leave'),
                 ]).reply_markup;
                 await this.appService.updateDisplay(playerData.playerProgress, keyboard, `${chapter === null || chapter === void 0 ? void 0 : chapter.character}`, ((_a = chapter === null || chapter === void 0 ? void 0 : chapter.image) === null || _a === void 0 ? void 0 : _a.length)
@@ -75,7 +75,7 @@ let QuestScene = QuestScene_1 = class QuestScene {
                 const choices = await this.appService.getChoiceList(nextChapter.code);
                 choices.forEach(async (item) => {
                     const chapter = await this.appService.getChapterByCode(item.next_code);
-                    return Object.assign(Object.assign({}, item), { description: chapter.character });
+                    return Object.assign(Object.assign({}, item), { description: chapter === null || chapter === void 0 ? void 0 : chapter.character });
                 });
                 const keyboard = telegraf_1.Markup.inlineKeyboard([
                     ...choices.map((item) => telegraf_1.Markup.button.callback(this.appService.escapeText(item === null || item === void 0 ? void 0 : item.description), 'chapterXXX' + item.next_code.toString())),

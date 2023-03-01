@@ -2,7 +2,7 @@ import { Logger } from '@nestjs/common';
 import { Scene, SceneEnter, Ctx, Action } from 'nestjs-telegraf';
 import { AppService } from 'src/app.service';
 import { PlayerDataDto } from 'src/common/player-data.dto';
-import { Markup } from 'telegraf';
+import { Markup, Scenes } from 'telegraf';
 import { TelegrafContext } from '../interfaces/telegraf-context.interface';
 import { ScenesEnum } from './enums/scenes.enum';
 
@@ -167,7 +167,8 @@ export class BanditScene {
       ctx,
     );
     const keyboard = Markup.inlineKeyboard([
-      Markup.button.callback('Вернуться', 'menu'),
+      // Markup.button.callback('Вернуться', 'menu'),
+      Markup.button.callback('Вернуться', ScenesEnum.SCENE_QUEST),
     ]).reply_markup;
     const enemies: any[] = this.generateRandomEnemies();
     let log = `Вам на пути встретились бандиты. Началась перестрелка. Вы обнаружили врагов: ${enemies
@@ -179,9 +180,9 @@ export class BanditScene {
       playerData.playerProgress,
       keyboard,
       log,
-      'https://sun9-40.userapi.com/impg/TdhFr4WwGgSQrY-68V5oP_iivWfv18ye2cs2UA/DQ5jU6dsKuM.jpg?size=1024x1024&quality=95&sign=314289bfceb91c4d013d1e4829d58d68&type=album',
+      'https://sun9-2.userapi.com/impg/8D9R-PqX4qIvNk1r7FQ4eP1KfPiWcUJFoN3uRw/B7-a2BJJtC4.jpg?size=700x538&quality=95&sign=becda26a8a3aad44cb19b373ddaa84e8&type=album',
     );
-    ctx.scene.leave();
+    // ctx.scene.leave();
   }
 
   // переговоры бандитов - заходи, сбоку заходи
@@ -198,7 +199,17 @@ export class BanditScene {
 
   @Action('leave')
   async onLeaveCommand(@Ctx() ctx: TelegrafContext) {
-    await ctx.scene.leave();
-    // await ctx.scene.enter(ScenesEnum.QUEST);
+    await ctx.scene.enter(ScenesEnum.SCENE_LOCATION);
+  }
+
+  @Action(/^scene.*/gim)
+  async enterBanditScene(@Ctx() ctx: Scenes.SceneContext) {
+    // @ts-ignore
+    const match = ctx.match[0];
+    if (match) {
+      const scene: ScenesEnum = match;
+      await ctx.scene.enter(scene);
+    }
+    return;
   }
 }

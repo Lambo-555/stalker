@@ -1,4 +1,5 @@
 import { AppService } from 'src/app.service';
+import { Scenes } from 'telegraf';
 import { TelegrafContext } from '../interfaces/telegraf-context.interface';
 export declare class BanditScene {
     private readonly appService;
@@ -25,4 +26,5 @@ export declare class BanditScene {
     battlePart(enemyList: any): string;
     onSceneEnter(ctx: TelegrafContext): Promise<void>;
     onLeaveCommand(ctx: TelegrafContext): Promise<void>;
+    enterBanditScene(ctx: Scenes.SceneContext): Promise<void>;
 }

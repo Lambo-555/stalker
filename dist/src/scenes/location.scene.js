@@ -72,7 +72,14 @@ let LocationScene = LocationScene_1 = class LocationScene {
         const location = await this.appService.getLocation(locationCode);
         ctx.scene.state[playerData.player.telegram_id] =
             await this.appService.updateStorePlayerLocation(ctx, Object.assign(Object.assign({}, playerData.player), { location: location.location }));
-        await ctx.scene.reenter();
+        const nextChapter = await this.appService.getChapterByCode(playerData.playerProgress.chapter_code);
+        if ((nextChapter === null || nextChapter === void 0 ? void 0 : nextChapter.character) === 'Бандиты (враги)' &&
+            (nextChapter === null || nextChapter === void 0 ? void 0 : nextChapter.location) === (location === null || location === void 0 ? void 0 : location.location)) {
+            return ctx.scene.enter(scenes_enum_1.ScenesEnum.SCENE_BANDIT);
+        }
+        else {
+            await ctx.scene.reenter();
+        }
     }
     async onLeaveCommand(ctx) {
         var _a, _b;
@@ -81,7 +88,6 @@ let LocationScene = LocationScene_1 = class LocationScene {
         const chapterNext = await this.appService.getNextChapter(playerData);
         const keyboard = telegraf_1.Markup.inlineKeyboard([
             telegraf_1.Markup.button.callback('📍Перемещение', scenes_enum_1.ScenesEnum.SCENE_LOCATION),
-            telegraf_1.Markup.button.callback('☠️Бандиты', scenes_enum_1.ScenesEnum.SCENE_BANDIT),
             telegraf_1.Markup.button.callback('📟PDA', scenes_enum_1.ScenesEnum.SCENE_PDA),
             telegraf_1.Markup.button.callback('☢️Взаимодействие', scenes_enum_1.ScenesEnum.SCENE_QUEST, !!!chapterNext),
         ], {

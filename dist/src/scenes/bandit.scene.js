@@ -159,7 +159,7 @@ let BanditScene = BanditScene_1 = class BanditScene {
     async onSceneEnter(ctx) {
         const playerData = await this.appService.getStorePlayerData(ctx);
         const keyboard = telegraf_1.Markup.inlineKeyboard([
-            telegraf_1.Markup.button.callback('Вернуться', 'menu'),
+            telegraf_1.Markup.button.callback('Вернуться', scenes_enum_1.ScenesEnum.SCENE_QUEST),
         ]).reply_markup;
         const enemies = this.generateRandomEnemies();
         let log = `Вам на пути встретились бандиты. Началась перестрелка. Вы обнаружили врагов: ${enemies
@@ -167,11 +167,18 @@ let BanditScene = BanditScene_1 = class BanditScene {
             .join(', ')}.\n`;
         log += this.battlePart(enemies);
         log += '\nБой окончен!';
-        this.appService.updateDisplay(playerData.playerProgress, keyboard, log, 'https://sun9-40.userapi.com/impg/TdhFr4WwGgSQrY-68V5oP_iivWfv18ye2cs2UA/DQ5jU6dsKuM.jpg?size=1024x1024&quality=95&sign=314289bfceb91c4d013d1e4829d58d68&type=album');
-        ctx.scene.leave();
+        this.appService.updateDisplay(playerData.playerProgress, keyboard, log, 'https://sun9-2.userapi.com/impg/8D9R-PqX4qIvNk1r7FQ4eP1KfPiWcUJFoN3uRw/B7-a2BJJtC4.jpg?size=700x538&quality=95&sign=becda26a8a3aad44cb19b373ddaa84e8&type=album');
     }
     async onLeaveCommand(ctx) {
-        await ctx.scene.leave();
+        await ctx.scene.enter(scenes_enum_1.ScenesEnum.SCENE_LOCATION);
+    }
+    async enterBanditScene(ctx) {
+        const match = ctx.match[0];
+        if (match) {
+            const scene = match;
+            await ctx.scene.enter(scene);
+        }
+        return;
     }
 };
 __decorate([
@@ -188,6 +195,13 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], BanditScene.prototype, "onLeaveCommand", null);
+__decorate([
+    (0, nestjs_telegraf_1.Action)(/^scene.*/gim),
+    __param(0, (0, nestjs_telegraf_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], BanditScene.prototype, "enterBanditScene", null);
 BanditScene = BanditScene_1 = __decorate([
     (0, nestjs_telegraf_1.Scene)(scenes_enum_1.ScenesEnum.SCENE_BANDIT),
     __metadata("design:paramtypes", [app_service_1.AppService])
