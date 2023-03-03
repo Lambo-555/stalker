@@ -20,8 +20,8 @@ export declare class BanditScene {
     };
     calculateDamage(distance: number, damage: number): number;
     generateRandomEnemies(): EnemyObj[];
-    battlePart(enemyList: any): string;
     attackEnemy(ctx: TelegrafContext): Promise<void>;
+    onMove(ctx: TelegrafContext): Promise<void>;
     onSceneEnter(ctx: TelegrafContext): Promise<void>;
     getEnemiesPositions(enemyList: EnemyObj[]): string;
     onLeaveCommand(ctx: TelegrafContext): Promise<void>;

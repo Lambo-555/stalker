@@ -103,70 +103,6 @@ export class BanditScene {
     return enemies;
   }
 
-  battlePart(enemyList) {
-    const phrasesShot = [
-      'Ай, мля',
-      'Маслину поймал',
-      'Епта',
-      'Меня подбили, пацаны',
-      'Погано то как',
-      'Зацепило, пацаны',
-    ];
-    const phrasesMiss = [
-      'Мозила',
-      'Косой',
-      'Баклан, ты мимо',
-      'Ай, фаратнуло',
-      'В молоко',
-    ];
-    let logs = '';
-    let damageToEnemy = 0;
-    let damageToPlayer = 0;
-    while (enemyList.length !== 0) {
-      const enemy = enemyList[0];
-      const distancePlayers = this.calculateDistance(enemy, { x: 0, y: 0 });
-      const spread = this.calculateSpread(1, distancePlayers);
-      logs += `\nДистанция:${distancePlayers}. Разлетность: ${spread}%`;
-
-      const phrasesIndex = Math.floor(Math.random() * phrasesShot.length);
-      const phraseShot = phrasesShot[phrasesIndex];
-      const phrasesMissIndex = Math.floor(Math.random() * phrasesMiss.length);
-      const phraseMiss = phrasesMiss[phrasesMissIndex];
-
-      const damageToEnemyNow = this.calculateDamage(distancePlayers, 120);
-      const isShotToEnemy = Math.random() * 100 >= spread;
-      if (isShotToEnemy) {
-        logs += `\n${enemy.name}: ${phraseShot}\n`;
-        damageToEnemy += damageToEnemyNow;
-        logs += `Урон по врагу: ${damageToEnemyNow}\n`;
-      } else {
-        logs += `\n${enemy.name}: ${phraseMiss}\n`;
-        logs += `Урон по врагу не прошел.\n`;
-      }
-
-      const damageToPlayerNow = this.calculateDamage(distancePlayers, 45);
-      const isShotToPlayer = Math.random() * 100 >= spread;
-      if (isShotToPlayer) {
-        damageToPlayer += damageToPlayerNow;
-        logs += `Ответный урон по вам: ${damageToPlayerNow}\n`;
-      } else {
-        logs += `Ответный урон по вам не прошел\n`;
-      }
-
-      if (damageToEnemy >= 75) {
-        enemyList.splice(0, 1);
-        logs += `${enemy.name} более не опасен...\n`;
-        damageToEnemy = 0;
-      }
-      if (damageToPlayer >= 126) {
-        enemyList.splice(0, 1);
-        logs += `\nВы погибли...(На данном этапе это не влияет на прогресс)\n`;
-        break;
-      }
-    }
-    return logs;
-  }
-
   @Action(/^attackXXX.*/gim)
   async attackEnemy(@Ctx() ctx: TelegrafContext) {
     // @ts-ignore
@@ -233,8 +169,8 @@ export class BanditScene {
         [
           // Markup.button.callback('Вернуться', 'menu'),
           Markup.button.callback('⬆️50m', 'goBack'),
-          Markup.button.callback('⬇️50m', 'goForward'),
           Markup.button.callback('⬅️50m', 'goLeft'),
+          Markup.button.callback('⬇️50m', 'goForward'),
           Markup.button.callback('➡️50m', 'goRight'),
           // кнопки для атаки конкретного персонажа
           ...ctx.scene.state[playerData.player.telegram_id].enemyList
@@ -259,6 +195,85 @@ export class BanditScene {
     );
   }
 
+  @Action(/^moveXXX.*/gim)
+  async onMove(@Ctx() ctx: TelegrafContext) {
+    // @ts-ignore
+    const match = ctx.match[0];
+    const direction: string = match.split('XXX')[1];
+    if (!direction) {
+      await ctx.scene.enter(ScenesEnum.SCENE_QUEST);
+    }
+    const playerData: PlayerDataDto = await this.appService.getStorePlayerData(
+      ctx,
+    );
+    let log = `Вы передвинулись ${direction} на 50m. Расстояние до противника поменялось.\n\n`;
+    let enemyList: EnemyObj[] = null;
+    if (!ctx.scene.state[playerData.player.telegram_id]?.enemyList?.length) {
+      enemyList = this.generateRandomEnemies();
+    } else {
+      enemyList = ctx.scene.state[playerData.player.telegram_id]?.enemyList;
+    }
+    enemyList = enemyList.filter((enemy) => enemy.isAlive);
+    ctx.scene.state[playerData.player.telegram_id] = {
+      ...playerData,
+      enemyList,
+    };
+    log += 'Было:' + this.getEnemiesPositions(enemyList) + '\n';
+    if (direction === '⬆️') {
+      enemyList.map((item) => {
+        item.position.y = item.position.y - 50;
+        return item;
+      });
+    }
+    if (direction === '⬇️') {
+      enemyList.map((item) => {
+        item.position.y = item.position.y + 50;
+        return item;
+      });
+    }
+    if (direction === '⬅️') {
+      enemyList.map((item) => {
+        item.position.x = item.position.x + 50;
+        return item;
+      });
+    }
+    if (direction === '➡️') {
+      enemyList.map((item) => {
+        item.position.x = item.position.x - 50;
+        return item;
+      });
+    }
+    ctx.scene.state[playerData.player.telegram_id].enemyList = enemyList;
+    const keyboard = Markup.inlineKeyboard(
+      [
+        // Markup.button.callback('Вернуться', 'menu'),
+        Markup.button.callback('⬆️50m', 'moveXXX' + '⬆️'),
+        Markup.button.callback('⬅️50m', 'moveXXX' + '⬅️'),
+        Markup.button.callback('⬇️50m', 'moveXXX' + '⬇️'),
+        Markup.button.callback('➡️50m', 'moveXXX' + '➡️'),
+        // кнопки для атаки конкретного персонажа
+        ...ctx.scene.state[playerData.player.telegram_id].enemyList
+          .filter((enemy) => enemy.isAlive)
+          .map((enemyItem) =>
+            Markup.button.callback(
+              '🎯' + enemyItem.name,
+              'attackXXX' + enemyItem.name,
+            ),
+          ),
+      ],
+      {
+        columns: 2,
+      },
+    ).reply_markup;
+    log += 'Стало:' + this.getEnemiesPositions(enemyList) + '\n';
+    this.appService.updateDisplay(
+      playerData.playerProgress,
+      keyboard,
+      log,
+      'https://sun9-2.userapi.com/impg/8D9R-PqX4qIvNk1r7FQ4eP1KfPiWcUJFoN3uRw/B7-a2BJJtC4.jpg?size=700x538&quality=95&sign=becda26a8a3aad44cb19b373ddaa84e8&type=album',
+    );
+  }
+
   @SceneEnter()
   async onSceneEnter(@Ctx() ctx: TelegrafContext) {
     const playerData: PlayerDataDto = await this.appService.getStorePlayerData(
@@ -270,21 +285,18 @@ export class BanditScene {
     } else {
       enemyList = ctx.scene.state[playerData.player.telegram_id]?.enemyList;
     }
-    const storeData: PlayerDataDto = await this.appService.getStorePlayerData(
-      ctx,
-    );
     ctx.scene.state[playerData.player.telegram_id] = {
-      ...storeData,
+      ...playerData,
       enemyList,
     };
     console.log('awdawdaw', ctx.scene.state[playerData.player.telegram_id]);
     const keyboard = Markup.inlineKeyboard(
       [
         // Markup.button.callback('Вернуться', 'menu'),
-        Markup.button.callback('⬆️50m', 'goBack'),
-        Markup.button.callback('⬇️50m', 'goForward'),
-        Markup.button.callback('⬅️50m', 'goLeft'),
-        Markup.button.callback('➡️50m', 'goRight'),
+        Markup.button.callback('⬆️50m', 'moveXXX' + '⬆️'),
+        Markup.button.callback('⬅️50m', 'moveXXX' + '⬅️'),
+        Markup.button.callback('⬇️50m', 'moveXXX' + '⬇️'),
+        Markup.button.callback('➡️50m', 'moveXXX' + '➡️'),
         // кнопки для атаки конкретного персонажа
         ...ctx.scene.state[playerData.player.telegram_id].enemyList
           .filter((enemy) => enemy.isAlive)
@@ -359,6 +371,66 @@ export class BanditScene {
   //     'https://sun9-2.userapi.com/impg/8D9R-PqX4qIvNk1r7FQ4eP1KfPiWcUJFoN3uRw/B7-a2BJJtC4.jpg?size=700x538&quality=95&sign=becda26a8a3aad44cb19b373ddaa84e8&type=album',
   //   );
   //   // ctx.scene.leave();
+  // }
+
+  // battlePart(enemyList) {
+  //   const phrasesShot = [
+  //     'Ай, мля',
+  //     'Маслину поймал',
+  //     'Епта',
+  //     'Меня подбили, пацаны',
+  //     'Погано то как',
+  //     'Зацепило, пацаны',
+  //   ];
+  //   const phrasesMiss = [
+  //     'Мозила',
+  //     'Косой',
+  //     'Баклан, ты мимо',
+  //     'Ай, фаратнуло',
+  //     'В молоко',
+  //   ];
+  //   let logs = '';
+  //   let damageToEnemy = 0;
+  //   let damageToPlayer = 0;
+  //   while (enemyList.length !== 0) {
+  //     const enemy = enemyList[0];
+  //     const distancePlayers = this.calculateDistance(enemy, { x: 0, y: 0 });
+  //     const spread = this.calculateSpread(1, distancePlayers);
+  //     logs += `\nДистанция:${distancePlayers}. Разлетность: ${spread}%`;
+  //     const phrasesIndex = Math.floor(Math.random() * phrasesShot.length);
+  //     const phraseShot = phrasesShot[phrasesIndex];
+  //     const phrasesMissIndex = Math.floor(Math.random() * phrasesMiss.length);
+  //     const phraseMiss = phrasesMiss[phrasesMissIndex];
+  //     const damageToEnemyNow = this.calculateDamage(distancePlayers, 120);
+  //     const isShotToEnemy = Math.random() * 100 >= spread;
+  //     if (isShotToEnemy) {
+  //       logs += `\n${enemy.name}: ${phraseShot}\n`;
+  //       damageToEnemy += damageToEnemyNow;
+  //       logs += `Урон по врагу: ${damageToEnemyNow}\n`;
+  //     } else {
+  //       logs += `\n${enemy.name}: ${phraseMiss}\n`;
+  //       logs += `Урон по врагу не прошел.\n`;
+  //     }
+  //     const damageToPlayerNow = this.calculateDamage(distancePlayers, 45);
+  //     const isShotToPlayer = Math.random() * 100 >= spread;
+  //     if (isShotToPlayer) {
+  //       damageToPlayer += damageToPlayerNow;
+  //       logs += `Ответный урон по вам: ${damageToPlayerNow}\n`;
+  //     } else {
+  //       logs += `Ответный урон по вам не прошел\n`;
+  //     }
+  //     if (damageToEnemy >= 75) {
+  //       enemyList.splice(0, 1);
+  //       logs += `${enemy.name} более не опасен...\n`;
+  //       damageToEnemy = 0;
+  //     }
+  //     if (damageToPlayer >= 126) {
+  //       enemyList.splice(0, 1);
+  //       logs += `\nВы погибли...(На данном этапе это не влияет на прогресс)\n`;
+  //       break;
+  //     }
+  //   }
+  //   return logs;
   // }
 
   @Action('leave')

@@ -101,67 +101,6 @@ let BanditScene = BanditScene_1 = class BanditScene {
         }
         return enemies;
     }
-    battlePart(enemyList) {
-        const phrasesShot = [
-            'Ай, мля',
-            'Маслину поймал',
-            'Епта',
-            'Меня подбили, пацаны',
-            'Погано то как',
-            'Зацепило, пацаны',
-        ];
-        const phrasesMiss = [
-            'Мозила',
-            'Косой',
-            'Баклан, ты мимо',
-            'Ай, фаратнуло',
-            'В молоко',
-        ];
-        let logs = '';
-        let damageToEnemy = 0;
-        let damageToPlayer = 0;
-        while (enemyList.length !== 0) {
-            const enemy = enemyList[0];
-            const distancePlayers = this.calculateDistance(enemy, { x: 0, y: 0 });
-            const spread = this.calculateSpread(1, distancePlayers);
-            logs += `\nДистанция:${distancePlayers}. Разлетность: ${spread}%`;
-            const phrasesIndex = Math.floor(Math.random() * phrasesShot.length);
-            const phraseShot = phrasesShot[phrasesIndex];
-            const phrasesMissIndex = Math.floor(Math.random() * phrasesMiss.length);
-            const phraseMiss = phrasesMiss[phrasesMissIndex];
-            const damageToEnemyNow = this.calculateDamage(distancePlayers, 120);
-            const isShotToEnemy = Math.random() * 100 >= spread;
-            if (isShotToEnemy) {
-                logs += `\n${enemy.name}: ${phraseShot}\n`;
-                damageToEnemy += damageToEnemyNow;
-                logs += `Урон по врагу: ${damageToEnemyNow}\n`;
-            }
-            else {
-                logs += `\n${enemy.name}: ${phraseMiss}\n`;
-                logs += `Урон по врагу не прошел.\n`;
-            }
-            const damageToPlayerNow = this.calculateDamage(distancePlayers, 45);
-            const isShotToPlayer = Math.random() * 100 >= spread;
-            if (isShotToPlayer) {
-                damageToPlayer += damageToPlayerNow;
-                logs += `Ответный урон по вам: ${damageToPlayerNow}\n`;
-            }
-            else {
-                logs += `Ответный урон по вам не прошел\n`;
-            }
-            if (damageToEnemy >= 75) {
-                enemyList.splice(0, 1);
-                logs += `${enemy.name} более не опасен...\n`;
-                damageToEnemy = 0;
-            }
-            if (damageToPlayer >= 126) {
-                enemyList.splice(0, 1);
-                logs += `\nВы погибли...(На данном этапе это не влияет на прогресс)\n`;
-                break;
-            }
-        }
-        return logs;
-    }
     async attackEnemy(ctx) {
         const match = ctx.match[0];
         const enemyName = match.split('XXX')[1];
@@ -212,8 +151,8 @@ let BanditScene = BanditScene_1 = class BanditScene {
         else {
             keyboard = telegraf_1.Markup.inlineKeyboard([
                 telegraf_1.Markup.button.callback('⬆️50m', 'goBack'),
-                telegraf_1.Markup.button.callback('⬇️50m', 'goForward'),
                 telegraf_1.Markup.button.callback('⬅️50m', 'goLeft'),
+                telegraf_1.Markup.button.callback('⬇️50m', 'goForward'),
                 telegraf_1.Markup.button.callback('➡️50m', 'goRight'),
                 ...ctx.scene.state[playerData.player.telegram_id].enemyList
                     .filter((enemy) => enemy.isAlive)
@@ -223,6 +162,64 @@ let BanditScene = BanditScene_1 = class BanditScene {
             }).reply_markup;
         }
         this.appService.updateDisplay(playerData.playerProgress, keyboard, text, 'https://sun9-2.userapi.com/impg/8D9R-PqX4qIvNk1r7FQ4eP1KfPiWcUJFoN3uRw/B7-a2BJJtC4.jpg?size=700x538&quality=95&sign=becda26a8a3aad44cb19b373ddaa84e8&type=album');
+    }
+    async onMove(ctx) {
+        var _a, _b, _c;
+        const match = ctx.match[0];
+        const direction = match.split('XXX')[1];
+        if (!direction) {
+            await ctx.scene.enter(scenes_enum_1.ScenesEnum.SCENE_QUEST);
+        }
+        const playerData = await this.appService.getStorePlayerData(ctx);
+        let log = `Вы передвинулись ${direction} на 50m. Расстояние до противника поменялось.\n\n`;
+        let enemyList = null;
+        if (!((_b = (_a = ctx.scene.state[playerData.player.telegram_id]) === null || _a === void 0 ? void 0 : _a.enemyList) === null || _b === void 0 ? void 0 : _b.length)) {
+            enemyList = this.generateRandomEnemies();
+        }
+        else {
+            enemyList = (_c = ctx.scene.state[playerData.player.telegram_id]) === null || _c === void 0 ? void 0 : _c.enemyList;
+        }
+        enemyList = enemyList.filter((enemy) => enemy.isAlive);
+        ctx.scene.state[playerData.player.telegram_id] = Object.assign(Object.assign({}, playerData), { enemyList });
+        log += 'Было:' + this.getEnemiesPositions(enemyList) + '\n';
+        if (direction === '⬆️') {
+            enemyList.map((item) => {
+                item.position.y = item.position.y - 50;
+                return item;
+            });
+        }
+        if (direction === '⬇️') {
+            enemyList.map((item) => {
+                item.position.y = item.position.y + 50;
+                return item;
+            });
+        }
+        if (direction === '⬅️') {
+            enemyList.map((item) => {
+                item.position.x = item.position.x + 50;
+                return item;
+            });
+        }
+        if (direction === '➡️') {
+            enemyList.map((item) => {
+                item.position.x = item.position.x - 50;
+                return item;
+            });
+        }
+        ctx.scene.state[playerData.player.telegram_id].enemyList = enemyList;
+        const keyboard = telegraf_1.Markup.inlineKeyboard([
+            telegraf_1.Markup.button.callback('⬆️50m', 'moveXXX' + '⬆️'),
+            telegraf_1.Markup.button.callback('⬅️50m', 'moveXXX' + '⬅️'),
+            telegraf_1.Markup.button.callback('⬇️50m', 'moveXXX' + '⬇️'),
+            telegraf_1.Markup.button.callback('➡️50m', 'moveXXX' + '➡️'),
+            ...ctx.scene.state[playerData.player.telegram_id].enemyList
+                .filter((enemy) => enemy.isAlive)
+                .map((enemyItem) => telegraf_1.Markup.button.callback('🎯' + enemyItem.name, 'attackXXX' + enemyItem.name)),
+        ], {
+            columns: 2,
+        }).reply_markup;
+        log += 'Стало:' + this.getEnemiesPositions(enemyList) + '\n';
+        this.appService.updateDisplay(playerData.playerProgress, keyboard, log, 'https://sun9-2.userapi.com/impg/8D9R-PqX4qIvNk1r7FQ4eP1KfPiWcUJFoN3uRw/B7-a2BJJtC4.jpg?size=700x538&quality=95&sign=becda26a8a3aad44cb19b373ddaa84e8&type=album');
     }
     async onSceneEnter(ctx) {
         var _a, _b, _c;
@@ -234,14 +231,13 @@ let BanditScene = BanditScene_1 = class BanditScene {
         else {
             enemyList = (_c = ctx.scene.state[playerData.player.telegram_id]) === null || _c === void 0 ? void 0 : _c.enemyList;
         }
-        const storeData = await this.appService.getStorePlayerData(ctx);
-        ctx.scene.state[playerData.player.telegram_id] = Object.assign(Object.assign({}, storeData), { enemyList });
+        ctx.scene.state[playerData.player.telegram_id] = Object.assign(Object.assign({}, playerData), { enemyList });
         console.log('awdawdaw', ctx.scene.state[playerData.player.telegram_id]);
         const keyboard = telegraf_1.Markup.inlineKeyboard([
-            telegraf_1.Markup.button.callback('⬆️50m', 'goBack'),
-            telegraf_1.Markup.button.callback('⬇️50m', 'goForward'),
-            telegraf_1.Markup.button.callback('⬅️50m', 'goLeft'),
-            telegraf_1.Markup.button.callback('➡️50m', 'goRight'),
+            telegraf_1.Markup.button.callback('⬆️50m', 'moveXXX' + '⬆️'),
+            telegraf_1.Markup.button.callback('⬅️50m', 'moveXXX' + '⬅️'),
+            telegraf_1.Markup.button.callback('⬇️50m', 'moveXXX' + '⬇️'),
+            telegraf_1.Markup.button.callback('➡️50m', 'moveXXX' + '➡️'),
             ...ctx.scene.state[playerData.player.telegram_id].enemyList
                 .filter((enemy) => enemy.isAlive)
                 .map((enemyItem) => telegraf_1.Markup.button.callback('🎯' + enemyItem.name, 'attackXXX' + enemyItem.name)),
@@ -290,6 +286,13 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], BanditScene.prototype, "attackEnemy", null);
+__decorate([
+    (0, nestjs_telegraf_1.Action)(/^moveXXX.*/gim),
+    __param(0, (0, nestjs_telegraf_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], BanditScene.prototype, "onMove", null);
 __decorate([
     (0, nestjs_telegraf_1.SceneEnter)(),
     __param(0, (0, nestjs_telegraf_1.Ctx)()),
