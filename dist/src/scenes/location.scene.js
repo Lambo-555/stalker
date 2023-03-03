@@ -73,12 +73,27 @@ let LocationScene = LocationScene_1 = class LocationScene {
         ctx.scene.state[playerData.player.telegram_id] =
             await this.appService.updateStorePlayerLocation(ctx, Object.assign(Object.assign({}, playerData.player), { location: location.location }));
         const nextChapter = await this.appService.getChapterByCode(playerData.playerProgress.chapter_code);
-        if ((nextChapter === null || nextChapter === void 0 ? void 0 : nextChapter.character) === 'Бандиты (враги)' &&
-            (nextChapter === null || nextChapter === void 0 ? void 0 : nextChapter.location) === (location === null || location === void 0 ? void 0 : location.location)) {
+        const isBattle = this.chooseBattleByLocation(ctx, location.location, nextChapter);
+        if (isBattle)
+            return isBattle;
+        ctx.scene.reenter();
+    }
+    chooseBattleByLocation(ctx, location, nextChapter) {
+        if (location.includes('(бандиты)') &&
+            (nextChapter === null || nextChapter === void 0 ? void 0 : nextChapter.character) === 'Бандиты (враги)') {
             return ctx.scene.enter(scenes_enum_1.ScenesEnum.SCENE_BANDIT);
         }
-        else {
-            await ctx.scene.reenter();
+        if (location.includes('(бандиты)')) {
+            return ctx.scene.enter(scenes_enum_1.ScenesEnum.SCENE_BANDIT);
+        }
+        if (location.includes('(армия)')) {
+            return ctx.scene.enter(scenes_enum_1.ScenesEnum.SCENE_BANDIT);
+        }
+        if (location.includes('(монолит)')) {
+            return ctx.scene.enter(scenes_enum_1.ScenesEnum.SCENE_BANDIT);
+        }
+        if (location.includes('(зомби)')) {
+            return ctx.scene.enter(scenes_enum_1.ScenesEnum.SCENE_BANDIT);
         }
     }
     async onLeaveCommand(ctx) {

@@ -94,13 +94,33 @@ export class LocationScene {
     const nextChapter = await this.appService.getChapterByCode(
       playerData.playerProgress.chapter_code,
     );
+    const isBattle = this.chooseBattleByLocation(
+      ctx,
+      location.location,
+      nextChapter,
+    );
+    if (isBattle) return isBattle;
+    ctx.scene.reenter();
+  }
+
+  chooseBattleByLocation(ctx: TelegrafContext, location: string, nextChapter) {
     if (
-      nextChapter?.character === 'Бандиты (враги)' &&
-      nextChapter?.location === location?.location
+      location.includes('(бандиты)') &&
+      nextChapter?.character === 'Бандиты (враги)'
     ) {
       return ctx.scene.enter(ScenesEnum.SCENE_BANDIT);
-    } else {
-      await ctx.scene.reenter();
+    }
+    if (location.includes('(бандиты)')) {
+      return ctx.scene.enter(ScenesEnum.SCENE_BANDIT);
+    }
+    if (location.includes('(армия)')) {
+      return ctx.scene.enter(ScenesEnum.SCENE_BANDIT);
+    }
+    if (location.includes('(монолит)')) {
+      return ctx.scene.enter(ScenesEnum.SCENE_BANDIT);
+    }
+    if (location.includes('(зомби)')) {
+      return ctx.scene.enter(ScenesEnum.SCENE_BANDIT);
     }
   }
 

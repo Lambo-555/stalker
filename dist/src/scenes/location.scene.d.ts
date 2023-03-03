@@ -10,5 +10,6 @@ export declare class LocationScene {
     constructor(appService: AppService, roadsRepository: Repository<RoadsEntity>);
     onSceneEnter(ctx: TelegrafContext): Promise<void>;
     onChoose(ctx: TelegrafContext, next: NextFunction): Promise<unknown>;
+    chooseBattleByLocation(ctx: TelegrafContext, location: string, nextChapter: any): Promise<unknown>;
     onLeaveCommand(ctx: TelegrafContext): Promise<void>;
 }

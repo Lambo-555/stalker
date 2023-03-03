@@ -1,4 +1,5 @@
 import { AppService } from 'src/app.service';
+import { EnemyObj } from 'src/common/player-data.dto';
 import { Scenes } from 'telegraf';
 import { TelegrafContext } from '../interfaces/telegraf-context.interface';
 export declare class BanditScene {
@@ -18,13 +19,11 @@ export declare class BanditScene {
         y: number;
     };
     calculateDamage(distance: number, damage: number): number;
-    generateRandomEnemies(): {
-        x: number;
-        y: number;
-        name: string;
-    }[];
+    generateRandomEnemies(): EnemyObj[];
     battlePart(enemyList: any): string;
+    attackEnemy(ctx: TelegrafContext): Promise<void>;
     onSceneEnter(ctx: TelegrafContext): Promise<void>;
+    getEnemiesPositions(enemyList: EnemyObj[]): string;
     onLeaveCommand(ctx: TelegrafContext): Promise<void>;
     enterBanditScene(ctx: Scenes.SceneContext): Promise<void>;
 }

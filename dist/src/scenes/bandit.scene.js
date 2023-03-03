@@ -90,8 +90,14 @@ let BanditScene = BanditScene_1 = class BanditScene {
             const surNameIndex = Math.floor(Math.random() * (names === null || names === void 0 ? void 0 : names.length));
             const surName = surNames[surNameIndex];
             surNames.splice(surNameIndex, 1);
-            const pogonalo = `${name} ${surName}`;
-            enemies.push({ x, y, name: pogonalo });
+            const pogonyalo = `${name} ${surName}`;
+            enemies.push({
+                position: { x, y },
+                name: pogonyalo,
+                isAlive: true,
+                health: 75,
+                group: 'Бандиты',
+            });
         }
         return enemies;
     }
@@ -156,18 +162,114 @@ let BanditScene = BanditScene_1 = class BanditScene {
         }
         return logs;
     }
-    async onSceneEnter(ctx) {
+    async attackEnemy(ctx) {
+        const match = ctx.match[0];
+        const enemyName = match.split('XXX')[1];
+        const storeData = await this.appService.getStorePlayerData(ctx);
         const playerData = await this.appService.getStorePlayerData(ctx);
+        let text = '';
+        const enemyList = storeData.enemyList;
+        const currentEnemy = enemyList.filter((item) => item.name === enemyName)[0];
+        const currentEnemyIndex = enemyList.findIndex((item) => item.name === enemyName);
+        if (!currentEnemy)
+            ctx.scene.reenter();
+        const player = {
+            position: { x: 50, y: 50 },
+            name: 'Player',
+            health: 150,
+            isAlive: true,
+        };
+        const distance = this.calculateDistance(player.position, currentEnemy.position);
+        const damage = this.calculateDamage(distance, 50);
+        const spread = this.calculateSpread(1, distance);
+        console.log('spreadspread', spread);
+        const isSuccessAttack = Math.random() * 100 > spread;
+        console.log('isSuccessAttackisSuccessAttack', isSuccessAttack);
+        if (isSuccessAttack) {
+            text += `Противник ${currentEnemy.name} получил ранения ${damage}hp на расстоянии ${distance}m.\n`;
+            currentEnemy.health = currentEnemy.health - damage;
+            if (currentEnemy.health <= 0) {
+                currentEnemy.isAlive = false;
+                text += `${currentEnemy.name} более не опасен\n`;
+            }
+            else {
+                text += `У ${currentEnemy.name} осталось ${currentEnemy.health}hp\n`;
+            }
+            enemyList[currentEnemyIndex] = currentEnemy;
+            ctx.scene.state[playerData.player.telegram_id].enemyList = enemyList;
+        }
+        if (!isSuccessAttack) {
+            text += `Противник ${currentEnemy.name} находится на расстоянии ${distance}m. Шанс попадания ${100 - spread}%.\n`;
+            text += `Вы промахнулись по цели: ${currentEnemy.name}\n`;
+        }
+        let keyboard = null;
+        if (!enemyList.filter((enemy) => enemy.isAlive).length) {
+            text += 'Все противники побеждены. Хорошая работа, сталкер';
+            keyboard = telegraf_1.Markup.inlineKeyboard([
+                telegraf_1.Markup.button.callback('Вернуться', scenes_enum_1.ScenesEnum.SCENE_QUEST),
+            ]).reply_markup;
+        }
+        else {
+            keyboard = telegraf_1.Markup.inlineKeyboard([
+                telegraf_1.Markup.button.callback('⬆️50m', 'goBack'),
+                telegraf_1.Markup.button.callback('⬇️50m', 'goForward'),
+                telegraf_1.Markup.button.callback('⬅️50m', 'goLeft'),
+                telegraf_1.Markup.button.callback('➡️50m', 'goRight'),
+                ...ctx.scene.state[playerData.player.telegram_id].enemyList
+                    .filter((enemy) => enemy.isAlive)
+                    .map((enemyItem) => telegraf_1.Markup.button.callback('🎯' + enemyItem.name, 'attackXXX' + enemyItem.name)),
+            ], {
+                columns: 2,
+            }).reply_markup;
+        }
+        this.appService.updateDisplay(playerData.playerProgress, keyboard, text, 'https://sun9-2.userapi.com/impg/8D9R-PqX4qIvNk1r7FQ4eP1KfPiWcUJFoN3uRw/B7-a2BJJtC4.jpg?size=700x538&quality=95&sign=becda26a8a3aad44cb19b373ddaa84e8&type=album');
+    }
+    async onSceneEnter(ctx) {
+        var _a, _b, _c;
+        const playerData = await this.appService.getStorePlayerData(ctx);
+        let enemyList = null;
+        if (!((_b = (_a = ctx.scene.state[playerData.player.telegram_id]) === null || _a === void 0 ? void 0 : _a.enemyList) === null || _b === void 0 ? void 0 : _b.length)) {
+            enemyList = this.generateRandomEnemies();
+        }
+        else {
+            enemyList = (_c = ctx.scene.state[playerData.player.telegram_id]) === null || _c === void 0 ? void 0 : _c.enemyList;
+        }
+        const storeData = await this.appService.getStorePlayerData(ctx);
+        ctx.scene.state[playerData.player.telegram_id] = Object.assign(Object.assign({}, storeData), { enemyList });
+        console.log('awdawdaw', ctx.scene.state[playerData.player.telegram_id]);
         const keyboard = telegraf_1.Markup.inlineKeyboard([
-            telegraf_1.Markup.button.callback('Вернуться', scenes_enum_1.ScenesEnum.SCENE_QUEST),
-        ]).reply_markup;
-        const enemies = this.generateRandomEnemies();
-        let log = `Вам на пути встретились бандиты. Началась перестрелка. Вы обнаружили врагов: ${enemies
-            .map((item) => item.name)
-            .join(', ')}.\n`;
-        log += this.battlePart(enemies);
-        log += '\nБой окончен!';
+            telegraf_1.Markup.button.callback('⬆️50m', 'goBack'),
+            telegraf_1.Markup.button.callback('⬇️50m', 'goForward'),
+            telegraf_1.Markup.button.callback('⬅️50m', 'goLeft'),
+            telegraf_1.Markup.button.callback('➡️50m', 'goRight'),
+            ...ctx.scene.state[playerData.player.telegram_id].enemyList
+                .filter((enemy) => enemy.isAlive)
+                .map((enemyItem) => telegraf_1.Markup.button.callback('🎯' + enemyItem.name, 'attackXXX' + enemyItem.name)),
+        ], {
+            columns: 2,
+        }).reply_markup;
+        let log = `Вам на пути встретились бандиты. Началась перестрелка.\n`;
+        log += this.getEnemiesPositions(enemyList);
         this.appService.updateDisplay(playerData.playerProgress, keyboard, log, 'https://sun9-2.userapi.com/impg/8D9R-PqX4qIvNk1r7FQ4eP1KfPiWcUJFoN3uRw/B7-a2BJJtC4.jpg?size=700x538&quality=95&sign=becda26a8a3aad44cb19b373ddaa84e8&type=album');
+    }
+    getEnemiesPositions(enemyList) {
+        let text = '\n';
+        let enemyPosText = '';
+        const player = {
+            position: { x: 50, y: 50 },
+            name: 'Player',
+            health: 150,
+            isAlive: true,
+        };
+        for (let i = 0; i < enemyList.length; i++) {
+            const enemy = enemyList[i];
+            const distance = this.calculateDistance(player.position, enemy.position);
+            enemyPosText += `${enemy.name} находится ${player.position.y > enemy.position.y ? 'позади' : 'спереди'} ${player.position.x > enemy.position.x ? 'слева' : 'справа'} на расстоянии ${distance}. `;
+            enemyPosText += `Шанс попадания: ${80 - this.calculateSpread(1, distance)}%. Можно нанести урона: ${this.calculateDamage(distance, 50)}\n\n`;
+            text += enemyPosText;
+            enemyPosText = '';
+        }
+        return text;
     }
     async onLeaveCommand(ctx) {
         await ctx.scene.enter(scenes_enum_1.ScenesEnum.SCENE_LOCATION);
@@ -181,6 +283,13 @@ let BanditScene = BanditScene_1 = class BanditScene {
         return;
     }
 };
+__decorate([
+    (0, nestjs_telegraf_1.Action)(/^attackXXX.*/gim),
+    __param(0, (0, nestjs_telegraf_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], BanditScene.prototype, "attackEnemy", null);
 __decorate([
     (0, nestjs_telegraf_1.SceneEnter)(),
     __param(0, (0, nestjs_telegraf_1.Ctx)()),
