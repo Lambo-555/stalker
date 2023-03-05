@@ -1,3 +1,4 @@
+import { GunInterface, NpcObj } from 'src/common/player-data.dto';
 import { Injectable } from '@nestjs/common';
 import { Telegraf } from 'telegraf';
 import { Scenes } from 'telegraf';
@@ -28,6 +29,26 @@ export class AppService {
     // { command: 'game', description: 'Start Cobalt game. Play2Earn.' },
     // { command: 'gambling', description: 'Get list of reached gambling machines. Play slots and other games. You can find more in Cobalt game series' },
     // { command: 'registration', description: 'Send your Ethereum wallet data for user gambling games authomats.' },
+  ];
+  private readonly guns: GunInterface[] = [
+    {
+      name: 'Дробовик',
+      optimalDistance: 20,
+      baseDamage: 150,
+      magazine: 1,
+    },
+    {
+      name: 'Пистолет',
+      optimalDistance: 80,
+      baseDamage: 60,
+      magazine: 2,
+    },
+    {
+      name: 'Снайпа',
+      optimalDistance: 170,
+      baseDamage: 120,
+      magazine: 1,
+    },
   ];
   constructor(
     @InjectBot() private bot: Telegraf<Scenes.SceneContext>,
@@ -114,6 +135,38 @@ export class AppService {
       where: { code: code },
     });
     return choices;
+  }
+
+  async getBattleEnemyList(@Ctx() ctx: TelegrafContext): Promise<NpcObj[]> {
+    const playerData = await this.getStorePlayerData(ctx);
+    return ctx.scene.state[playerData.player.telegram_id]?.battle?.enemyList;
+  }
+
+  async updateBattleEnemyList(
+    @Ctx() ctx: TelegrafContext,
+    newEnemyList,
+  ): Promise<NpcObj[]> {
+    const playerData = await this.getStorePlayerData(ctx);
+    if (ctx.scene.state[playerData.player.telegram_id]?.battle?.enemyList) {
+      ctx.scene.state[playerData.player.telegram_id].battle.enemyList =
+        newEnemyList;
+    }
+    return ctx.scene.state[playerData.player.telegram_id].battle.enemyList;
+  }
+
+  async getBattlePlayer(@Ctx() ctx: TelegrafContext): Promise<NpcObj> {
+    const playerData = await this.getStorePlayerData(ctx);
+    return ctx.scene.state[playerData.player.telegram_id]?.battle?.player;
+  }
+
+  async updateBattlePlayer(
+    @Ctx() ctx: TelegrafContext,
+    battlePlayer: NpcObj,
+  ): Promise<NpcObj> {
+    const playerData = await this.getStorePlayerData(ctx);
+    ctx.scene.state[playerData.player.telegram_id].battle.battlePlayer =
+      battlePlayer;
+    return ctx.scene.state[playerData.player.telegram_id].battle.battlePlayer;
   }
 
   async getStorePlayerData(
@@ -369,5 +422,107 @@ export class AppService {
     } catch (error) {
       console.error(error);
     }
+  }
+
+  async createBattle(@Ctx() ctx: TelegrafContext): Promise<PlayerDataDto> {
+    const playerData: PlayerDataDto = await this.getStorePlayerData(ctx);
+    const enemyList = this.genBattleEnemies();
+    const battlePlayer = this.genBattlePlayer();
+    const playerDataDto: PlayerDataDto = {
+      ...playerData,
+      battle: { enemyList, battlePlayer },
+    };
+    ctx.scene.state[playerData.player.telegram_id] = playerDataDto;
+    return playerDataDto;
+  }
+
+  async getBattle(@Ctx() ctx: TelegrafContext): Promise<PlayerDataDto> {
+    const playerData: PlayerDataDto = await this.getStorePlayerData(ctx);
+    return ctx.scene.state[playerData.player.telegram_id];
+  }
+
+  async updateBattle(
+    @Ctx() ctx: TelegrafContext,
+    battleData: PlayerDataDto,
+  ): Promise<PlayerDataDto> {
+    const playerData: PlayerDataDto = await this.getStorePlayerData(ctx);
+    const playerDataDto: PlayerDataDto = {
+      ...playerData,
+      ...battleData,
+    };
+    ctx.scene.state[playerData.player.telegram_id] = playerDataDto;
+    return playerDataDto;
+  }
+
+  genBattleEnemies(): NpcObj[] {
+    const names = [
+      'Васян',
+      'Жора',
+      'Борян',
+      'Колян',
+      'Стасик',
+      'Петрос',
+      'Роберт',
+      'Андрюха',
+      'Асти',
+      'Максон',
+      'Максан',
+      'Денчик',
+      'Витян',
+    ];
+    const surNames = [
+      'Бобр',
+      'Жесткий',
+      'Кривой',
+      'Зануда',
+      'Мозила',
+      'Пес',
+      'Гангстер',
+      'Черный',
+      'Дикий',
+      'Цепной',
+      'Шальной',
+      'Зеленый',
+      'Маслинник',
+    ];
+    const enemies: NpcObj[] = [];
+    // const enemiesTargetCount = Math.floor(Math.random() * 2) + 1;
+    const enemiesTargetCount = 1;
+    while (enemies?.length !== enemiesTargetCount) {
+      const x = Math.floor(Math.random() * 200);
+      const y = Math.floor(Math.random() * 200);
+      const nameIndex = Math.floor(Math.random() * names?.length);
+      const name = names[nameIndex];
+      names.splice(nameIndex, 1);
+      const surNameIndex = Math.floor(Math.random() * names?.length);
+      const surName = surNames[surNameIndex];
+      surNames.splice(surNameIndex, 1);
+      const fullName = `${name} ${surName}`;
+      enemies.push({
+        position: { x, y },
+        name: fullName,
+        isAlive: true,
+        health: 75,
+        group: 'Бандиты',
+        // gun: this.appService.getRandomElInArr(this.guns),
+        gun: this.guns[2],
+      });
+    }
+    return enemies;
+  }
+
+  genBattlePlayer(): NpcObj {
+    return {
+      position: {
+        x: Math.floor(Math.random() * 200),
+        y: Math.floor(Math.random() * 200),
+      },
+      name: 'Игрок',
+      isAlive: true,
+      health: 75,
+      group: 'Бандиты',
+      // gun: this.appService.getRandomElInArr(this.guns),
+      gun: this.guns[2],
+    };
   }
 }

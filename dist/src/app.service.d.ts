@@ -1,3 +1,4 @@
+import { NpcObj } from 'src/common/player-data.dto';
 import { Telegraf } from 'telegraf';
 import { Scenes } from 'telegraf';
 import { InlineKeyboardMarkup } from 'telegraf/typings/core/types/typegram';
@@ -22,6 +23,7 @@ export declare class AppService {
     private readonly algorithm;
     private readonly secretKey;
     private readonly commandList;
+    private readonly guns;
     constructor(bot: Telegraf<Scenes.SceneContext>, usersRepository: Repository<UsersEntity>, chaptersRepository: Repository<ChaptersEntity>, choicesRepository: Repository<ChoicesEntity>, progressRepository: Repository<ProgressEntity>, roadsRepository: Repository<RoadsEntity>, locationsRepository: Repository<LocationsEntity>);
     encrypt(text: any): {
         iv: string;
@@ -34,6 +36,10 @@ export declare class AppService {
     getChapterByCode(code: string): Promise<ChaptersEntity>;
     getRoadList(location: string): Promise<RoadsEntity[]>;
     getChoiceList(code: string): Promise<ChoicesEntity[]>;
+    getBattleEnemyList(ctx: TelegrafContext): Promise<NpcObj[]>;
+    updateBattleEnemyList(ctx: TelegrafContext, newEnemyList: any): Promise<NpcObj[]>;
+    getBattlePlayer(ctx: TelegrafContext): Promise<NpcObj>;
+    updateBattlePlayer(ctx: TelegrafContext, battlePlayer: NpcObj): Promise<NpcObj>;
     getStorePlayerData(ctx: TelegrafContext): Promise<PlayerDataDto>;
     getNextChapter(playerData: PlayerDataDto): Promise<ChaptersEntity>;
     getGoalChapter(playerData: PlayerDataDto): Promise<ChaptersEntity>;
@@ -49,4 +55,9 @@ export declare class AppService {
     getRandomElInArr(arr: any[]): any;
     menuSplitter(arr: any, cols: any): any[];
     sendMessageByTelegramId(telegramId: number, message: string, extra?: ExtraReplyMessage): Promise<import("typegram/message").Message.TextMessage>;
+    createBattle(ctx: TelegrafContext): Promise<PlayerDataDto>;
+    getBattle(ctx: TelegrafContext): Promise<PlayerDataDto>;
+    updateBattle(ctx: TelegrafContext, battleData: PlayerDataDto): Promise<PlayerDataDto>;
+    genBattleEnemies(): NpcObj[];
+    genBattlePlayer(): NpcObj;
 }

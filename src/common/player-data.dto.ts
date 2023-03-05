@@ -6,17 +6,27 @@ export class PlayerDataDto {
   player: UsersEntity;
   playerLocation: LocationsEntity;
   playerProgress: ProgressEntity;
-  enemyList?: EnemyObj[];
+  battle?: {
+    enemyList: NpcObj[];
+    battlePlayer: NpcObj;
+  };
 }
 
-export interface EnemyObj {
+export interface NpcObj {
   position: {
     x: number;
     y: number;
   };
   isAlive: boolean;
   health: number;
-  armor?: number;
+  gun?: GunInterface;
   name: string;
   group?: 'Бандиты' | 'Армия' | 'Монолит' | 'Зомби';
+}
+
+export interface GunInterface {
+  name: string;
+  optimalDistance: number;
+  baseDamage: number;
+  magazine: number;
 }

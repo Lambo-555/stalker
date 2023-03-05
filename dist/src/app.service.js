@@ -35,6 +35,7 @@ const chapters_entity_1 = require("./user/entities/chapters.entity");
 const choices_entity_1 = require("./user/entities/choices.entity");
 const locations_entity_1 = require("./user/entities/locations.entity");
 const typeorm_2 = require("typeorm");
+const player_data_dto_1 = require("./common/player-data.dto");
 const roads_entity_1 = require("./user/entities/roads.entity");
 let AppService = class AppService {
     constructor(bot, usersRepository, chaptersRepository, choicesRepository, progressRepository, roadsRepository, locationsRepository) {
@@ -50,6 +51,26 @@ let AppService = class AppService {
         this.commandList = [
             { command: 'menu', description: 'Главное меню' },
             { command: 'display', description: 'Создать новый игровой дисплей' },
+        ];
+        this.guns = [
+            {
+                name: 'Дробовик',
+                optimalDistance: 20,
+                baseDamage: 150,
+                magazine: 1,
+            },
+            {
+                name: 'Пистолет',
+                optimalDistance: 80,
+                baseDamage: 60,
+                magazine: 2,
+            },
+            {
+                name: 'Снайпа',
+                optimalDistance: 170,
+                baseDamage: 120,
+                magazine: 1,
+            },
         ];
     }
     encrypt(text) {
@@ -101,6 +122,31 @@ let AppService = class AppService {
             where: { code: code },
         });
         return choices;
+    }
+    async getBattleEnemyList(ctx) {
+        var _a, _b;
+        const playerData = await this.getStorePlayerData(ctx);
+        return (_b = (_a = ctx.scene.state[playerData.player.telegram_id]) === null || _a === void 0 ? void 0 : _a.battle) === null || _b === void 0 ? void 0 : _b.enemyList;
+    }
+    async updateBattleEnemyList(ctx, newEnemyList) {
+        var _a, _b;
+        const playerData = await this.getStorePlayerData(ctx);
+        if ((_b = (_a = ctx.scene.state[playerData.player.telegram_id]) === null || _a === void 0 ? void 0 : _a.battle) === null || _b === void 0 ? void 0 : _b.enemyList) {
+            ctx.scene.state[playerData.player.telegram_id].battle.enemyList =
+                newEnemyList;
+        }
+        return ctx.scene.state[playerData.player.telegram_id].battle.enemyList;
+    }
+    async getBattlePlayer(ctx) {
+        var _a, _b;
+        const playerData = await this.getStorePlayerData(ctx);
+        return (_b = (_a = ctx.scene.state[playerData.player.telegram_id]) === null || _a === void 0 ? void 0 : _a.battle) === null || _b === void 0 ? void 0 : _b.player;
+    }
+    async updateBattlePlayer(ctx, battlePlayer) {
+        const playerData = await this.getStorePlayerData(ctx);
+        ctx.scene.state[playerData.player.telegram_id].battle.battlePlayer =
+            battlePlayer;
+        return ctx.scene.state[playerData.player.telegram_id].battle.battlePlayer;
     }
     async getStorePlayerData(ctx) {
         var _a;
@@ -290,6 +336,91 @@ let AppService = class AppService {
             console.error(error);
         }
     }
+    async createBattle(ctx) {
+        const playerData = await this.getStorePlayerData(ctx);
+        const enemyList = this.genBattleEnemies();
+        const battlePlayer = this.genBattlePlayer();
+        const playerDataDto = Object.assign(Object.assign({}, playerData), { battle: { enemyList, battlePlayer } });
+        ctx.scene.state[playerData.player.telegram_id] = playerDataDto;
+        return playerDataDto;
+    }
+    async getBattle(ctx) {
+        const playerData = await this.getStorePlayerData(ctx);
+        return ctx.scene.state[playerData.player.telegram_id];
+    }
+    async updateBattle(ctx, battleData) {
+        const playerData = await this.getStorePlayerData(ctx);
+        const playerDataDto = Object.assign(Object.assign({}, playerData), battleData);
+        ctx.scene.state[playerData.player.telegram_id] = playerDataDto;
+        return playerDataDto;
+    }
+    genBattleEnemies() {
+        const names = [
+            'Васян',
+            'Жора',
+            'Борян',
+            'Колян',
+            'Стасик',
+            'Петрос',
+            'Роберт',
+            'Андрюха',
+            'Асти',
+            'Максон',
+            'Максан',
+            'Денчик',
+            'Витян',
+        ];
+        const surNames = [
+            'Бобр',
+            'Жесткий',
+            'Кривой',
+            'Зануда',
+            'Мозила',
+            'Пес',
+            'Гангстер',
+            'Черный',
+            'Дикий',
+            'Цепной',
+            'Шальной',
+            'Зеленый',
+            'Маслинник',
+        ];
+        const enemies = [];
+        const enemiesTargetCount = 1;
+        while ((enemies === null || enemies === void 0 ? void 0 : enemies.length) !== enemiesTargetCount) {
+            const x = Math.floor(Math.random() * 200);
+            const y = Math.floor(Math.random() * 200);
+            const nameIndex = Math.floor(Math.random() * (names === null || names === void 0 ? void 0 : names.length));
+            const name = names[nameIndex];
+            names.splice(nameIndex, 1);
+            const surNameIndex = Math.floor(Math.random() * (names === null || names === void 0 ? void 0 : names.length));
+            const surName = surNames[surNameIndex];
+            surNames.splice(surNameIndex, 1);
+            const fullName = `${name} ${surName}`;
+            enemies.push({
+                position: { x, y },
+                name: fullName,
+                isAlive: true,
+                health: 75,
+                group: 'Бандиты',
+                gun: this.guns[2],
+            });
+        }
+        return enemies;
+    }
+    genBattlePlayer() {
+        return {
+            position: {
+                x: Math.floor(Math.random() * 200),
+                y: Math.floor(Math.random() * 200),
+            },
+            name: 'Игрок',
+            isAlive: true,
+            health: 75,
+            group: 'Бандиты',
+            gun: this.guns[2],
+        };
+    }
 };
 __decorate([
     __param(0, (0, nestjs_telegraf_1.Ctx)()),
@@ -308,6 +439,30 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
+], AppService.prototype, "getBattleEnemyList", null);
+__decorate([
+    __param(0, (0, nestjs_telegraf_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], AppService.prototype, "updateBattleEnemyList", null);
+__decorate([
+    __param(0, (0, nestjs_telegraf_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AppService.prototype, "getBattlePlayer", null);
+__decorate([
+    __param(0, (0, nestjs_telegraf_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], AppService.prototype, "updateBattlePlayer", null);
+__decorate([
+    __param(0, (0, nestjs_telegraf_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
 ], AppService.prototype, "getStorePlayerData", null);
 __decorate([
     __param(0, (0, nestjs_telegraf_1.Ctx)()),
@@ -321,6 +476,24 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], AppService.prototype, "getTelegramId", null);
+__decorate([
+    __param(0, (0, nestjs_telegraf_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AppService.prototype, "createBattle", null);
+__decorate([
+    __param(0, (0, nestjs_telegraf_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AppService.prototype, "getBattle", null);
+__decorate([
+    __param(0, (0, nestjs_telegraf_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, player_data_dto_1.PlayerDataDto]),
+    __metadata("design:returntype", Promise)
+], AppService.prototype, "updateBattle", null);
 AppService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, nestjs_telegraf_1.InjectBot)()),
