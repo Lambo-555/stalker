@@ -38,15 +38,33 @@ export class AppService {
       magazine: 1,
     },
     {
-      name: 'Пистолет',
-      optimalDistance: 80,
-      baseDamage: 60,
+      name: 'Помповое ружье',
+      optimalDistance: 35,
+      baseDamage: 125,
+      magazine: 1,
+    },
+    {
+      name: 'Макаров',
+      optimalDistance: 50,
+      baseDamage: 45,
       magazine: 2,
     },
     {
-      name: 'Снайпа',
-      optimalDistance: 170,
+      name: 'HK USP',
+      optimalDistance: 65,
+      baseDamage: 60,
+      magazine: 1,
+    },
+    {
+      name: 'Винторез',
+      optimalDistance: 150,
       baseDamage: 120,
+      magazine: 1,
+    },
+    {
+      name: 'СВД',
+      optimalDistance: 220,
+      baseDamage: 115,
       magazine: 1,
     },
   ];
@@ -504,8 +522,7 @@ export class AppService {
         isAlive: true,
         health: 75,
         group: 'Бандиты',
-        // gun: this.appService.getRandomElInArr(this.guns),
-        gun: this.guns[2],
+        gun: this.getRandomElInArr(this.guns),
       });
     }
     return enemies;
@@ -519,10 +536,9 @@ export class AppService {
       },
       name: 'Игрок',
       isAlive: true,
-      health: 75,
+      health: 125,
       group: 'Бандиты',
-      // gun: this.appService.getRandomElInArr(this.guns),
-      gun: this.guns[2],
+      gun: this.getRandomElInArr(this.guns),
     };
   }
 }

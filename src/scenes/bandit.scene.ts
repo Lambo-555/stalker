@@ -109,61 +109,87 @@ export class BanditScene {
     const storePlayerData: PlayerDataDto =
       await this.appService.getStorePlayerData(ctx);
     let text = '';
-    const enemyList: NpcObj[] = await this.appService.getBattleEnemyList(ctx);
-    const currentEnemy: NpcObj = enemyList.filter(
+    let battleData: PlayerDataDto = await this.appService.getBattle(ctx);
+    const currentEnemy: NpcObj = battleData.battle.enemyList.filter(
       (item) => item.name === enemyName,
     )[0];
-    const currentEnemyIndex: number = enemyList.findIndex(
+    const currentEnemyIndex: number = battleData.battle.enemyList.findIndex(
       (item) => item.name === enemyName,
     );
     if (!currentEnemy) ctx.scene.reenter();
-    const battlePlayer: NpcObj = await this.appService.getBattlePlayer(ctx);
-    if (!battlePlayer) console.error('NO PLAYER HERE');
     const distance: number = this.calculateDistance(
-      battlePlayer.position,
+      battleData.battle.battlePlayer.position,
       currentEnemy.position,
     );
-    const damage: number = this.calculateDamageForGun(
-      battlePlayer.gun,
+    const playerDamage: number = this.calculateDamageForGun(
+      battleData.battle.battlePlayer.gun,
       distance,
     );
-    const spread: number = this.calculateSpreadForGun(
-      battlePlayer.gun,
+    const enemyDamage: number = this.calculateDamageForGun(
+      currentEnemy.gun,
       distance,
     );
-    const isSuccessAttack: boolean = Math.random() * 100 > spread;
+    const playerSpread: number = this.calculateSpreadForGun(
+      battleData.battle.battlePlayer.gun,
+      distance,
+    );
+    const enemySpread: number = this.calculateSpreadForGun(
+      currentEnemy.gun,
+      distance,
+    );
+    const isSuccessAttack: boolean = Math.random() * 100 > playerSpread;
     if (isSuccessAttack) {
-      text += `Противник ${currentEnemy.name} получил ранения от '${battlePlayer.gun.name}' ${damage}hp на расстоянии ${distance}m.\n`;
-      currentEnemy.health = currentEnemy.health - damage;
+      text += `Противник ${currentEnemy.name} получил ранения от '${battleData.battle.battlePlayer.gun.name}' ${playerDamage}hp на расстоянии ${distance}m.\n`;
+      currentEnemy.health = currentEnemy.health - playerDamage;
       if (currentEnemy.health <= 0) {
         currentEnemy.isAlive = false;
         text += `${currentEnemy.name} более не опасен\n`;
       } else {
         text += `У ${currentEnemy.name} осталось ${currentEnemy.health}hp\n`;
       }
-      enemyList[currentEnemyIndex] = currentEnemy;
-      ctx.scene.state[storePlayerData.player.telegram_id].enemyList = enemyList;
+      battleData.battle.enemyList[currentEnemyIndex] = currentEnemy;
+      ctx.scene.state[storePlayerData.player.telegram_id].enemyList =
+        battleData.battle.enemyList;
     }
     if (!isSuccessAttack) {
       text += `Противник ${
         currentEnemy.name
       } находится на расстоянии ${distance}m. Шанс попадания ${
-        100 - spread
+        100 - playerSpread
       }%.\n`;
       text += `Вы промахнулись по цели: ${currentEnemy.name}\n`;
     }
+    const isSuccessCounterAttack: boolean = Math.random() * 100 > enemySpread;
+    if (isSuccessCounterAttack) {
+      text += `\nПротивник ${currentEnemy.name} выстрелил в вас в ответ из '${currentEnemy.gun.name}' ${enemyDamage}hp на расстоянии ${distance}m.\n`;
+      battleData.battle.battlePlayer.health =
+        battleData.battle.battlePlayer.health - enemyDamage;
+      if (battleData.battle.battlePlayer.health <= 0) {
+        battleData.battle.battlePlayer.isAlive = false;
+        text += `Ущерб был летальным\n`;
+      }
+      if (battleData.battle.battlePlayer.health > 0) {
+        text += `У вас осталось ${battleData.battle.battlePlayer.health}hp\n`;
+      }
+    }
+    if (!isSuccessCounterAttack) {
+      text += `Противник промахнулся\n`;
+    }
     let keyboard = null;
-    ctx.scene.state[storePlayerData.player.telegram_id].enemyList =
-      enemyList.filter((enemy) => enemy.isAlive);
-    const allEnemyIsDead =
-      !!ctx.scene.state[storePlayerData.player.telegram_id].enemyList.length;
-    if (allEnemyIsDead && battlePlayer.health >= 0) {
+    await this.appService.updateBattleEnemyList(
+      ctx,
+      battleData.battle.enemyList.filter((enemy) => enemy.isAlive),
+    );
+    battleData = await this.appService.getBattle(ctx);
+    const allEnemyIsDead: boolean =
+      battleData.battle.enemyList.filter((item) => item.isAlive).length === 0;
+    if (allEnemyIsDead && battleData.battle.battlePlayer.health >= 0) {
       text += 'Все противники побеждены. Хорошая работа, сталкер';
       keyboard = Markup.inlineKeyboard([
         Markup.button.callback('Вернуться', ScenesEnum.SCENE_QUEST),
       ]).reply_markup;
     }
-    if (!allEnemyIsDead && battlePlayer.health >= 0) {
+    if (!allEnemyIsDead && battleData.battle.battlePlayer.health >= 0) {
       keyboard = Markup.inlineKeyboard(
         [
           // Markup.button.callback('Вернуться', 'menu'),
@@ -172,7 +198,7 @@ export class BanditScene {
           Markup.button.callback('⬇️50m', 'goForward'),
           Markup.button.callback('➡️50m', 'goRight'),
           // кнопки для атаки конкретного персонажа
-          ...ctx.scene.state[storePlayerData.player.telegram_id].enemyList
+          ...battleData.battle.enemyList
             .filter((enemy) => enemy.isAlive)
             .map((enemyItem) =>
               Markup.button.callback(
@@ -186,7 +212,7 @@ export class BanditScene {
         },
       ).reply_markup;
     }
-    if (battlePlayer.health <= 0) {
+    if (battleData.battle.battlePlayer.health <= 0) {
       text += 'Противники победили. Зона забрала вас';
       keyboard = Markup.inlineKeyboard([
         Markup.button.callback('Вернуться', ScenesEnum.SCENE_QUEST),
@@ -234,7 +260,11 @@ export class BanditScene {
       battleData.battle.battlePlayer.position.x,
     )}, ⬆️: ${this.formatCoord(
       battleData.battle.battlePlayer.position.y,
-    )}] - ваши координаты.\n`;
+    )}] - ваши координаты. У вас в руках: ${
+      battleData.battle.battlePlayer.gun.name
+    }. Оптимальная дистанция, чтобы спустить курок ${
+      battleData.battle.battlePlayer.gun.optimalDistance
+    }m\n`;
     await this.appService.updateBattleEnemyList(
       ctx,
       battleData.battle.enemyList.map((enemy) =>
@@ -326,7 +356,9 @@ export class BanditScene {
       battleData.battle.battlePlayer.position.y,
     )}] - ваши координаты. В руках у вас ${
       battleData.battle.battlePlayer.gun.name
-    }.\n`;
+    }. Оптимальная дистанция выстрела ${
+      battleData.battle.battlePlayer.gun.optimalDistance
+    }m\n`;
     log += this.getEnemiesPositions(
       battleData.battle.enemyList,
       battleData.battle.battlePlayer,
@@ -350,7 +382,7 @@ export class BanditScene {
       )}, ⬆️: ${this.formatCoord(enemy.position.y)}] - координаты ${
         enemy.name
       }. Он находится на расстоянии ${distance}.`;
-      enemyPosText += ` В руках: ${enemy.gun.name}.\n`;
+      enemyPosText += ` В руках: ${enemy.gun.name}. Оптимальная дистанция для стрельбы ${enemy.gun.optimalDistance}m\n`;
       text += enemyPosText;
       enemyPosText = '';
     }
