@@ -33,6 +33,8 @@ const mutants_entity_1 = require("./user/entities/mutants.entity");
 const pda_scene_1 = require("./scenes/pda.scene");
 const quests_entity_1 = require("./user/entities/quests.entity");
 const bandit_scene_1 = require("./scenes/bandit.scene");
+const guns_entity_1 = require("./user/entities/guns.entity");
+const npcs_entity_1 = require("./user/entities/npcs.entity");
 const scenes = [
     registration_wizzard_1.TestWizard,
     anomaly_scene_1.AnomalyRoadScene,
@@ -68,6 +70,8 @@ AppModule = __decorate([
                     roads_entity_1.RoadsEntity,
                     mutants_entity_1.MutantsEntity,
                     quests_entity_1.QuestsEntity,
+                    npcs_entity_1.NpcEntity,
+                    guns_entity_1.GunsEntity,
                 ],
                 synchronize: false,
             }),
@@ -83,6 +87,8 @@ AppModule = __decorate([
                 roads_entity_1.RoadsEntity,
                 mutants_entity_1.MutantsEntity,
                 quests_entity_1.QuestsEntity,
+                npcs_entity_1.NpcEntity,
+                guns_entity_1.GunsEntity,
             ]),
             nestjs_telegraf_1.TelegrafModule.forRoot({
                 token: '5943057211:AAHh26OWDRO1fYtaGJtpL_lTSSTB-foTQWM',

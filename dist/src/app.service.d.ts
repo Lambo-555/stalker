@@ -12,6 +12,8 @@ import { LocationsEntity } from './user/entities/locations.entity';
 import { Repository } from 'typeorm';
 import { PlayerDataDto } from './common/player-data.dto';
 import { RoadsEntity } from './user/entities/roads.entity';
+import { GunsEntity } from './user/entities/guns.entity';
+import { NpcEntity } from './user/entities/npcs.entity';
 export declare class AppService {
     private bot;
     private readonly usersRepository;
@@ -20,11 +22,12 @@ export declare class AppService {
     private readonly progressRepository;
     private readonly roadsRepository;
     private readonly locationsRepository;
+    private readonly gunsRepository;
+    private readonly npcRepository;
     private readonly algorithm;
     private readonly secretKey;
     private readonly commandList;
-    private readonly guns;
-    constructor(bot: Telegraf<Scenes.SceneContext>, usersRepository: Repository<UsersEntity>, chaptersRepository: Repository<ChaptersEntity>, choicesRepository: Repository<ChoicesEntity>, progressRepository: Repository<ProgressEntity>, roadsRepository: Repository<RoadsEntity>, locationsRepository: Repository<LocationsEntity>);
+    constructor(bot: Telegraf<Scenes.SceneContext>, usersRepository: Repository<UsersEntity>, chaptersRepository: Repository<ChaptersEntity>, choicesRepository: Repository<ChoicesEntity>, progressRepository: Repository<ProgressEntity>, roadsRepository: Repository<RoadsEntity>, locationsRepository: Repository<LocationsEntity>, gunsRepository: Repository<GunsEntity>, npcRepository: Repository<NpcEntity>);
     encrypt(text: any): {
         iv: string;
         content: string;
@@ -58,6 +61,6 @@ export declare class AppService {
     createBattle(ctx: TelegrafContext): Promise<PlayerDataDto>;
     getBattle(ctx: TelegrafContext): Promise<PlayerDataDto>;
     updateBattle(ctx: TelegrafContext, battleData: PlayerDataDto): Promise<PlayerDataDto>;
-    genBattleEnemies(): NpcObj[];
-    genBattlePlayer(): NpcObj;
+    genBattleEnemies(npcList: NpcEntity[], gunsList: GunsEntity[]): NpcObj[];
+    genBattlePlayer(gunsList: GunsEntity[]): NpcObj;
 }

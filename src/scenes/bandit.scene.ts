@@ -34,7 +34,11 @@ export class BanditScene {
   calculateDamageForGun(gun: GunInterface, distance: number) {
     return Math.max(
       Math.floor(
-        gun.baseDamage - (Math.abs(gun.optimalDistance - distance) / 15) ** 2,
+        gun.base_damage -
+          (((Math.abs(gun.optimal_distance - distance) / 15) *
+            gun.optimal_modifier) /
+            100) **
+            2,
       ),
       0,
     );
@@ -45,7 +49,8 @@ export class BanditScene {
       100 -
       Math.max(
         Math.floor(
-          gun.baseDamage - (Math.abs(gun.optimalDistance - distance) / 30) ** 2,
+          gun.base_damage -
+            (Math.abs(gun.optimal_distance - distance) / 30) ** 2,
         ),
         0,
       )
@@ -61,7 +66,7 @@ export class BanditScene {
     return Math.floor(Math.sqrt(deltaX * deltaX + deltaY * deltaY)) + 1;
   }
 
-  calculateSpread(shotsPrev, distance) {
+  calculateSpreadByRounds(shotsPrev, distance) {
     if (distance > 2000) return 100;
     const spread = Math.floor(shotsPrev * distance ** 0.6);
     if (spread >= 100) return 100;
@@ -76,8 +81,9 @@ export class BanditScene {
 
   formatCoord(coord: number): string {
     const coordLen = coord.toString().length;
-    const toLen = 5;
-    return '_'.repeat(toLen - coordLen) + coord.toString();
+    // const toLen = 5;
+    // return '_'.repeat(toLen - coordLen) + coord.toString();
+    return coord.toString();
   }
 
   moveEnemyByGun(player: NpcObj, enemy: NpcObj): NpcObj {
@@ -91,7 +97,7 @@ export class BanditScene {
     const posYPositive = Math.abs(posYDiff);
     const moveXDist = posXPositive >= 20 ? 20 : posXPositive;
     const moveYDist = posYPositive >= 20 ? 20 : posYPositive;
-    if (diffDistance > enemy.gun.optimalDistance) {
+    if (diffDistance > enemy.gun.optimal_distance) {
       enemy.position.x += posXDiff >= 0 ? -1 * moveXDist : moveXDist;
       enemy.position.y += posYDiff >= 0 ? -1 * moveYDist : moveYDist;
     } else {
@@ -192,11 +198,7 @@ export class BanditScene {
     if (!allEnemyIsDead && battleData.battle.battlePlayer.health >= 0) {
       keyboard = Markup.inlineKeyboard(
         [
-          // Markup.button.callback('Вернуться', 'menu'),
-          Markup.button.callback('⬆️50m', 'goBack'),
-          Markup.button.callback('⬅️50m', 'goLeft'),
-          Markup.button.callback('⬇️50m', 'goForward'),
-          Markup.button.callback('➡️50m', 'goRight'),
+          ...this.navigationKeyboard,
           // кнопки для атаки конкретного персонажа
           ...battleData.battle.enemyList
             .filter((enemy) => enemy.isAlive)
@@ -222,7 +224,7 @@ export class BanditScene {
       storePlayerData.playerProgress,
       keyboard,
       text,
-      'https://sun9-2.userapi.com/impg/8D9R-PqX4qIvNk1r7FQ4eP1KfPiWcUJFoN3uRw/B7-a2BJJtC4.jpg?size=700x538&quality=95&sign=becda26a8a3aad44cb19b373ddaa84e8&type=album',
+      storePlayerData?.playerLocation?.image,
     );
   }
 
@@ -256,15 +258,14 @@ export class BanditScene {
       ctx,
       battleData.battle.battlePlayer,
     );
-    log += `[➡️: ${this.formatCoord(
-      battleData.battle.battlePlayer.position.x,
-    )}, ⬆️: ${this.formatCoord(
-      battleData.battle.battlePlayer.position.y,
-    )}] - ваши координаты. У вас в руках: ${
-      battleData.battle.battlePlayer.gun.name
-    }. Оптимальная дистанция, чтобы спустить курок ${
-      battleData.battle.battlePlayer.gun.optimalDistance
-    }m\n`;
+    // log += 'Ваши координаты:\n';
+    // log += `↕️ ${this.formatCoord(
+    //   battleData.battle.battlePlayer.position.y,
+    // )}m, `;
+    // log += `↔️ ${this.formatCoord(
+    //   battleData.battle.battlePlayer.position.x,
+    // )}m\n`;
+    log += `У вас в руках ${battleData.battle.battlePlayer.gun.name}. Оптимальная дистанция, чтобы спустить курок ${battleData.battle.battlePlayer.gun.optimal_distance}m.\n`;
     await this.appService.updateBattleEnemyList(
       ctx,
       battleData.battle.enemyList.map((enemy) =>
@@ -277,9 +278,9 @@ export class BanditScene {
         battleData.battle.battlePlayer.position,
         enemy.position,
       );
-      console.log('distdistPL', battleData.battle.battlePlayer.position);
-      console.log('distdistEN', enemy.position);
-      console.log('distdist', dist);
+      console.log('playerPos', battleData.battle.battlePlayer.position);
+      console.log('enemy_Pos', enemy.position);
+      console.log('distance:', dist);
       return dist <= 500;
     });
     if (enemyAway.length === 0) {
@@ -290,7 +291,7 @@ export class BanditScene {
         battleData.playerProgress,
         keyboard,
         'Вы ушли достаточно далеко',
-        'https://sun9-2.userapi.com/impg/8D9R-PqX4qIvNk1r7FQ4eP1KfPiWcUJFoN3uRw/B7-a2BJJtC4.jpg?size=700x538&quality=95&sign=becda26a8a3aad44cb19b373ddaa84e8&type=album',
+        battleData?.playerLocation?.image,
       );
       // await ctx.scene.enter(ScenesEnum.SCENE_QUEST);
     }
@@ -349,16 +350,16 @@ export class BanditScene {
         columns: 2,
       },
     ).reply_markup;
-    let log = `Вам на пути встретились бандиты. Началась перестрелка. Чтобы сбежать отдалитесь от противника на 500м. \n`;
-    log += `\n[➡️: ${this.formatCoord(
-      battleData.battle.battlePlayer.position.x,
-    )}, ⬆️: ${this.formatCoord(
-      battleData.battle.battlePlayer.position.y,
-    )}] - ваши координаты. В руках у вас ${
-      battleData.battle.battlePlayer.gun.name
-    }. Оптимальная дистанция выстрела ${
-      battleData.battle.battlePlayer.gun.optimalDistance
-    }m\n`;
+    let log = `Вам на пути встретился противник - ${battleData.battle.enemyList[0].group}. Началась перестрелка. Чтобы сбежать отдалитесь на 500м. \n`;
+
+    // log += 'Ваши координаты:\n';
+    // log += `↕️ ${this.formatCoord(
+    //   battleData.battle.battlePlayer.position.y,
+    // )}m, `;
+    // log += `↔️ ${this.formatCoord(
+    //   battleData.battle.battlePlayer.position.x,
+    // )}m\n`;
+    log += `У вас в руках ${battleData.battle.battlePlayer.gun.name}. Оптимальная дистанция, чтобы спустить курок ${battleData.battle.battlePlayer.gun.optimal_distance}m.`;
     log += this.getEnemiesPositions(
       battleData.battle.enemyList,
       battleData.battle.battlePlayer,
@@ -367,7 +368,7 @@ export class BanditScene {
       playerData.playerProgress,
       keyboard,
       log,
-      'https://sun9-2.userapi.com/impg/8D9R-PqX4qIvNk1r7FQ4eP1KfPiWcUJFoN3uRw/B7-a2BJJtC4.jpg?size=700x538&quality=95&sign=becda26a8a3aad44cb19b373ddaa84e8&type=album',
+      playerData?.playerLocation?.image,
     );
   }
 
@@ -377,12 +378,14 @@ export class BanditScene {
     for (let i = 0; i < enemyList.length; i++) {
       const enemy: NpcObj = enemyList[i];
       const distance = this.calculateDistance(player.position, enemy.position);
-      enemyPosText += `\n[➡️: ${this.formatCoord(
-        enemy.position.x,
-      )}, ⬆️: ${this.formatCoord(enemy.position.y)}] - координаты ${
-        enemy.name
-      }. Он находится на расстоянии ${distance}.`;
-      enemyPosText += ` В руках: ${enemy.gun.name}. Оптимальная дистанция для стрельбы ${enemy.gun.optimalDistance}m\n`;
+      const difX = enemy.position.x - player.position.x;
+      const difY = enemy.position.y - player.position.y;
+      const xSmile = difX == 0 ? '↔️' : difX < 0 ? '⬅️️' : '➡️';
+      const ySmile = difY == 0 ? '↕️' : difY < 0 ? '⬇️' : '⬆️';
+      enemyPosText += `\n${xSmile} ${this.formatCoord(Math.abs(difX))}m,`;
+      enemyPosText += `  ${ySmile} ${this.formatCoord(Math.abs(difY))}m`;
+      enemyPosText += ` - отдаление врага ${enemy.name}.\nОн находится на расстоянии 🏃 ${distance}m.\n`;
+      enemyPosText += `В руках у него ${enemy.gun.name}.\nОптимальная дистанция его стрельбы ${enemy.gun.optimal_distance}m.\n`;
       text += enemyPosText;
       enemyPosText = '';
     }
@@ -402,6 +405,5 @@ export class BanditScene {
       const scene: ScenesEnum = match;
       await ctx.scene.enter(scene);
     }
-    return;
   }
 }

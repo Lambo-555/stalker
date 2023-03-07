@@ -24,6 +24,8 @@ import { MutantsEntity } from './user/entities/mutants.entity';
 import { PdaScene } from './scenes/pda.scene';
 import { QuestsEntity } from './user/entities/quests.entity';
 import { BanditScene } from './scenes/bandit.scene';
+import { GunsEntity } from './user/entities/guns.entity';
+import { NpcEntity } from './user/entities/npcs.entity';
 
 const scenes = [
   TestWizard,
@@ -58,6 +60,8 @@ const scenes = [
         RoadsEntity,
         MutantsEntity,
         QuestsEntity,
+        NpcEntity,
+        GunsEntity,
       ],
       synchronize: false,
     }),
@@ -73,6 +77,8 @@ const scenes = [
       RoadsEntity,
       MutantsEntity,
       QuestsEntity,
+      NpcEntity,
+      GunsEntity,
     ]),
     TelegrafModule.forRoot({
       token: '5943057211:AAHh26OWDRO1fYtaGJtpL_lTSSTB-foTQWM',

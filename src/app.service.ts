@@ -13,9 +13,11 @@ import { UsersEntity } from './user/entities/users.entity';
 import { ChaptersEntity } from './user/entities/chapters.entity';
 import { ChoicesEntity } from './user/entities/choices.entity';
 import { LocationsEntity } from './user/entities/locations.entity';
-import { Like, Repository } from 'typeorm';
+import { In, Like, Repository } from 'typeorm';
 import { PlayerDataDto } from './common/player-data.dto';
 import { RoadsEntity } from './user/entities/roads.entity';
+import { GunsEntity } from './user/entities/guns.entity';
+import { NpcEntity } from './user/entities/npcs.entity';
 
 @Injectable()
 export class AppService {
@@ -30,44 +32,7 @@ export class AppService {
     // { command: 'gambling', description: 'Get list of reached gambling machines. Play slots and other games. You can find more in Cobalt game series' },
     // { command: 'registration', description: 'Send your Ethereum wallet data for user gambling games authomats.' },
   ];
-  private readonly guns: GunInterface[] = [
-    {
-      name: 'Дробовик',
-      optimalDistance: 20,
-      baseDamage: 150,
-      magazine: 1,
-    },
-    {
-      name: 'Помповое ружье',
-      optimalDistance: 35,
-      baseDamage: 125,
-      magazine: 1,
-    },
-    {
-      name: 'Макаров',
-      optimalDistance: 50,
-      baseDamage: 45,
-      magazine: 2,
-    },
-    {
-      name: 'HK USP',
-      optimalDistance: 65,
-      baseDamage: 60,
-      magazine: 1,
-    },
-    {
-      name: 'Винторез',
-      optimalDistance: 150,
-      baseDamage: 120,
-      magazine: 1,
-    },
-    {
-      name: 'СВД',
-      optimalDistance: 220,
-      baseDamage: 115,
-      magazine: 1,
-    },
-  ];
+
   constructor(
     @InjectBot() private bot: Telegraf<Scenes.SceneContext>,
     @InjectRepository(UsersEntity)
@@ -82,6 +47,10 @@ export class AppService {
     private readonly roadsRepository: Repository<RoadsEntity>,
     @InjectRepository(LocationsEntity)
     private readonly locationsRepository: Repository<LocationsEntity>,
+    @InjectRepository(GunsEntity)
+    private readonly gunsRepository: Repository<GunsEntity>,
+    @InjectRepository(NpcEntity)
+    private readonly npcRepository: Repository<NpcEntity>,
   ) {}
 
   encrypt(text) {
@@ -443,15 +412,38 @@ export class AppService {
   }
 
   async createBattle(@Ctx() ctx: TelegrafContext): Promise<PlayerDataDto> {
-    const playerData: PlayerDataDto = await this.getStorePlayerData(ctx);
-    const enemyList = this.genBattleEnemies();
-    const battlePlayer = this.genBattlePlayer();
-    const playerDataDto: PlayerDataDto = {
-      ...playerData,
-      battle: { enemyList, battlePlayer },
-    };
-    ctx.scene.state[playerData.player.telegram_id] = playerDataDto;
-    return playerDataDto;
+    try {
+      const playerData: PlayerDataDto = await this.getStorePlayerData(ctx);
+      const enemyGroup = playerData?.playerLocation?.location
+        .match(/\(.*\)$/gim)[0]
+        .slice(1, -1);
+      const npcList: NpcEntity[] = await this.npcRepository.find({
+        where: {
+          group: enemyGroup,
+        },
+      });
+      // console.log('npcList', npcList);
+      if (!npcList.length) return;
+      const gunNames: string[] = npcList.map((npc) => npc.gun);
+      // console.log('gunNames', gunNames);
+      const gunsList: GunsEntity[] = await this.gunsRepository.find({
+        where: {
+          name: In(gunNames),
+        },
+      });
+      // console.log(JSON.stringify(gunsList, null, 2));
+      if (!gunsList.length) return;
+      const enemyList = this.genBattleEnemies(npcList, gunsList);
+      const battlePlayer = this.genBattlePlayer(gunsList);
+      const playerDataDto: PlayerDataDto = {
+        ...playerData,
+        battle: { enemyList, battlePlayer },
+      };
+      ctx.scene.state[playerData.player.telegram_id] = playerDataDto;
+      return playerDataDto;
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   async getBattle(@Ctx() ctx: TelegrafContext): Promise<PlayerDataDto> {
@@ -472,63 +464,29 @@ export class AppService {
     return playerDataDto;
   }
 
-  genBattleEnemies(): NpcObj[] {
-    const names = [
-      'Васян',
-      'Жора',
-      'Борян',
-      'Колян',
-      'Стасик',
-      'Петрос',
-      'Роберт',
-      'Андрюха',
-      'Асти',
-      'Максон',
-      'Максан',
-      'Денчик',
-      'Витян',
-    ];
-    const surNames = [
-      'Бобр',
-      'Жесткий',
-      'Кривой',
-      'Зануда',
-      'Мозила',
-      'Пес',
-      'Гангстер',
-      'Черный',
-      'Дикий',
-      'Цепной',
-      'Шальной',
-      'Зеленый',
-      'Маслинник',
-    ];
+  genBattleEnemies(npcList: NpcEntity[], gunsList: GunsEntity[]): NpcObj[] {
     const enemies: NpcObj[] = [];
     // const enemiesTargetCount = Math.floor(Math.random() * 2) + 1;
-    const enemiesTargetCount = 1;
+    const enemiesTargetCount = Math.random() > 0.5 ? 2 : 1;
     while (enemies?.length !== enemiesTargetCount) {
       const x = Math.floor(Math.random() * 200);
       const y = Math.floor(Math.random() * 200);
-      const nameIndex = Math.floor(Math.random() * names?.length);
-      const name = names[nameIndex];
-      names.splice(nameIndex, 1);
-      const surNameIndex = Math.floor(Math.random() * names?.length);
-      const surName = surNames[surNameIndex];
-      surNames.splice(surNameIndex, 1);
-      const fullName = `${name} ${surName}`;
+      const fullName = `${this.getRandomElInArr(npcList).first_name} ${
+        this.getRandomElInArr(npcList).last_name
+      }`;
       enemies.push({
         position: { x, y },
         name: fullName,
         isAlive: true,
         health: 75,
-        group: 'Бандиты',
-        gun: this.getRandomElInArr(this.guns),
+        group: npcList[0].group,
+        gun: this.getRandomElInArr(gunsList),
       });
     }
     return enemies;
   }
 
-  genBattlePlayer(): NpcObj {
+  genBattlePlayer(gunsList: GunsEntity[]): NpcObj {
     return {
       position: {
         x: Math.floor(Math.random() * 200),
@@ -538,7 +496,7 @@ export class AppService {
       isAlive: true,
       health: 125,
       group: 'Бандиты',
-      gun: this.getRandomElInArr(this.guns),
+      gun: this.getRandomElInArr(gunsList),
     };
   }
 }

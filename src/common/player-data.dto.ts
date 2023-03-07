@@ -21,12 +21,12 @@ export interface NpcObj {
   health: number;
   gun?: GunInterface;
   name: string;
-  group?: 'Бандиты' | 'Армия' | 'Монолит' | 'Зомби';
+  group?: string;
 }
 
 export interface GunInterface {
   name: string;
-  optimalDistance: number;
-  baseDamage: number;
-  magazine: number;
+  optimal_distance: number;
+  base_damage: number;
+  optimal_modifier: number;
 }

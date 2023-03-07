@@ -16,7 +16,7 @@ export declare class BanditScene {
         x: number;
         y: number;
     }): number;
-    calculateSpread(shotsPrev: any, distance: any): number;
+    calculateSpreadByRounds(shotsPrev: any, distance: any): number;
     calculateDamage(distance: number, damage: number): number;
     formatCoord(coord: number): string;
     moveEnemyByGun(player: NpcObj, enemy: NpcObj): NpcObj;

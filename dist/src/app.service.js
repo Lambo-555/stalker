@@ -37,8 +37,10 @@ const locations_entity_1 = require("./user/entities/locations.entity");
 const typeorm_2 = require("typeorm");
 const player_data_dto_1 = require("./common/player-data.dto");
 const roads_entity_1 = require("./user/entities/roads.entity");
+const guns_entity_1 = require("./user/entities/guns.entity");
+const npcs_entity_1 = require("./user/entities/npcs.entity");
 let AppService = class AppService {
-    constructor(bot, usersRepository, chaptersRepository, choicesRepository, progressRepository, roadsRepository, locationsRepository) {
+    constructor(bot, usersRepository, chaptersRepository, choicesRepository, progressRepository, roadsRepository, locationsRepository, gunsRepository, npcRepository) {
         this.bot = bot;
         this.usersRepository = usersRepository;
         this.chaptersRepository = chaptersRepository;
@@ -46,49 +48,13 @@ let AppService = class AppService {
         this.progressRepository = progressRepository;
         this.roadsRepository = roadsRepository;
         this.locationsRepository = locationsRepository;
+        this.gunsRepository = gunsRepository;
+        this.npcRepository = npcRepository;
         this.algorithm = 'aes-256-ctr';
         this.secretKey = 'vOVH6sdmpNWjRRIqCc7rdxs01lwHzfr3';
         this.commandList = [
             { command: 'menu', description: 'Главное меню' },
             { command: 'display', description: 'Создать новый игровой дисплей' },
-        ];
-        this.guns = [
-            {
-                name: 'Дробовик',
-                optimalDistance: 20,
-                baseDamage: 150,
-                magazine: 1,
-            },
-            {
-                name: 'Помповое ружье',
-                optimalDistance: 35,
-                baseDamage: 125,
-                magazine: 1,
-            },
-            {
-                name: 'Макаров',
-                optimalDistance: 50,
-                baseDamage: 45,
-                magazine: 2,
-            },
-            {
-                name: 'HK USP',
-                optimalDistance: 65,
-                baseDamage: 60,
-                magazine: 1,
-            },
-            {
-                name: 'Винторез',
-                optimalDistance: 150,
-                baseDamage: 120,
-                magazine: 1,
-            },
-            {
-                name: 'СВД',
-                optimalDistance: 220,
-                baseDamage: 115,
-                magazine: 1,
-            },
         ];
     }
     encrypt(text) {
@@ -355,12 +321,34 @@ let AppService = class AppService {
         }
     }
     async createBattle(ctx) {
-        const playerData = await this.getStorePlayerData(ctx);
-        const enemyList = this.genBattleEnemies();
-        const battlePlayer = this.genBattlePlayer();
-        const playerDataDto = Object.assign(Object.assign({}, playerData), { battle: { enemyList, battlePlayer } });
-        ctx.scene.state[playerData.player.telegram_id] = playerDataDto;
-        return playerDataDto;
+        var _a;
+        try {
+            const playerData = await this.getStorePlayerData(ctx);
+            const enemyGroup = (_a = playerData === null || playerData === void 0 ? void 0 : playerData.playerLocation) === null || _a === void 0 ? void 0 : _a.location.match(/\(.*\)$/gim)[0].slice(1, -1);
+            const npcList = await this.npcRepository.find({
+                where: {
+                    group: enemyGroup,
+                },
+            });
+            if (!npcList.length)
+                return;
+            const gunNames = npcList.map((npc) => npc.gun);
+            const gunsList = await this.gunsRepository.find({
+                where: {
+                    name: (0, typeorm_2.In)(gunNames),
+                },
+            });
+            if (!gunsList.length)
+                return;
+            const enemyList = this.genBattleEnemies(npcList, gunsList);
+            const battlePlayer = this.genBattlePlayer(gunsList);
+            const playerDataDto = Object.assign(Object.assign({}, playerData), { battle: { enemyList, battlePlayer } });
+            ctx.scene.state[playerData.player.telegram_id] = playerDataDto;
+            return playerDataDto;
+        }
+        catch (error) {
+            console.error(error);
+        }
     }
     async getBattle(ctx) {
         const playerData = await this.getStorePlayerData(ctx);
@@ -372,61 +360,25 @@ let AppService = class AppService {
         ctx.scene.state[playerData.player.telegram_id] = playerDataDto;
         return playerDataDto;
     }
-    genBattleEnemies() {
-        const names = [
-            'Васян',
-            'Жора',
-            'Борян',
-            'Колян',
-            'Стасик',
-            'Петрос',
-            'Роберт',
-            'Андрюха',
-            'Асти',
-            'Максон',
-            'Максан',
-            'Денчик',
-            'Витян',
-        ];
-        const surNames = [
-            'Бобр',
-            'Жесткий',
-            'Кривой',
-            'Зануда',
-            'Мозила',
-            'Пес',
-            'Гангстер',
-            'Черный',
-            'Дикий',
-            'Цепной',
-            'Шальной',
-            'Зеленый',
-            'Маслинник',
-        ];
+    genBattleEnemies(npcList, gunsList) {
         const enemies = [];
-        const enemiesTargetCount = 1;
+        const enemiesTargetCount = Math.random() > 0.5 ? 2 : 1;
         while ((enemies === null || enemies === void 0 ? void 0 : enemies.length) !== enemiesTargetCount) {
             const x = Math.floor(Math.random() * 200);
             const y = Math.floor(Math.random() * 200);
-            const nameIndex = Math.floor(Math.random() * (names === null || names === void 0 ? void 0 : names.length));
-            const name = names[nameIndex];
-            names.splice(nameIndex, 1);
-            const surNameIndex = Math.floor(Math.random() * (names === null || names === void 0 ? void 0 : names.length));
-            const surName = surNames[surNameIndex];
-            surNames.splice(surNameIndex, 1);
-            const fullName = `${name} ${surName}`;
+            const fullName = `${this.getRandomElInArr(npcList).first_name} ${this.getRandomElInArr(npcList).last_name}`;
             enemies.push({
                 position: { x, y },
                 name: fullName,
                 isAlive: true,
                 health: 75,
-                group: 'Бандиты',
-                gun: this.getRandomElInArr(this.guns),
+                group: npcList[0].group,
+                gun: this.getRandomElInArr(gunsList),
             });
         }
         return enemies;
     }
-    genBattlePlayer() {
+    genBattlePlayer(gunsList) {
         return {
             position: {
                 x: Math.floor(Math.random() * 200),
@@ -436,7 +388,7 @@ let AppService = class AppService {
             isAlive: true,
             health: 125,
             group: 'Бандиты',
-            gun: this.getRandomElInArr(this.guns),
+            gun: this.getRandomElInArr(gunsList),
         };
     }
 };
@@ -521,7 +473,11 @@ AppService = __decorate([
     __param(4, (0, typeorm_1.InjectRepository)(progress_entity_1.ProgressEntity)),
     __param(5, (0, typeorm_1.InjectRepository)(roads_entity_1.RoadsEntity)),
     __param(6, (0, typeorm_1.InjectRepository)(locations_entity_1.LocationsEntity)),
+    __param(7, (0, typeorm_1.InjectRepository)(guns_entity_1.GunsEntity)),
+    __param(8, (0, typeorm_1.InjectRepository)(npcs_entity_1.NpcEntity)),
     __metadata("design:paramtypes", [telegraf_1.Telegraf,
+        typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
