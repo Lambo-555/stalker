@@ -61,6 +61,8 @@ let LocationScene = LocationScene_1 = class LocationScene {
         ], {
             columns: 1,
         }).reply_markup;
+        await this.appService.updateDisplay(playerData.playerProgress, null, `🏃 Перемещение...`, playerData.playerLocation.image);
+        await this.appService.sleep(2550);
         await this.appService.updateDisplay(playerData.playerProgress, keyboard, `Вы находитесь в локации: "${playerData.playerLocation.location}". Куда вы хотите отправиться?`, playerData.playerLocation.image);
     }
     async onChoose(ctx, next) {

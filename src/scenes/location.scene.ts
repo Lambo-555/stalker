@@ -38,6 +38,11 @@ export class LocationScene {
     private readonly roadsRepository: Repository<RoadsEntity>,
   ) {}
 
+  /**
+   * Показ текущей локации при переходе в сцену
+   * Показ мест, куда можно пройти
+   * @param ctx - контекст Telegram
+   */
   @SceneEnter()
   async onSceneEnter(@Ctx() ctx: TelegrafContext) {
     const playerData: PlayerDataDto = await this.appService.getStorePlayerData(
@@ -50,7 +55,7 @@ export class LocationScene {
     for await (const road of roads) {
       const locationsItem: LocationsEntity = await this.appService.getLocation(
         road.to,
-      );
+      ); 
       nextLocations.push(locationsItem);
     }
     const keyboard = Markup.inlineKeyboard(
@@ -69,12 +74,25 @@ export class LocationScene {
     ).reply_markup;
     await this.appService.updateDisplay(
       playerData.playerProgress,
+      null,
+      `🏃 Перемещение...`,
+      playerData.playerLocation.image,
+    );
+    await this.appService.sleep(2550);
+    await this.appService.updateDisplay(
+      playerData.playerProgress,
       keyboard,
       `Вы находитесь в локации: "${playerData.playerLocation.location}". Куда вы хотите отправиться?`,
       playerData.playerLocation.image,
     );
   }
 
+  /**
+   * Переход на локацию согласно ее названию
+   * @param ctx - контекст Telegram
+   * @param next - объект из express, позволяющий перейти далее по сцене
+   * @returns
+   */
   @Action(/locationsXXX.*/gim)
   async onChoose(@Ctx() ctx: TelegrafContext, @Next() next: NextFunction) {
     const match = ctx.match[0];
