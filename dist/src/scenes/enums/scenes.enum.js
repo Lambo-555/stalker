@@ -11,6 +11,6 @@ var ScenesEnum;
     ScenesEnum["SCENE_PDA"] = "SCENE_PDA";
     ScenesEnum["SCENE_QUEST"] = "SCENE_QUEST";
     ScenesEnum["SCENE_LOCATION"] = "SCENE_LOCATION";
-    ScenesEnum["SCENE_BANDIT"] = "SCENE_BANDIT";
+    ScenesEnum["SCENE_BATTLE"] = "SCENE_BANDIT";
 })(ScenesEnum = exports.ScenesEnum || (exports.ScenesEnum = {}));
 //# sourceMappingURL=scenes.enum.js.map

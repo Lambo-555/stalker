@@ -1,8 +1,10 @@
 import { Logger } from '@nestjs/common';
-import { Scene, SceneEnter, Command, Ctx, Action } from 'nestjs-telegraf';
+import { NextFunction } from 'express';
+import { Scene, SceneEnter, Command, Ctx, Action, Next } from 'nestjs-telegraf';
 import { AppService } from 'src/app.service';
 import { PlayerDataDto } from 'src/common/player-data.dto';
-import { ChaptersEntity } from 'src/user/entities/chapters.entity';
+import { ChaptersEntity } from 'src/database/entities/chapters.entity';
+import { GunsEntity } from 'src/database/entities/guns.entity';
 import { Markup, Scenes } from 'telegraf';
 import { TelegrafContext } from '../interfaces/telegraf-context.interface';
 import { ScenesEnum } from './enums/scenes.enum';
@@ -27,11 +29,23 @@ export class PdaScene {
     const nextLocation = await this.appService.getLocation(
       nextChapter.location,
     );
-    const keyboard = Markup.inlineKeyboard([
-      Markup.button.callback('Меню', 'menu'),
-    ]).reply_markup;
+    const guns: GunsEntity[] = await this.appService.getGunList();
+
+    const keyboard = Markup.inlineKeyboard(
+      [
+        ...guns.map((gun: GunsEntity) =>
+          Markup.button.callback(gun.name, 'gunXXX' + gun.name),
+        ),
+        Markup.button.callback('📟Меню', 'menu'),
+      ],
+      {
+        columns: 2,
+      },
+    ).reply_markup;
     const pdaMenu = `
 📟 Вы смотрите в свой КПК(PDA)
+
+Воля: ${playerData?.player?.will}
 
 Текущая локация: ${playerData.playerLocation.location}
 Целевая локация: ${nextLocation.location}`;
@@ -41,6 +55,43 @@ export class PdaScene {
       pdaMenu,
       playerData.playerLocation.image,
     );
+  }
+
+  @Action('my_callback_query')
+  handleCallbackQuery(ctx: TelegrafContext) {
+    ctx.answerCbQuery('Response message', {
+      show_alert: true,
+      cache_time: 500,
+    });
+  }
+
+  @Action(/gunXXX.*/gim)
+  async onChooseGun(@Ctx() ctx: TelegrafContext, @Next() next: NextFunction) {
+    const match = ctx.match[0];
+    if (!match) next();
+    const selectedGunName: string = match.split('XXX')[1];
+    const playerData: PlayerDataDto = await this.appService.getStorePlayerData(
+      ctx,
+    );
+    const currentGun: GunsEntity = await this.appService.getGunByName(
+      selectedGunName,
+    );
+    if (currentGun) {
+      playerData.player.gun = selectedGunName;
+      await this.appService.updateStorePlayer(ctx, playerData.player);
+      ctx.answerCbQuery(
+        `Теперь вы носите ${currentGun.name}, оптимальная дистанция ${currentGun.optimal_distance}m`,
+        {
+          show_alert: true,
+          cache_time: 500,
+        },
+      );
+    } else {
+      ctx.answerCbQuery(`${selectedGunName} недоступно`, {
+        show_alert: false,
+        cache_time: 500,
+      });
+    }
   }
 
   // const x = `

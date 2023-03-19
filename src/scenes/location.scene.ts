@@ -1,21 +1,19 @@
 import { Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import { NextFunction } from 'express';
 import {
   Scene,
   SceneEnter,
-  SceneLeave,
   Ctx,
   Action,
   Next,
+  InjectBot,
 } from 'nestjs-telegraf';
 import { AppService } from 'src/app.service';
 import { PlayerDataDto } from 'src/common/player-data.dto';
-import { ChaptersEntity } from 'src/user/entities/chapters.entity';
-import { LocationsEntity } from 'src/user/entities/locations.entity';
-import { RoadsEntity } from 'src/user/entities/roads.entity';
-import { Markup } from 'telegraf';
-import { Repository } from 'typeorm';
+import { ChaptersEntity } from 'src/database/entities/chapters.entity';
+import { LocationsEntity } from 'src/database/entities/locations.entity';
+import { RoadsEntity } from 'src/database/entities/roads.entity';
+import { Markup, Scenes, Telegraf } from 'telegraf';
 import { TelegrafContext } from '../interfaces/telegraf-context.interface';
 import { ScenesEnum } from './enums/scenes.enum';
 
@@ -32,10 +30,8 @@ export class LocationScene {
   private readonly logger = new Logger(LocationScene.name);
 
   constructor(
+    @InjectBot() private bot: Telegraf<Scenes.SceneContext>,
     private readonly appService: AppService,
-    @InjectRepository(LocationsEntity)
-    @InjectRepository(RoadsEntity)
-    private readonly roadsRepository: Repository<RoadsEntity>,
   ) {}
 
   /**
@@ -55,7 +51,7 @@ export class LocationScene {
     for await (const road of roads) {
       const locationsItem: LocationsEntity = await this.appService.getLocation(
         road.to,
-      ); 
+      );
       nextLocations.push(locationsItem);
     }
     const keyboard = Markup.inlineKeyboard(
@@ -76,15 +72,20 @@ export class LocationScene {
       playerData.playerProgress,
       null,
       `🏃 Перемещение...`,
-      playerData.playerLocation.image,
+      'https://sun9-23.userapi.com/impg/BerBvhk0PaC29WoXTFWTf49Fa-G_ktt1OXe7Ng/53JM42xkeeo.jpg?size=1920x855&quality=95&sign=1bc2fed9648961b2d332a7c6d42c8555&type=album',
     );
-    await this.appService.sleep(2550);
+    await this.appService.sleep(Math.random() * 1500);
     await this.appService.updateDisplay(
       playerData.playerProgress,
       keyboard,
       `Вы находитесь в локации: "${playerData.playerLocation.location}". Куда вы хотите отправиться?`,
       playerData.playerLocation.image,
     );
+  }
+
+  @Action('alert')
+  async onChox(@Ctx() ctx: TelegrafContext, @Next() next: NextFunction) {
+    ctx.reply('awdaw');
   }
 
   /**
@@ -104,6 +105,14 @@ export class LocationScene {
     const location: LocationsEntity = await this.appService.getLocation(
       locationCode,
     );
+    await ctx.answerCbQuery(
+      `В дороге вам стало легче, ${playerData.player.will} + 10 воли.`,
+      {
+        show_alert: false,
+        cache_time: 500,
+      },
+    );
+    playerData.player.will += 10;
     ctx.scene.state[playerData.player.telegram_id] =
       await this.appService.updateStorePlayerLocation(ctx, {
         ...playerData.player,
@@ -126,19 +135,19 @@ export class LocationScene {
       location.includes('(бандиты)') &&
       nextChapter?.character === 'Бандиты (враги)'
     ) {
-      return ctx.scene.enter(ScenesEnum.SCENE_BANDIT);
+      return ctx.scene.enter(ScenesEnum.SCENE_BATTLE);
     }
     if (location.includes('(бандиты)')) {
-      return ctx.scene.enter(ScenesEnum.SCENE_BANDIT);
+      return ctx.scene.enter(ScenesEnum.SCENE_BATTLE);
     }
     if (location.includes('(армия)')) {
-      return ctx.scene.enter(ScenesEnum.SCENE_BANDIT);
+      return ctx.scene.enter(ScenesEnum.SCENE_BATTLE);
     }
     if (location.includes('(монолит)')) {
-      return ctx.scene.enter(ScenesEnum.SCENE_BANDIT);
+      return ctx.scene.enter(ScenesEnum.SCENE_BATTLE);
     }
     if (location.includes('(зомби)')) {
-      return ctx.scene.enter(ScenesEnum.SCENE_BANDIT);
+      return ctx.scene.enter(ScenesEnum.SCENE_BATTLE);
     }
   }
 

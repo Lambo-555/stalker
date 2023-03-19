@@ -1,11 +1,8 @@
 import { Logger } from '@nestjs/common';
 import { Scene, SceneEnter, Ctx, Action } from 'nestjs-telegraf';
 import { AppService } from 'src/app.service';
-import {
-  GunInterface,
-  NpcObj,
-  PlayerDataDto,
-} from 'src/common/player-data.dto';
+import { NpcObj, PlayerDataDto } from 'src/common/player-data.dto';
+import { GunsEntity } from 'src/database/entities/guns.entity';
 import { Markup, Scenes } from 'telegraf';
 import { TelegrafContext } from '../interfaces/telegraf-context.interface';
 import { ScenesEnum } from './enums/scenes.enum';
@@ -18,34 +15,36 @@ import { ScenesEnum } from './enums/scenes.enum';
 // сделать район богаче - новая миссия
 // чем богаче и умнее район, тем больше примочек на автоматы
 
-@Scene(ScenesEnum.SCENE_BANDIT)
-export class BanditScene {
-  private readonly logger = new Logger(BanditScene.name);
+@Scene(ScenesEnum.SCENE_BATTLE)
+export class BattleScene {
+  private readonly logger = new Logger(BattleScene.name);
 
   private readonly navigationKeyboard = [
+    Markup.button.callback('↖️50m', 'moveXXX' + '↖️'),
     Markup.button.callback('⬆️50m', 'moveXXX' + '⬆️'),
+    Markup.button.callback('↗️50m', 'moveXXX' + '↗️'),
     Markup.button.callback('⬅️50m', 'moveXXX' + '⬅️'),
-    Markup.button.callback('⬇️50m', 'moveXXX' + '⬇️'),
+    Markup.button.callback('⏹00m', '⏱'),
     Markup.button.callback('➡️50m', 'moveXXX' + '➡️'),
+    Markup.button.callback('↙️50m', 'moveXXX' + '↙️'),
+    Markup.button.callback('⬇️50m', 'moveXXX' + '⬇️'),
+    Markup.button.callback('↘️50m', 'moveXXX' + '↘️'),
   ];
 
   constructor(private readonly appService: AppService) {}
 
-  calculateDamageForGun(gun: GunInterface, distance: number) {
-    return Math.max(
-      Math.floor(
-        gun.base_damage -
-          (((Math.abs(gun.optimal_distance - distance) / 15) *
-            gun.optimal_modifier) /
-            100) **
-            2,
-      ),
-      0,
+  calculateDamageForGun(gun: GunsEntity, distance: number) {
+    const damage = Math.floor(
+      (((gun.optimal_distance / (gun.optimal_distance + distance)) *
+        gun.optimal_modifier) /
+        100) *
+        gun.base_damage,
     );
+    return damage;
   }
 
-  calculateSpreadForGun(gun: GunInterface, distance: number) {
-    return (
+  calculateSpreadForGun(gun: GunsEntity, distance: number) {
+    const spread: number =
       100 -
       Math.max(
         Math.floor(
@@ -53,8 +52,9 @@ export class BanditScene {
             (Math.abs(gun.optimal_distance - distance) / 30) ** 2,
         ),
         0,
-      )
-    );
+      );
+    console.log('spread:', gun.optimal_distance, distance, spread);
+    return spread;
   }
 
   calculateDistance(
@@ -66,18 +66,18 @@ export class BanditScene {
     return Math.floor(Math.sqrt(deltaX * deltaX + deltaY * deltaY)) + 1;
   }
 
-  calculateSpreadByRounds(shotsPrev, distance) {
-    if (distance > 2000) return 100;
-    const spread = Math.floor(shotsPrev * distance ** 0.6);
-    if (spread >= 100) return 100;
-    return spread;
-  }
+  // calculateSpreadByRounds(shotsPrev, distance) {
+  //   if (distance > 2000) return 100;
+  //   const spread = Math.floor(shotsPrev * distance ** 0.6);
+  //   if (spread >= 100) return 100;
+  //   return spread;
+  // }
 
-  calculateDamage(distance: number, damage: number): number {
-    const calcDamage = damage - (distance / 50) ** 2 + Math.random() * 5 - 5;
-    if (calcDamage <= 0) return 0;
-    return Math.floor(calcDamage);
-  }
+  // calculateDamage(distance: number, damage: number): number {
+  //   const calcDamage = damage - (distance / 50) ** 2 + Math.random() * 5 - 5;
+  //   if (calcDamage <= 0) return 0;
+  //   return Math.floor(calcDamage);
+  // }
 
   formatCoord(coord: number): string {
     const coordLen = coord.toString().length;
@@ -210,7 +210,7 @@ export class BanditScene {
             ),
         ],
         {
-          columns: 2,
+          columns: 3,
         },
       ).reply_markup;
     }
@@ -242,6 +242,30 @@ export class BanditScene {
       ctx,
       battleData.battle.enemyList,
     );
+    if (direction === '↖️') {
+      battleData.battle.battlePlayer.position.y =
+        battleData.battle.battlePlayer.position.y + 35;
+      battleData.battle.battlePlayer.position.x =
+        battleData.battle.battlePlayer.position.x - 35;
+    }
+    if (direction === '↗️') {
+      battleData.battle.battlePlayer.position.y =
+        battleData.battle.battlePlayer.position.y + 35;
+      battleData.battle.battlePlayer.position.x =
+        battleData.battle.battlePlayer.position.x + 35;
+    }
+    if (direction === '↘️') {
+      battleData.battle.battlePlayer.position.y =
+        battleData.battle.battlePlayer.position.y - 35;
+      battleData.battle.battlePlayer.position.x =
+        battleData.battle.battlePlayer.position.x + 35;
+    }
+    if (direction === '↙️') {
+      battleData.battle.battlePlayer.position.y =
+        battleData.battle.battlePlayer.position.y - 35;
+      battleData.battle.battlePlayer.position.x =
+        battleData.battle.battlePlayer.position.x - 35;
+    }
     if (direction === '⬆️')
       battleData.battle.battlePlayer.position.y =
         battleData.battle.battlePlayer.position.y + 50;
@@ -310,7 +334,7 @@ export class BanditScene {
             ),
         ],
         {
-          columns: 2,
+          columns: 3,
         },
       ).reply_markup;
       log +=
@@ -347,7 +371,7 @@ export class BanditScene {
           ),
       ],
       {
-        columns: 2,
+        columns: 3,
       },
     ).reply_markup;
     let log = `Вам на пути встретился противник - ${battleData.battle.enemyList[0].group}. Началась перестрелка. Чтобы сбежать отдалитесь на 500м. \n`;

@@ -22,18 +22,14 @@ var LocationScene_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LocationScene = void 0;
 const common_1 = require("@nestjs/common");
-const typeorm_1 = require("@nestjs/typeorm");
 const nestjs_telegraf_1 = require("nestjs-telegraf");
 const app_service_1 = require("../app.service");
-const locations_entity_1 = require("../user/entities/locations.entity");
-const roads_entity_1 = require("../user/entities/roads.entity");
 const telegraf_1 = require("telegraf");
-const typeorm_2 = require("typeorm");
 const scenes_enum_1 = require("./enums/scenes.enum");
 let LocationScene = LocationScene_1 = class LocationScene {
-    constructor(appService, roadsRepository) {
+    constructor(bot, appService) {
+        this.bot = bot;
         this.appService = appService;
-        this.roadsRepository = roadsRepository;
         this.logger = new common_1.Logger(LocationScene_1.name);
     }
     async onSceneEnter(ctx) {
@@ -61,9 +57,12 @@ let LocationScene = LocationScene_1 = class LocationScene {
         ], {
             columns: 1,
         }).reply_markup;
-        await this.appService.updateDisplay(playerData.playerProgress, null, `🏃 Перемещение...`, playerData.playerLocation.image);
-        await this.appService.sleep(2550);
+        await this.appService.updateDisplay(playerData.playerProgress, null, `🏃 Перемещение...`, 'https://sun9-23.userapi.com/impg/BerBvhk0PaC29WoXTFWTf49Fa-G_ktt1OXe7Ng/53JM42xkeeo.jpg?size=1920x855&quality=95&sign=1bc2fed9648961b2d332a7c6d42c8555&type=album');
+        await this.appService.sleep(Math.random() * 1500);
         await this.appService.updateDisplay(playerData.playerProgress, keyboard, `Вы находитесь в локации: "${playerData.playerLocation.location}". Куда вы хотите отправиться?`, playerData.playerLocation.image);
+    }
+    async onChox(ctx, next) {
+        ctx.reply('awdaw');
     }
     async onChoose(ctx, next) {
         const match = ctx.match[0];
@@ -72,6 +71,11 @@ let LocationScene = LocationScene_1 = class LocationScene {
         const locationCode = match.split('XXX')[1];
         const playerData = await this.appService.getStorePlayerData(ctx);
         const location = await this.appService.getLocation(locationCode);
+        await ctx.answerCbQuery(`В дороге вам стало легче, ${playerData.player.will} + 10 воли.`, {
+            show_alert: false,
+            cache_time: 500,
+        });
+        playerData.player.will += 10;
         ctx.scene.state[playerData.player.telegram_id] =
             await this.appService.updateStorePlayerLocation(ctx, Object.assign(Object.assign({}, playerData.player), { location: location.location }));
         const nextChapter = await this.appService.getChapterByCode(playerData.playerProgress.chapter_code);
@@ -83,19 +87,19 @@ let LocationScene = LocationScene_1 = class LocationScene {
     chooseBattleByLocation(ctx, location, nextChapter) {
         if (location.includes('(бандиты)') &&
             (nextChapter === null || nextChapter === void 0 ? void 0 : nextChapter.character) === 'Бандиты (враги)') {
-            return ctx.scene.enter(scenes_enum_1.ScenesEnum.SCENE_BANDIT);
+            return ctx.scene.enter(scenes_enum_1.ScenesEnum.SCENE_BATTLE);
         }
         if (location.includes('(бандиты)')) {
-            return ctx.scene.enter(scenes_enum_1.ScenesEnum.SCENE_BANDIT);
+            return ctx.scene.enter(scenes_enum_1.ScenesEnum.SCENE_BATTLE);
         }
         if (location.includes('(армия)')) {
-            return ctx.scene.enter(scenes_enum_1.ScenesEnum.SCENE_BANDIT);
+            return ctx.scene.enter(scenes_enum_1.ScenesEnum.SCENE_BATTLE);
         }
         if (location.includes('(монолит)')) {
-            return ctx.scene.enter(scenes_enum_1.ScenesEnum.SCENE_BANDIT);
+            return ctx.scene.enter(scenes_enum_1.ScenesEnum.SCENE_BATTLE);
         }
         if (location.includes('(зомби)')) {
-            return ctx.scene.enter(scenes_enum_1.ScenesEnum.SCENE_BANDIT);
+            return ctx.scene.enter(scenes_enum_1.ScenesEnum.SCENE_BATTLE);
         }
     }
     async onLeaveCommand(ctx) {
@@ -121,6 +125,14 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], LocationScene.prototype, "onSceneEnter", null);
 __decorate([
+    (0, nestjs_telegraf_1.Action)('alert'),
+    __param(0, (0, nestjs_telegraf_1.Ctx)()),
+    __param(1, (0, nestjs_telegraf_1.Next)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Function]),
+    __metadata("design:returntype", Promise)
+], LocationScene.prototype, "onChox", null);
+__decorate([
     (0, nestjs_telegraf_1.Action)(/locationsXXX.*/gim),
     __param(0, (0, nestjs_telegraf_1.Ctx)()),
     __param(1, (0, nestjs_telegraf_1.Next)()),
@@ -137,10 +149,9 @@ __decorate([
 ], LocationScene.prototype, "onLeaveCommand", null);
 LocationScene = LocationScene_1 = __decorate([
     (0, nestjs_telegraf_1.Scene)(scenes_enum_1.ScenesEnum.SCENE_LOCATION),
-    __param(1, (0, typeorm_1.InjectRepository)(locations_entity_1.LocationsEntity)),
-    __param(1, (0, typeorm_1.InjectRepository)(roads_entity_1.RoadsEntity)),
-    __metadata("design:paramtypes", [app_service_1.AppService,
-        typeorm_2.Repository])
+    __param(0, (0, nestjs_telegraf_1.InjectBot)()),
+    __metadata("design:paramtypes", [telegraf_1.Telegraf,
+        app_service_1.AppService])
 ], LocationScene);
 exports.LocationScene = LocationScene;
 //# sourceMappingURL=location.scene.js.map

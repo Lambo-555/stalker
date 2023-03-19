@@ -13,4 +13,8 @@ export class ChoicesEntity {
 
   @Column({ nullable: true })
   description: string;
+
+  @Column()
+  will?: number;
+
 }

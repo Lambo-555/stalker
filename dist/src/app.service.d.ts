@@ -4,16 +4,16 @@ import { Scenes } from 'telegraf';
 import { InlineKeyboardMarkup } from 'telegraf/typings/core/types/typegram';
 import { ExtraReplyMessage } from 'telegraf/typings/telegram-types';
 import { TelegrafContext } from './interfaces/telegraf-context.interface';
-import { ProgressEntity } from './user/entities/progress.entity';
-import { UsersEntity } from './user/entities/users.entity';
-import { ChaptersEntity } from './user/entities/chapters.entity';
-import { ChoicesEntity } from './user/entities/choices.entity';
-import { LocationsEntity } from './user/entities/locations.entity';
+import { ProgressEntity } from './database/entities/progress.entity';
+import { UsersEntity } from './database/entities/users.entity';
+import { ChaptersEntity } from './database/entities/chapters.entity';
+import { ChoicesEntity } from './database/entities/choices.entity';
+import { LocationsEntity } from './database/entities/locations.entity';
 import { Repository } from 'typeorm';
 import { PlayerDataDto } from './common/player-data.dto';
-import { RoadsEntity } from './user/entities/roads.entity';
-import { GunsEntity } from './user/entities/guns.entity';
-import { NpcEntity } from './user/entities/npcs.entity';
+import { RoadsEntity } from './database/entities/roads.entity';
+import { GunsEntity } from './database/entities/guns.entity';
+import { NpcEntity } from './database/entities/npcs.entity';
 export declare class AppService {
     private bot;
     private readonly usersRepository;
@@ -28,14 +28,18 @@ export declare class AppService {
     private readonly secretKey;
     private readonly commandList;
     constructor(bot: Telegraf<Scenes.SceneContext>, usersRepository: Repository<UsersEntity>, chaptersRepository: Repository<ChaptersEntity>, choicesRepository: Repository<ChoicesEntity>, progressRepository: Repository<ProgressEntity>, roadsRepository: Repository<RoadsEntity>, locationsRepository: Repository<LocationsEntity>, gunsRepository: Repository<GunsEntity>, npcRepository: Repository<NpcEntity>);
+    sendAlert(message: string): Promise<void>;
     encrypt(text: any): {
         iv: string;
         content: string;
     };
+    updateStorePlayer(ctx: TelegrafContext, player: UsersEntity): Promise<any>;
     updateStorePlayerLocation(ctx: TelegrafContext, playerLocation: UsersEntity): Promise<any>;
     updateStorePlayerProgress(ctx: TelegrafContext, playerProgress: ProgressEntity): Promise<any>;
     connectPlayerMonitor(): Promise<void>;
     getLocation(location: string): Promise<LocationsEntity>;
+    getGunList(): Promise<GunsEntity[]>;
+    getGunByName(name: string): Promise<GunsEntity>;
     getChapterByCode(code: string): Promise<ChaptersEntity>;
     getRoadList(location: string): Promise<RoadsEntity[]>;
     getChoiceList(code: string): Promise<ChoicesEntity[]>;
@@ -46,6 +50,7 @@ export declare class AppService {
     getStorePlayerData(ctx: TelegrafContext): Promise<PlayerDataDto>;
     getNextChapter(playerData: PlayerDataDto): Promise<ChaptersEntity>;
     getGoalChapter(playerData: PlayerDataDto): Promise<ChaptersEntity>;
+    getCurrentChoice(playerData: PlayerDataDto): Promise<ChoicesEntity>;
     getCurrentChapter(playerData: PlayerDataDto): Promise<ChaptersEntity>;
     clearMenuCommands(messageText: string, chatId: number, messageId: number): Promise<void>;
     registerNewPlayer(ctx: TelegrafContext): Promise<PlayerDataDto>;
@@ -62,5 +67,5 @@ export declare class AppService {
     getBattle(ctx: TelegrafContext): Promise<PlayerDataDto>;
     updateBattle(ctx: TelegrafContext, battleData: PlayerDataDto): Promise<PlayerDataDto>;
     genBattleEnemies(npcList: NpcEntity[], gunsList: GunsEntity[]): NpcObj[];
-    genBattlePlayer(gunsList: GunsEntity[]): NpcObj;
+    genBattlePlayer(playerData: PlayerDataDto): Promise<NpcObj>;
 }

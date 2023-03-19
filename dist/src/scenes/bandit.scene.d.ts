@@ -1,5 +1,6 @@
 import { AppService } from 'src/app.service';
-import { GunInterface, NpcObj } from 'src/common/player-data.dto';
+import { NpcObj } from 'src/common/player-data.dto';
+import { GunsEntity } from 'src/database/entities/guns.entity';
 import { Scenes } from 'telegraf';
 import { TelegrafContext } from '../interfaces/telegraf-context.interface';
 export declare class BanditScene {
@@ -7,8 +8,8 @@ export declare class BanditScene {
     private readonly logger;
     private readonly navigationKeyboard;
     constructor(appService: AppService);
-    calculateDamageForGun(gun: GunInterface, distance: number): number;
-    calculateSpreadForGun(gun: GunInterface, distance: number): number;
+    calculateDamageForGun(gun: GunsEntity, distance: number): number;
+    calculateSpreadForGun(gun: GunsEntity, distance: number): number;
     calculateDistance(posOne: {
         x: number;
         y: number;

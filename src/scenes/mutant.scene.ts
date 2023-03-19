@@ -14,13 +14,13 @@ import {
   Use,
 } from 'nestjs-telegraf';
 import { AppService } from 'src/app.service';
-import { ChaptersEntity } from 'src/user/entities/chapters.entity';
-import { ChoicesEntity } from 'src/user/entities/choices.entity';
-import { InventoryItems } from 'src/user/entities/inventory_items.entity';
-import { LocationsEntity } from 'src/user/entities/locations.entity';
-import { MutantsEntity } from 'src/user/entities/mutants.entity';
-import { ProgressEntity } from 'src/user/entities/progress.entity';
-import { UsersEntity } from 'src/user/entities/users.entity';
+import { ChaptersEntity } from 'src/database/entities/chapters.entity';
+import { ChoicesEntity } from 'src/database/entities/choices.entity';
+import { InventoryItems } from 'src/database/entities/inventory_items.entity';
+import { LocationsEntity } from 'src/database/entities/locations.entity';
+import { MutantsEntity } from 'src/database/entities/mutants.entity';
+import { ProgressEntity } from 'src/database/entities/progress.entity';
+import { UsersEntity } from 'src/database/entities/users.entity';
 import { Markup, Scenes } from 'telegraf';
 import { InlineKeyboardButton } from 'telegraf/typings/core/types/typegram';
 import { Like, Repository } from 'typeorm';

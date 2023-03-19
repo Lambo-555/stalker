@@ -59,6 +59,9 @@ let QuestScene = QuestScene_1 = class QuestScene {
                 next();
             const selectedChapterCode = match.split('XXX')[1];
             let playerData = await this.appService.getStorePlayerData(ctx);
+            const currentChoice = await this.appService.getCurrentChoice(playerData);
+            playerData.player.will -= currentChoice.will;
+            await this.appService.updateStorePlayer(ctx, playerData.player);
             ctx.scene.state[playerData.player.telegram_id] =
                 await this.appService.updateStorePlayerProgress(ctx, Object.assign(Object.assign({}, playerData.playerProgress), { chapter_code: selectedChapterCode }));
             playerData = await this.appService.getStorePlayerData(ctx);
@@ -75,10 +78,20 @@ let QuestScene = QuestScene_1 = class QuestScene {
                 const choices = await this.appService.getChoiceList(nextChapter.code);
                 choices.forEach(async (item) => {
                     const chapter = await this.appService.getChapterByCode(item.next_code);
-                    return Object.assign(Object.assign({}, item), { description: chapter === null || chapter === void 0 ? void 0 : chapter.character });
+                    return Object.assign(Object.assign({}, item), { description: (chapter === null || chapter === void 0 ? void 0 : chapter.character) + ` [Воля:${item === null || item === void 0 ? void 0 : item.will}]` });
                 });
                 const keyboard = telegraf_1.Markup.inlineKeyboard([
-                    ...choices.map((item) => telegraf_1.Markup.button.callback(this.appService.escapeText(item === null || item === void 0 ? void 0 : item.description), 'chapterXXX' + item.next_code.toString())),
+                    ...choices.map((item) => {
+                        var _a, _b, _c;
+                        return telegraf_1.Markup.button.callback(this.appService.escapeText((item === null || item === void 0 ? void 0 : item.description) +
+                            (item.will === 0
+                                ? ''
+                                : +(item === null || item === void 0 ? void 0 : item.will) <= +((_a = playerData === null || playerData === void 0 ? void 0 : playerData.player) === null || _a === void 0 ? void 0 : _a.will)
+                                    ? ` [Воля:${item === null || item === void 0 ? void 0 : item.will}/${(_b = playerData === null || playerData === void 0 ? void 0 : playerData.player) === null || _b === void 0 ? void 0 : _b.will}]`
+                                    : '[Мало воли]')), +(item === null || item === void 0 ? void 0 : item.will) <= +((_c = playerData === null || playerData === void 0 ? void 0 : playerData.player) === null || _c === void 0 ? void 0 : _c.will)
+                            ? 'chapterXXX' + item.next_code.toString()
+                            : scenes_enum_1.ScenesEnum.SCENE_QUEST);
+                    }),
                 ], {
                     columns: 1,
                 }).reply_markup;

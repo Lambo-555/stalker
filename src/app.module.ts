@@ -4,28 +4,28 @@ import { TelegrafModule } from 'nestjs-telegraf';
 import { session } from 'telegraf';
 import { AppService } from './app.service';
 import AppUpdate from './app.update';
-import { ChaptersEntity } from './user/entities/chapters.entity';
-import { ProgressEntity } from './user/entities/progress.entity';
-import { ChoicesEntity } from './user/entities/choices.entity';
-import { InventoryItems } from './user/entities/inventory_items.entity';
-import { UsersEntity } from './user/entities/users.entity';
-import { UserModule } from './user/user.module';
+import { ChaptersEntity } from './database/entities/chapters.entity';
+import { ProgressEntity } from './database/entities/progress.entity';
+import { ChoicesEntity } from './database/entities/choices.entity';
+import { InventoryItems } from './database/entities/inventory_items.entity';
+import { UsersEntity } from './database/entities/users.entity';
+import { DatabaseModule } from './database/database.module';
 import { TestWizard } from './scenes/registration.wizzard';
 import { AnomalyRoadScene } from './scenes/anomaly.scene';
 import { MutantScene } from './scenes/mutant.scene';
 import { ArtefactScene } from './scenes/artefact.scene';
-import { Anomalies } from './user/entities/anomalies.entity';
-import { Artifacts } from './user/entities/artifacts.entity';
-import { LocationsEntity } from './user/entities/locations.entity';
-import { RoadsEntity } from './user/entities/roads.entity';
+import { Anomalies } from './database/entities/anomalies.entity';
+import { Artifacts } from './database/entities/artifacts.entity';
+import { LocationsEntity } from './database/entities/locations.entity';
+import { RoadsEntity } from './database/entities/roads.entity';
 import { LocationScene } from './scenes/location.scene';
 import { QuestScene } from './scenes/quest.scene';
-import { MutantsEntity } from './user/entities/mutants.entity';
+import { MutantsEntity } from './database/entities/mutants.entity';
 import { PdaScene } from './scenes/pda.scene';
-import { QuestsEntity } from './user/entities/quests.entity';
-import { BanditScene } from './scenes/bandit.scene';
-import { GunsEntity } from './user/entities/guns.entity';
-import { NpcEntity } from './user/entities/npcs.entity';
+import { QuestsEntity } from './database/entities/quests.entity';
+import { BattleScene } from './scenes/battle.scene';
+import { GunsEntity } from './database/entities/guns.entity';
+import { NpcEntity } from './database/entities/npcs.entity';
 
 const scenes = [
   TestWizard,
@@ -35,12 +35,12 @@ const scenes = [
   LocationScene,
   QuestScene,
   PdaScene,
-  BanditScene,
+  BattleScene,
 ];
 
 @Module({
   imports: [
-    UserModule,
+    DatabaseModule,
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: '194.58.107.23',
@@ -81,7 +81,7 @@ const scenes = [
       GunsEntity,
     ]),
     TelegrafModule.forRoot({
-      token: '5943057211:AAHh26OWDRO1fYtaGJtpL_lTSSTB-foTQWM',
+      token: '6159975411:AAEOyCa4O_FqV8dIougNxOo-9g9ZdEGx-vY',
       middlewares: [session()],
     }),
   ],

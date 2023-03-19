@@ -25,18 +25,53 @@ let PdaScene = PdaScene_1 = class PdaScene {
         this.logger = new common_1.Logger(PdaScene_1.name);
     }
     async onSceneEnter(ctx) {
+        var _a;
         const playerData = await this.appService.getStorePlayerData(ctx);
         const nextChapter = await this.appService.getGoalChapter(playerData);
         const nextLocation = await this.appService.getLocation(nextChapter.location);
+        const guns = await this.appService.getGunList();
         const keyboard = telegraf_1.Markup.inlineKeyboard([
-            telegraf_1.Markup.button.callback('Меню', 'menu'),
-        ]).reply_markup;
+            ...guns.map((gun) => telegraf_1.Markup.button.callback(gun.name, 'gunXXX' + gun.name)),
+            telegraf_1.Markup.button.callback('📟Меню', 'menu'),
+        ], {
+            columns: 2,
+        }).reply_markup;
         const pdaMenu = `
 📟 Вы смотрите в свой КПК(PDA)
+
+Воля: ${(_a = playerData === null || playerData === void 0 ? void 0 : playerData.player) === null || _a === void 0 ? void 0 : _a.will}
 
 Текущая локация: ${playerData.playerLocation.location}
 Целевая локация: ${nextLocation.location}`;
         await this.appService.updateDisplay(playerData.playerProgress, keyboard, pdaMenu, playerData.playerLocation.image);
+    }
+    handleCallbackQuery(ctx) {
+        ctx.answerCbQuery('Response message', {
+            show_alert: true,
+            cache_time: 500,
+        });
+    }
+    async onChooseGun(ctx, next) {
+        const match = ctx.match[0];
+        if (!match)
+            next();
+        const selectedGunName = match.split('XXX')[1];
+        const playerData = await this.appService.getStorePlayerData(ctx);
+        const currentGun = await this.appService.getGunByName(selectedGunName);
+        if (currentGun) {
+            playerData.player.gun = selectedGunName;
+            await this.appService.updateStorePlayer(ctx, playerData.player);
+            ctx.answerCbQuery(`Теперь вы носите ${currentGun.name}, оптимальная дистанция ${currentGun.optimal_distance}m`, {
+                show_alert: true,
+                cache_time: 500,
+            });
+        }
+        else {
+            ctx.answerCbQuery(`${selectedGunName} недоступно`, {
+                show_alert: false,
+                cache_time: 500,
+            });
+        }
     }
     async onLeaveCommand(ctx) {
         await ctx.scene.leave();
@@ -49,6 +84,20 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], PdaScene.prototype, "onSceneEnter", null);
+__decorate([
+    (0, nestjs_telegraf_1.Action)('my_callback_query'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], PdaScene.prototype, "handleCallbackQuery", null);
+__decorate([
+    (0, nestjs_telegraf_1.Action)(/gunXXX.*/gim),
+    __param(0, (0, nestjs_telegraf_1.Ctx)()),
+    __param(1, (0, nestjs_telegraf_1.Next)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Function]),
+    __metadata("design:returntype", Promise)
+], PdaScene.prototype, "onChooseGun", null);
 __decorate([
     (0, nestjs_telegraf_1.Action)('leave'),
     (0, nestjs_telegraf_1.Command)('leave'),

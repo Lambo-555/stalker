@@ -5,5 +5,6 @@ export declare class UsersEntity {
     telegram_id?: number;
     location?: string;
     health?: number;
+    will?: number;
     radiation?: number;
 }

@@ -1,6 +1,7 @@
-import { LocationsEntity } from 'src/user/entities/locations.entity';
-import { ProgressEntity } from 'src/user/entities/progress.entity';
-import { UsersEntity } from 'src/user/entities/users.entity';
+import { GunsEntity } from 'src/database/entities/guns.entity';
+import { LocationsEntity } from 'src/database/entities/locations.entity';
+import { ProgressEntity } from 'src/database/entities/progress.entity';
+import { UsersEntity } from 'src/database/entities/users.entity';
 export declare class PlayerDataDto {
     player: UsersEntity;
     playerLocation: LocationsEntity;
@@ -17,13 +18,7 @@ export interface NpcObj {
     };
     isAlive: boolean;
     health: number;
-    gun?: GunInterface;
+    gun?: GunsEntity;
     name: string;
     group?: string;
-}
-export interface GunInterface {
-    name: string;
-    optimal_distance: number;
-    base_damage: number;
-    optimal_modifier: number;
 }

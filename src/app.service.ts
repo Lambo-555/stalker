@@ -1,4 +1,4 @@
-import { GunInterface, NpcObj } from 'src/common/player-data.dto';
+import { NpcObj } from 'src/common/player-data.dto';
 import { Injectable } from '@nestjs/common';
 import { Telegraf } from 'telegraf';
 import { Scenes } from 'telegraf';
@@ -7,17 +7,17 @@ import { InlineKeyboardMarkup } from 'telegraf/typings/core/types/typegram';
 import { ExtraReplyMessage } from 'telegraf/typings/telegram-types';
 import crypto from 'crypto';
 import { TelegrafContext } from './interfaces/telegraf-context.interface';
-import { ProgressEntity } from './user/entities/progress.entity';
+import { ProgressEntity } from './database/entities/progress.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { UsersEntity } from './user/entities/users.entity';
-import { ChaptersEntity } from './user/entities/chapters.entity';
-import { ChoicesEntity } from './user/entities/choices.entity';
-import { LocationsEntity } from './user/entities/locations.entity';
+import { UsersEntity } from './database/entities/users.entity';
+import { ChaptersEntity } from './database/entities/chapters.entity';
+import { ChoicesEntity } from './database/entities/choices.entity';
+import { LocationsEntity } from './database/entities/locations.entity';
 import { In, Like, Repository } from 'typeorm';
 import { PlayerDataDto } from './common/player-data.dto';
-import { RoadsEntity } from './user/entities/roads.entity';
-import { GunsEntity } from './user/entities/guns.entity';
-import { NpcEntity } from './user/entities/npcs.entity';
+import { RoadsEntity } from './database/entities/roads.entity';
+import { GunsEntity } from './database/entities/guns.entity';
+import { NpcEntity } from './database/entities/npcs.entity';
 
 @Injectable()
 export class AppService {
@@ -53,6 +53,10 @@ export class AppService {
     private readonly npcRepository: Repository<NpcEntity>,
   ) {}
 
+  async sendAlert(message: string) {
+    // await this.bot.telegram.answerCbQuery(message, message);
+  }
+
   encrypt(text) {
     const iv = crypto.randomBytes(16);
     const cipher = crypto.createCipheriv(this.algorithm, this.secretKey, iv);
@@ -61,6 +65,18 @@ export class AppService {
       iv: iv.toString('hex'),
       content: encrypted.toString('hex'),
     };
+  }
+
+  async updateStorePlayer(@Ctx() ctx: TelegrafContext, player: UsersEntity) {
+    const telegram_id = this.getTelegramId(ctx);
+    const { id, ...dataToUpdate } = player;
+    await this.usersRepository.update(id, dataToUpdate);
+    ctx.scene.state[telegram_id] = {
+      ...ctx.scene.state[telegram_id],
+      player,
+    };
+    console.log('player data updated. telegram_id: ', telegram_id);
+    return ctx.scene.state[telegram_id];
   }
 
   async updateStorePlayerLocation(
@@ -101,6 +117,18 @@ export class AppService {
         where: { location: location },
       });
     return locationData;
+  }
+
+  async getGunList(): Promise<GunsEntity[]> {
+    const gunList: GunsEntity[] = await this.gunsRepository.find();
+    return gunList;
+  }
+
+  async getGunByName(name: string): Promise<GunsEntity> {
+    const gunList: GunsEntity = await this.gunsRepository.findOne({
+      where: { name: name },
+    });
+    return gunList;
   }
 
   async getChapterByCode(code: string): Promise<ChaptersEntity> {
@@ -203,6 +231,15 @@ export class AppService {
       },
     });
     return chapterNext;
+  }
+
+  async getCurrentChoice(playerData: PlayerDataDto): Promise<ChoicesEntity> {
+    const currentChoice: ChoicesEntity = await this.choicesRepository.findOne({
+      where: {
+        code: playerData.playerProgress.chapter_code,
+      },
+    });
+    return currentChoice;
   }
 
   async getCurrentChapter(playerData: PlayerDataDto): Promise<ChaptersEntity> {
@@ -434,7 +471,7 @@ export class AppService {
       // console.log(JSON.stringify(gunsList, null, 2));
       if (!gunsList.length) return;
       const enemyList = this.genBattleEnemies(npcList, gunsList);
-      const battlePlayer = this.genBattlePlayer(gunsList);
+      const battlePlayer = await this.genBattlePlayer(playerData);
       const playerDataDto: PlayerDataDto = {
         ...playerData,
         battle: { enemyList, battlePlayer },
@@ -486,7 +523,10 @@ export class AppService {
     return enemies;
   }
 
-  genBattlePlayer(gunsList: GunsEntity[]): NpcObj {
+  async genBattlePlayer(playerData: PlayerDataDto): Promise<NpcObj> {
+    const playerGun: GunsEntity = await this.getGunByName(
+      playerData?.player?.gun,
+    );
     return {
       position: {
         x: Math.floor(Math.random() * 200),
@@ -496,7 +536,7 @@ export class AppService {
       isAlive: true,
       health: 125,
       group: 'Бандиты',
-      gun: this.getRandomElInArr(gunsList),
+      gun: playerGun,
     };
   }
 }

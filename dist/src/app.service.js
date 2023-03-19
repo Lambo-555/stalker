@@ -28,17 +28,17 @@ const common_1 = require("@nestjs/common");
 const telegraf_1 = require("telegraf");
 const nestjs_telegraf_1 = require("nestjs-telegraf");
 const crypto_1 = require("crypto");
-const progress_entity_1 = require("./user/entities/progress.entity");
+const progress_entity_1 = require("./database/entities/progress.entity");
 const typeorm_1 = require("@nestjs/typeorm");
-const users_entity_1 = require("./user/entities/users.entity");
-const chapters_entity_1 = require("./user/entities/chapters.entity");
-const choices_entity_1 = require("./user/entities/choices.entity");
-const locations_entity_1 = require("./user/entities/locations.entity");
+const users_entity_1 = require("./database/entities/users.entity");
+const chapters_entity_1 = require("./database/entities/chapters.entity");
+const choices_entity_1 = require("./database/entities/choices.entity");
+const locations_entity_1 = require("./database/entities/locations.entity");
 const typeorm_2 = require("typeorm");
 const player_data_dto_1 = require("./common/player-data.dto");
-const roads_entity_1 = require("./user/entities/roads.entity");
-const guns_entity_1 = require("./user/entities/guns.entity");
-const npcs_entity_1 = require("./user/entities/npcs.entity");
+const roads_entity_1 = require("./database/entities/roads.entity");
+const guns_entity_1 = require("./database/entities/guns.entity");
+const npcs_entity_1 = require("./database/entities/npcs.entity");
 let AppService = class AppService {
     constructor(bot, usersRepository, chaptersRepository, choicesRepository, progressRepository, roadsRepository, locationsRepository, gunsRepository, npcRepository) {
         this.bot = bot;
@@ -57,6 +57,8 @@ let AppService = class AppService {
             { command: 'display', description: 'Создать новый игровой дисплей' },
         ];
     }
+    async sendAlert(message) {
+    }
     encrypt(text) {
         const iv = crypto_1.default.randomBytes(16);
         const cipher = crypto_1.default.createCipheriv(this.algorithm, this.secretKey, iv);
@@ -65,6 +67,14 @@ let AppService = class AppService {
             iv: iv.toString('hex'),
             content: encrypted.toString('hex'),
         };
+    }
+    async updateStorePlayer(ctx, player) {
+        const telegram_id = this.getTelegramId(ctx);
+        const { id } = player, dataToUpdate = __rest(player, ["id"]);
+        await this.usersRepository.update(id, dataToUpdate);
+        ctx.scene.state[telegram_id] = Object.assign(Object.assign({}, ctx.scene.state[telegram_id]), { player });
+        console.log('player data updated. telegram_id: ', telegram_id);
+        return ctx.scene.state[telegram_id];
     }
     async updateStorePlayerLocation(ctx, playerLocation) {
         const telegram_id = this.getTelegramId(ctx);
@@ -88,6 +98,16 @@ let AppService = class AppService {
             where: { location: location },
         });
         return locationData;
+    }
+    async getGunList() {
+        const gunList = await this.gunsRepository.find();
+        return gunList;
+    }
+    async getGunByName(name) {
+        const gunList = await this.gunsRepository.findOne({
+            where: { name: name },
+        });
+        return gunList;
     }
     async getChapterByCode(code) {
         const chapterData = await this.chaptersRepository.findOne({
@@ -174,6 +194,14 @@ let AppService = class AppService {
             },
         });
         return chapterNext;
+    }
+    async getCurrentChoice(playerData) {
+        const currentChoice = await this.choicesRepository.findOne({
+            where: {
+                code: playerData.playerProgress.chapter_code,
+            },
+        });
+        return currentChoice;
     }
     async getCurrentChapter(playerData) {
         const currentChapter = await this.chaptersRepository.findOne({
@@ -341,7 +369,7 @@ let AppService = class AppService {
             if (!gunsList.length)
                 return;
             const enemyList = this.genBattleEnemies(npcList, gunsList);
-            const battlePlayer = this.genBattlePlayer(gunsList);
+            const battlePlayer = await this.genBattlePlayer(playerData);
             const playerDataDto = Object.assign(Object.assign({}, playerData), { battle: { enemyList, battlePlayer } });
             ctx.scene.state[playerData.player.telegram_id] = playerDataDto;
             return playerDataDto;
@@ -378,7 +406,9 @@ let AppService = class AppService {
         }
         return enemies;
     }
-    genBattlePlayer(gunsList) {
+    async genBattlePlayer(playerData) {
+        var _a;
+        const playerGun = await this.getGunByName((_a = playerData === null || playerData === void 0 ? void 0 : playerData.player) === null || _a === void 0 ? void 0 : _a.gun);
         return {
             position: {
                 x: Math.floor(Math.random() * 200),
@@ -388,10 +418,16 @@ let AppService = class AppService {
             isAlive: true,
             health: 125,
             group: 'Бандиты',
-            gun: this.getRandomElInArr(gunsList),
+            gun: playerGun,
         };
     }
 };
+__decorate([
+    __param(0, (0, nestjs_telegraf_1.Ctx)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, users_entity_1.UsersEntity]),
+    __metadata("design:returntype", Promise)
+], AppService.prototype, "updateStorePlayer", null);
 __decorate([
     __param(0, (0, nestjs_telegraf_1.Ctx)()),
     __metadata("design:type", Function),

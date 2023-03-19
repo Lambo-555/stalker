@@ -10,8 +10,8 @@ import {
 } from 'nestjs-telegraf';
 import { AppService } from 'src/app.service';
 import { PlayerDataDto } from 'src/common/player-data.dto';
-import { ChaptersEntity } from 'src/user/entities/chapters.entity';
-import { ChoicesEntity } from 'src/user/entities/choices.entity';
+import { ChaptersEntity } from 'src/database/entities/chapters.entity';
+import { ChoicesEntity } from 'src/database/entities/choices.entity';
 import { Markup, Scenes } from 'telegraf';
 import { TelegrafContext } from '../interfaces/telegraf-context.interface';
 import { ScenesEnum } from './enums/scenes.enum';
@@ -84,6 +84,9 @@ export class QuestScene {
       let playerData: PlayerDataDto = await this.appService.getStorePlayerData(
         ctx,
       );
+      const currentChoice = await this.appService.getCurrentChoice(playerData);
+      playerData.player.will -= currentChoice.will;
+      await this.appService.updateStorePlayer(ctx, playerData.player);
       ctx.scene.state[playerData.player.telegram_id] =
         await this.appService.updateStorePlayerProgress(ctx, {
           ...playerData.playerProgress,
@@ -114,15 +117,24 @@ export class QuestScene {
             await this.appService.getChapterByCode(item.next_code);
           return {
             ...item,
-            description: chapter?.character,
+            description: chapter?.character + ` [Воля:${item?.will}]`,
           };
         });
         const keyboard = Markup.inlineKeyboard(
           [
             ...choices.map((item) =>
               Markup.button.callback(
-                this.appService.escapeText(item?.description),
-                'chapterXXX' + item.next_code.toString(),
+                this.appService.escapeText(
+                  item?.description +
+                    (item.will === 0
+                      ? ''
+                      : +item?.will <= +playerData?.player?.will
+                      ? ` [Воля:${item?.will}/${playerData?.player?.will}]`
+                      : '[Мало воли]'),
+                ),
+                +item?.will <= +playerData?.player?.will
+                  ? 'chapterXXX' + item.next_code.toString()
+                  : ScenesEnum.SCENE_QUEST,
               ),
             ),
           ],

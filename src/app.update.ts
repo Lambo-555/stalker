@@ -12,7 +12,7 @@ import { Markup, Scenes } from 'telegraf';
 import { NextFunction } from 'express';
 import { TelegrafContext } from 'src/interfaces/telegraf-context.interface';
 import { AppService } from './app.service';
-import { ChaptersEntity } from './user/entities/chapters.entity';
+import { ChaptersEntity } from './database/entities/chapters.entity';
 import { ScenesEnum } from './scenes/enums/scenes.enum';
 import { PlayerDataDto } from './common/player-data.dto';
 

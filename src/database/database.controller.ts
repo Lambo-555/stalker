@@ -7,12 +7,12 @@ import {
   Delete,
   Put,
 } from '@nestjs/common';
-import { UserService } from './user.service';
+import { DatabaseService } from './database.service';
 import { UsersEntity } from './entities/users.entity';
 
-@Controller('user')
-export class UserController {
-  constructor(private readonly userService: UserService) {}
+@Controller('database')
+export class DatabaseController {
+  constructor(private readonly userService: DatabaseService) {}
 
   @Get()
   async findAll(): Promise<UsersEntity[]> {

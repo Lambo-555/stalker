@@ -38,6 +38,10 @@ __decorate([
     __metadata("design:type", Number)
 ], UsersEntity.prototype, "health", void 0);
 __decorate([
+    (0, typeorm_1.Column)(),
+    __metadata("design:type", Number)
+], UsersEntity.prototype, "will", void 0);
+__decorate([
     (0, typeorm_1.Column)({ nullable: false, default: 0 }),
     __metadata("design:type", Number)
 ], UsersEntity.prototype, "radiation", void 0);

@@ -20,6 +20,12 @@ export class UsersEntity {
   @Column()
   health?: number;
 
+  @Column()
+  will?: number;
+
+  @Column()
+  gun?: string;
+
   @Column({ nullable: false, default: 0 })
   radiation?: number;
 }

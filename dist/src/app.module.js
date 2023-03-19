@@ -13,28 +13,28 @@ const nestjs_telegraf_1 = require("nestjs-telegraf");
 const telegraf_1 = require("telegraf");
 const app_service_1 = require("./app.service");
 const app_update_1 = require("./app.update");
-const chapters_entity_1 = require("./user/entities/chapters.entity");
-const progress_entity_1 = require("./user/entities/progress.entity");
-const choices_entity_1 = require("./user/entities/choices.entity");
-const inventory_items_entity_1 = require("./user/entities/inventory_items.entity");
-const users_entity_1 = require("./user/entities/users.entity");
-const user_module_1 = require("./user/user.module");
+const chapters_entity_1 = require("./database/entities/chapters.entity");
+const progress_entity_1 = require("./database/entities/progress.entity");
+const choices_entity_1 = require("./database/entities/choices.entity");
+const inventory_items_entity_1 = require("./database/entities/inventory_items.entity");
+const users_entity_1 = require("./database/entities/users.entity");
+const database_module_1 = require("./database/database.module");
 const registration_wizzard_1 = require("./scenes/registration.wizzard");
 const anomaly_scene_1 = require("./scenes/anomaly.scene");
 const mutant_scene_1 = require("./scenes/mutant.scene");
 const artefact_scene_1 = require("./scenes/artefact.scene");
-const anomalies_entity_1 = require("./user/entities/anomalies.entity");
-const artifacts_entity_1 = require("./user/entities/artifacts.entity");
-const locations_entity_1 = require("./user/entities/locations.entity");
-const roads_entity_1 = require("./user/entities/roads.entity");
+const anomalies_entity_1 = require("./database/entities/anomalies.entity");
+const artifacts_entity_1 = require("./database/entities/artifacts.entity");
+const locations_entity_1 = require("./database/entities/locations.entity");
+const roads_entity_1 = require("./database/entities/roads.entity");
 const location_scene_1 = require("./scenes/location.scene");
 const quest_scene_1 = require("./scenes/quest.scene");
-const mutants_entity_1 = require("./user/entities/mutants.entity");
+const mutants_entity_1 = require("./database/entities/mutants.entity");
 const pda_scene_1 = require("./scenes/pda.scene");
-const quests_entity_1 = require("./user/entities/quests.entity");
-const bandit_scene_1 = require("./scenes/bandit.scene");
-const guns_entity_1 = require("./user/entities/guns.entity");
-const npcs_entity_1 = require("./user/entities/npcs.entity");
+const quests_entity_1 = require("./database/entities/quests.entity");
+const battle_scene_1 = require("./scenes/battle.scene");
+const guns_entity_1 = require("./database/entities/guns.entity");
+const npcs_entity_1 = require("./database/entities/npcs.entity");
 const scenes = [
     registration_wizzard_1.TestWizard,
     anomaly_scene_1.AnomalyRoadScene,
@@ -43,14 +43,14 @@ const scenes = [
     location_scene_1.LocationScene,
     quest_scene_1.QuestScene,
     pda_scene_1.PdaScene,
-    bandit_scene_1.BanditScene,
+    battle_scene_1.BattleScene,
 ];
 let AppModule = class AppModule {
 };
 AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            user_module_1.UserModule,
+            database_module_1.DatabaseModule,
             typeorm_1.TypeOrmModule.forRoot({
                 type: 'postgres',
                 host: '194.58.107.23',
@@ -91,7 +91,7 @@ AppModule = __decorate([
                 guns_entity_1.GunsEntity,
             ]),
             nestjs_telegraf_1.TelegrafModule.forRoot({
-                token: '5943057211:AAHh26OWDRO1fYtaGJtpL_lTSSTB-foTQWM',
+                token: '6159975411:AAEOyCa4O_FqV8dIougNxOo-9g9ZdEGx-vY',
                 middlewares: [(0, telegraf_1.session)()],
             }),
         ],
