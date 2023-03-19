@@ -57,7 +57,7 @@ export declare class AppService {
     decrypt(hash: any): string;
     commandListInit(): Promise<void>;
     escapeText(escapedMsg: string): string;
-    updateDisplay(progress: ProgressEntity, keyboard: InlineKeyboardMarkup, caption?: string, photoLink?: string): Promise<void>;
+    updateDisplay(player: UsersEntity, keyboard: InlineKeyboardMarkup, caption?: string, photoLink?: string): Promise<void>;
     getTelegramId(ctx: TelegrafContext): number;
     sleep(ms: any): Promise<unknown>;
     getRandomElInArr(arr: any[]): any;

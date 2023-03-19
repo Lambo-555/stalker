@@ -68,8 +68,8 @@ export default class AppUpdate {
         reply_markup: keyboard,
       });
       ctx.scene.state[playerData.player.telegram_id] =
-        await this.appService.updateStorePlayerProgress(ctx, {
-          ...playerData.playerProgress,
+        await this.appService.updateStorePlayer(ctx, {
+          ...playerData.player,
           chat_id: messageDisplay.chat.id,
           message_display_id: messageDisplay.message_id,
         });
@@ -109,7 +109,7 @@ export default class AppUpdate {
       }).reply_markup;
 
       this.appService.updateDisplay(
-        playerData?.playerProgress,
+        playerData?.player,
         keyboard,
         this.appService.escapeText(
           `Вы на локации: ${playerData?.playerLocation?.location}.`,

@@ -8,4 +8,6 @@ export declare class UsersEntity {
     will?: number;
     gun?: string;
     radiation?: number;
+    chat_id?: number;
+    message_display_id?: number;
 }

@@ -28,6 +28,12 @@ export class UsersEntity {
 
   @Column({ nullable: false, default: 0 })
   radiation?: number;
+
+  @Column()
+  chat_id?: number;
+
+  @Column()
+  message_display_id?: number;
 }
 
 // CREATE TABLE public.users (

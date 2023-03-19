@@ -299,15 +299,15 @@ let AppService = class AppService {
         };
         return escapedMsg.replace(specialChars, (match) => replacements[match] || match);
     }
-    async updateDisplay(progress, keyboard, caption, photoLink) {
+    async updateDisplay(player, keyboard, caption, photoLink) {
         try {
-            await this.bot.telegram.editMessageMedia(progress.chat_id, progress.message_display_id, null, {
+            await this.bot.telegram.editMessageMedia(player.chat_id, player.message_display_id, null, {
                 type: 'photo',
                 media: this.escapeText(photoLink) ||
                     this.escapeText('https://media2.giphy.com/media/z6UjsCa1Pq4QoMtkNR/giphy.gif?cid=790b76115ebeebe0c7ac50b73f0eb536c3f7dcaf33451941&rid=giphy.gif&ct=g'),
                 caption: this.escapeText(caption) || 'подпись медиа',
             });
-            await this.bot.telegram.editMessageReplyMarkup(progress.chat_id, progress.message_display_id, null, keyboard);
+            await this.bot.telegram.editMessageReplyMarkup(player.chat_id, player.message_display_id, null, keyboard);
         }
         catch (error) {
             console.error(error);

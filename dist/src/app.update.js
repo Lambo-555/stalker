@@ -55,7 +55,7 @@ let AppUpdate = AppUpdate_1 = class AppUpdate {
                 reply_markup: keyboard,
             });
             ctx.scene.state[playerData.player.telegram_id] =
-                await this.appService.updateStorePlayerProgress(ctx, Object.assign(Object.assign({}, playerData.playerProgress), { chat_id: messageDisplay.chat.id, message_display_id: messageDisplay.message_id }));
+                await this.appService.updateStorePlayer(ctx, Object.assign(Object.assign({}, playerData.player), { chat_id: messageDisplay.chat.id, message_display_id: messageDisplay.message_id }));
         }
         catch (error) {
             await ctx.reply('Ошибка создания монитора');
@@ -75,7 +75,7 @@ let AppUpdate = AppUpdate_1 = class AppUpdate {
             const keyboard = telegraf_1.Markup.inlineKeyboard(keyboardButtons, {
                 columns: 1,
             }).reply_markup;
-            this.appService.updateDisplay(playerData === null || playerData === void 0 ? void 0 : playerData.playerProgress, keyboard, this.appService.escapeText(`Вы на локации: ${(_a = playerData === null || playerData === void 0 ? void 0 : playerData.playerLocation) === null || _a === void 0 ? void 0 : _a.location}.`), (_b = playerData === null || playerData === void 0 ? void 0 : playerData.playerLocation) === null || _b === void 0 ? void 0 : _b.image);
+            this.appService.updateDisplay(playerData === null || playerData === void 0 ? void 0 : playerData.player, keyboard, this.appService.escapeText(`Вы на локации: ${(_a = playerData === null || playerData === void 0 ? void 0 : playerData.playerLocation) === null || _a === void 0 ? void 0 : _a.location}.`), (_b = playerData === null || playerData === void 0 ? void 0 : playerData.playerLocation) === null || _b === void 0 ? void 0 : _b.image);
         }
         catch (error) {
             console.error(error);

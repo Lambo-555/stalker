@@ -57,9 +57,9 @@ let LocationScene = LocationScene_1 = class LocationScene {
         ], {
             columns: 1,
         }).reply_markup;
-        await this.appService.updateDisplay(playerData.playerProgress, null, `🏃 Перемещение...`, 'https://sun9-23.userapi.com/impg/BerBvhk0PaC29WoXTFWTf49Fa-G_ktt1OXe7Ng/53JM42xkeeo.jpg?size=1920x855&quality=95&sign=1bc2fed9648961b2d332a7c6d42c8555&type=album');
+        await this.appService.updateDisplay(playerData.player, null, `🏃 Перемещение...`, 'https://sun9-23.userapi.com/impg/BerBvhk0PaC29WoXTFWTf49Fa-G_ktt1OXe7Ng/53JM42xkeeo.jpg?size=1920x855&quality=95&sign=1bc2fed9648961b2d332a7c6d42c8555&type=album');
         await this.appService.sleep(Math.random() * 1500);
-        await this.appService.updateDisplay(playerData.playerProgress, keyboard, `Вы находитесь в локации: "${playerData.playerLocation.location}". Куда вы хотите отправиться?`, playerData.playerLocation.image);
+        await this.appService.updateDisplay(playerData.player, keyboard, `Вы находитесь в локации: "${playerData.playerLocation.location}". Куда вы хотите отправиться?`, playerData.playerLocation.image);
     }
     async onChox(ctx, next) {
         ctx.reply('awdaw');
@@ -114,7 +114,7 @@ let LocationScene = LocationScene_1 = class LocationScene {
         ], {
             columns: 1,
         }).reply_markup;
-        this.appService.updateDisplay(playerData === null || playerData === void 0 ? void 0 : playerData.playerProgress, keyboard, this.appService.escapeText(`Вы на локации: ${(_a = playerData === null || playerData === void 0 ? void 0 : playerData.playerLocation) === null || _a === void 0 ? void 0 : _a.location}.`), (_b = playerData === null || playerData === void 0 ? void 0 : playerData.playerLocation) === null || _b === void 0 ? void 0 : _b.image);
+        this.appService.updateDisplay(playerData === null || playerData === void 0 ? void 0 : playerData.player, keyboard, this.appService.escapeText(`Вы на локации: ${(_a = playerData === null || playerData === void 0 ? void 0 : playerData.playerLocation) === null || _a === void 0 ? void 0 : _a.location}.`), (_b = playerData === null || playerData === void 0 ? void 0 : playerData.playerLocation) === null || _b === void 0 ? void 0 : _b.image);
     }
 };
 __decorate([

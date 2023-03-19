@@ -49,6 +49,14 @@ __decorate([
     (0, typeorm_1.Column)({ nullable: false, default: 0 }),
     __metadata("design:type", Number)
 ], UsersEntity.prototype, "radiation", void 0);
+__decorate([
+    (0, typeorm_1.Column)(),
+    __metadata("design:type", Number)
+], UsersEntity.prototype, "chat_id", void 0);
+__decorate([
+    (0, typeorm_1.Column)(),
+    __metadata("design:type", Number)
+], UsersEntity.prototype, "message_display_id", void 0);
 UsersEntity = __decorate([
     (0, typeorm_1.Entity)('users')
 ], UsersEntity);

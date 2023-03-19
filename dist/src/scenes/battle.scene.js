@@ -153,7 +153,7 @@ let BattleScene = BattleScene_1 = class BattleScene {
                 telegraf_1.Markup.button.callback('Вернуться', scenes_enum_1.ScenesEnum.SCENE_QUEST),
             ]).reply_markup;
         }
-        this.appService.updateDisplay(storePlayerData.playerProgress, keyboard, text, (_a = storePlayerData === null || storePlayerData === void 0 ? void 0 : storePlayerData.playerLocation) === null || _a === void 0 ? void 0 : _a.image);
+        this.appService.updateDisplay(storePlayerData.player, keyboard, text, (_a = storePlayerData === null || storePlayerData === void 0 ? void 0 : storePlayerData.playerLocation) === null || _a === void 0 ? void 0 : _a.image);
     }
     async onMove(ctx) {
         var _a;
@@ -216,7 +216,7 @@ let BattleScene = BattleScene_1 = class BattleScene {
             const keyboard = telegraf_1.Markup.inlineKeyboard([
                 telegraf_1.Markup.button.callback('Сбежать', 'leave'),
             ]).reply_markup;
-            this.appService.updateDisplay(battleData.playerProgress, keyboard, 'Вы ушли достаточно далеко', (_a = battleData === null || battleData === void 0 ? void 0 : battleData.playerLocation) === null || _a === void 0 ? void 0 : _a.image);
+            this.appService.updateDisplay(battleData.player, keyboard, 'Вы ушли достаточно далеко', (_a = battleData === null || battleData === void 0 ? void 0 : battleData.playerLocation) === null || _a === void 0 ? void 0 : _a.image);
         }
         if (enemyAway.length !== 0) {
             const keyboard = telegraf_1.Markup.inlineKeyboard([
@@ -229,7 +229,7 @@ let BattleScene = BattleScene_1 = class BattleScene {
             }).reply_markup;
             log +=
                 this.getEnemiesPositions(battleData.battle.enemyList, battleData.battle.battlePlayer) + '\n';
-            this.appService.updateDisplay(battleData.playerProgress, keyboard, log, 'https://sun9-2.userapi.com/impg/8D9R-PqX4qIvNk1r7FQ4eP1KfPiWcUJFoN3uRw/B7-a2BJJtC4.jpg?size=700x538&quality=95&sign=becda26a8a3aad44cb19b373ddaa84e8&type=album');
+            this.appService.updateDisplay(battleData.player, keyboard, log, 'https://sun9-2.userapi.com/impg/8D9R-PqX4qIvNk1r7FQ4eP1KfPiWcUJFoN3uRw/B7-a2BJJtC4.jpg?size=700x538&quality=95&sign=becda26a8a3aad44cb19b373ddaa84e8&type=album');
         }
     }
     async onSceneEnter(ctx) {
@@ -247,7 +247,7 @@ let BattleScene = BattleScene_1 = class BattleScene {
         let log = `Вам на пути встретился противник - ${battleData.battle.enemyList[0].group}. Началась перестрелка. Чтобы сбежать отдалитесь на 500м. \n`;
         log += `У вас в руках ${battleData.battle.battlePlayer.gun.name}. Оптимальная дистанция, чтобы спустить курок ${battleData.battle.battlePlayer.gun.optimal_distance}m.`;
         log += this.getEnemiesPositions(battleData.battle.enemyList, battleData.battle.battlePlayer);
-        this.appService.updateDisplay(playerData.playerProgress, keyboard, log, (_a = playerData === null || playerData === void 0 ? void 0 : playerData.playerLocation) === null || _a === void 0 ? void 0 : _a.image);
+        this.appService.updateDisplay(playerData.player, keyboard, log, (_a = playerData === null || playerData === void 0 ? void 0 : playerData.playerLocation) === null || _a === void 0 ? void 0 : _a.image);
     }
     getEnemiesPositions(enemyList, player) {
         let text = '\n';

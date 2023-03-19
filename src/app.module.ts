@@ -26,6 +26,7 @@ import { QuestsEntity } from './database/entities/quests.entity';
 import { BattleScene } from './scenes/battle.scene';
 import { GunsEntity } from './database/entities/guns.entity';
 import { NpcEntity } from './database/entities/npcs.entity';
+import { StoriesEntity } from './database/entities/stories.entity';
 
 const scenes = [
   TestWizard,
@@ -62,6 +63,7 @@ const scenes = [
         QuestsEntity,
         NpcEntity,
         GunsEntity,
+        StoriesEntity,
       ],
       synchronize: false,
     }),
@@ -79,6 +81,7 @@ const scenes = [
       QuestsEntity,
       NpcEntity,
       GunsEntity,
+      StoriesEntity,
     ]),
     TelegrafModule.forRoot({
       token: '6159975411:AAEOyCa4O_FqV8dIougNxOo-9g9ZdEGx-vY',

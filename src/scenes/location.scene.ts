@@ -69,14 +69,14 @@ export class LocationScene {
       },
     ).reply_markup;
     await this.appService.updateDisplay(
-      playerData.playerProgress,
+      playerData.player,
       null,
       `🏃 Перемещение...`,
       'https://sun9-23.userapi.com/impg/BerBvhk0PaC29WoXTFWTf49Fa-G_ktt1OXe7Ng/53JM42xkeeo.jpg?size=1920x855&quality=95&sign=1bc2fed9648961b2d332a7c6d42c8555&type=album',
     );
     await this.appService.sleep(Math.random() * 1500);
     await this.appService.updateDisplay(
-      playerData.playerProgress,
+      playerData.player,
       keyboard,
       `Вы находитесь в локации: "${playerData.playerLocation.location}". Куда вы хотите отправиться?`,
       playerData.playerLocation.image,
@@ -176,7 +176,7 @@ export class LocationScene {
       },
     ).reply_markup;
     this.appService.updateDisplay(
-      playerData?.playerProgress,
+      playerData?.player,
       keyboard,
       this.appService.escapeText(
         `Вы на локации: ${playerData?.playerLocation?.location}.`,

@@ -34,7 +34,7 @@ let QuestScene = QuestScene_1 = class QuestScene {
                     telegraf_1.Markup.button.callback('🤝Взаимодействие', 'chapterXXX' + chapter.code),
                     telegraf_1.Markup.button.callback('✋🏻Уйти', 'leave'),
                 ]).reply_markup;
-                await this.appService.updateDisplay(playerData.playerProgress, keyboard, `${chapter === null || chapter === void 0 ? void 0 : chapter.character}`, ((_a = chapter === null || chapter === void 0 ? void 0 : chapter.image) === null || _a === void 0 ? void 0 : _a.length)
+                await this.appService.updateDisplay(playerData.player, keyboard, `${chapter === null || chapter === void 0 ? void 0 : chapter.character}`, ((_a = chapter === null || chapter === void 0 ? void 0 : chapter.image) === null || _a === void 0 ? void 0 : _a.length)
                     ? chapter === null || chapter === void 0 ? void 0 : chapter.image
                     : playerData.playerLocation.image);
             }
@@ -42,7 +42,7 @@ let QuestScene = QuestScene_1 = class QuestScene {
                 const keyboard = telegraf_1.Markup.inlineKeyboard([
                     telegraf_1.Markup.button.callback('✋🏻Уйти', 'leave'),
                 ]).reply_markup;
-                await this.appService.updateDisplay(playerData.playerProgress, keyboard, `Здесь не с кем взаимодействовать`, ((_b = chapter === null || chapter === void 0 ? void 0 : chapter.image) === null || _b === void 0 ? void 0 : _b.length)
+                await this.appService.updateDisplay(playerData.player, keyboard, `Здесь не с кем взаимодействовать`, ((_b = chapter === null || chapter === void 0 ? void 0 : chapter.image) === null || _b === void 0 ? void 0 : _b.length)
                     ? chapter === null || chapter === void 0 ? void 0 : chapter.image
                     : playerData.playerLocation.image);
             }
@@ -70,7 +70,7 @@ let QuestScene = QuestScene_1 = class QuestScene {
                 const keyboard = telegraf_1.Markup.inlineKeyboard([
                     telegraf_1.Markup.button.callback('✋🏻Уйти', 'leave'),
                 ]).reply_markup;
-                await this.appService.updateDisplay(playerData.playerProgress, keyboard, `Здесь не с кем взаимодействовать`, ((_a = nextChapter === null || nextChapter === void 0 ? void 0 : nextChapter.image) === null || _a === void 0 ? void 0 : _a.length)
+                await this.appService.updateDisplay(playerData.player, keyboard, `Здесь не с кем взаимодействовать`, ((_a = nextChapter === null || nextChapter === void 0 ? void 0 : nextChapter.image) === null || _a === void 0 ? void 0 : _a.length)
                     ? nextChapter === null || nextChapter === void 0 ? void 0 : nextChapter.image
                     : playerData.playerLocation.image);
             }
@@ -95,7 +95,7 @@ let QuestScene = QuestScene_1 = class QuestScene {
                 ], {
                     columns: 1,
                 }).reply_markup;
-                await this.appService.updateDisplay(playerData.playerProgress, keyboard, `${nextChapter === null || nextChapter === void 0 ? void 0 : nextChapter.character}: ` + nextChapter.content, ((_b = nextChapter === null || nextChapter === void 0 ? void 0 : nextChapter.image) === null || _b === void 0 ? void 0 : _b.length)
+                await this.appService.updateDisplay(playerData.player, keyboard, `${nextChapter === null || nextChapter === void 0 ? void 0 : nextChapter.character}: ` + nextChapter.content, ((_b = nextChapter === null || nextChapter === void 0 ? void 0 : nextChapter.image) === null || _b === void 0 ? void 0 : _b.length)
                     ? nextChapter === null || nextChapter === void 0 ? void 0 : nextChapter.image
                     : playerData.playerLocation.image);
             }

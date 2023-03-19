@@ -54,7 +54,7 @@ let ArtefactScene = ArtefactScene_1 = class ArtefactScene {
         const artList = await this.artifactsRepository.find();
         const randArt = this.appService.getRandomElInArr(artList);
         this.userData[user.telegram_id] = {
-            artefactName: randArt
+            artefactName: randArt,
         };
         await ctx.reply(`Вы возле куска от артефакта "${randArt.name}". Нужно его правильно запереть в короб. Материал покрытия крайне важен.`, telegraf_1.Markup.inlineKeyboard([
             telegraf_1.Markup.button.callback('Выбор короба.', 'artifactXXX' + randArt.anomaly),
@@ -70,12 +70,12 @@ let ArtefactScene = ArtefactScene_1 = class ArtefactScene {
         const anomalyTarget = anomalyAll.filter((item) => item.id === anomalyId)[0];
         const anomalyEffects = Array.from(new Set(anomalyAll.map((item) => item.effects)));
         const telegram_id = ((_a = ctx === null || ctx === void 0 ? void 0 : ctx.message) === null || _a === void 0 ? void 0 : _a.from.id) || ((_c = (_b = ctx === null || ctx === void 0 ? void 0 : ctx.callbackQuery) === null || _b === void 0 ? void 0 : _b.from) === null || _c === void 0 ? void 0 : _c.id);
-        const user = await this.usersRepository.findOne({
+        const player = await this.usersRepository.findOne({
             where: { telegram_id: telegram_id },
         });
         const progress = await this.progressRepository.findOne({
             where: {
-                user_id: user.id,
+                user_id: player.id,
             },
         });
         const keyboard = telegraf_1.Markup.inlineKeyboard([
@@ -87,7 +87,7 @@ let ArtefactScene = ArtefactScene_1 = class ArtefactScene {
             columns: 1,
         }).reply_markup;
         const log = `Аномалия, в которой находится артефакт: ${anomalyTarget.name}`;
-        this.appService.updateDisplay(progress, keyboard, log, 'https://sun9-40.userapi.com/impg/TdhFr4WwGgSQrY-68V5oP_iivWfv18ye2cs2UA/DQ5jU6dsKuM.jpg?size=1024x1024&quality=95&sign=314289bfceb91c4d013d1e4829d58d68&type=album');
+        this.appService.updateDisplay(player, keyboard, log, 'https://sun9-40.userapi.com/impg/TdhFr4WwGgSQrY-68V5oP_iivWfv18ye2cs2UA/DQ5jU6dsKuM.jpg?size=1024x1024&quality=95&sign=314289bfceb91c4d013d1e4829d58d68&type=album');
     }
     async anomalyTrue(ctx) {
         const wayTotal = Math.random() * 100;

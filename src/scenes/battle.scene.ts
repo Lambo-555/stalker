@@ -221,7 +221,7 @@ export class BattleScene {
       ]).reply_markup;
     }
     this.appService.updateDisplay(
-      storePlayerData.playerProgress,
+      storePlayerData.player,
       keyboard,
       text,
       storePlayerData?.playerLocation?.image,
@@ -312,7 +312,7 @@ export class BattleScene {
         Markup.button.callback('Сбежать', 'leave'),
       ]).reply_markup;
       this.appService.updateDisplay(
-        battleData.playerProgress,
+        battleData.player,
         keyboard,
         'Вы ушли достаточно далеко',
         battleData?.playerLocation?.image,
@@ -343,7 +343,7 @@ export class BattleScene {
           battleData.battle.battlePlayer,
         ) + '\n';
       this.appService.updateDisplay(
-        battleData.playerProgress,
+        battleData.player,
         keyboard,
         log,
         'https://sun9-2.userapi.com/impg/8D9R-PqX4qIvNk1r7FQ4eP1KfPiWcUJFoN3uRw/B7-a2BJJtC4.jpg?size=700x538&quality=95&sign=becda26a8a3aad44cb19b373ddaa84e8&type=album',
@@ -389,7 +389,7 @@ export class BattleScene {
       battleData.battle.battlePlayer,
     );
     this.appService.updateDisplay(
-      playerData.playerProgress,
+      playerData.player,
       keyboard,
       log,
       playerData?.playerLocation?.image,

@@ -87,7 +87,7 @@ export class ArtefactScene {
     const artList: Artifacts[] = await this.artifactsRepository.find();
     const randArt: Artifacts = this.appService.getRandomElInArr(artList);
     this.userData[user.telegram_id] = {
-      artefactName: randArt
+      artefactName: randArt,
     };
     await ctx.reply(
       `Вы возле куска от артефакта "${randArt.name}". Нужно его правильно запереть в короб. Материал покрытия крайне важен.`,
@@ -119,12 +119,12 @@ export class ArtefactScene {
     // });
     const telegram_id: number =
       ctx?.message?.from.id || ctx?.callbackQuery?.from?.id;
-    const user: UsersEntity = await this.usersRepository.findOne({
+    const player: UsersEntity = await this.usersRepository.findOne({
       where: { telegram_id: telegram_id },
     });
     const progress: ProgressEntity = await this.progressRepository.findOne({
       where: {
-        user_id: user.id,
+        user_id: player.id,
       },
     });
     const keyboard = Markup.inlineKeyboard(
@@ -145,7 +145,7 @@ export class ArtefactScene {
     ).reply_markup;
     const log = `Аномалия, в которой находится артефакт: ${anomalyTarget.name}`;
     this.appService.updateDisplay(
-      progress,
+      player,
       keyboard,
       log,
       'https://sun9-40.userapi.com/impg/TdhFr4WwGgSQrY-68V5oP_iivWfv18ye2cs2UA/DQ5jU6dsKuM.jpg?size=1024x1024&quality=95&sign=314289bfceb91c4d013d1e4829d58d68&type=album',

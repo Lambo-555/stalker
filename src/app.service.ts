@@ -376,15 +376,15 @@ export class AppService {
   // }
 
   async updateDisplay(
-    progress: ProgressEntity,
+    player: UsersEntity,
     keyboard: InlineKeyboardMarkup,
     caption?: string,
     photoLink?: string,
   ) {
     try {
       await this.bot.telegram.editMessageMedia(
-        progress.chat_id,
-        progress.message_display_id,
+        player.chat_id,
+        player.message_display_id,
         null,
         {
           type: 'photo',
@@ -397,8 +397,8 @@ export class AppService {
         },
       );
       await this.bot.telegram.editMessageReplyMarkup(
-        progress.chat_id,
-        progress.message_display_id,
+        player.chat_id,
+        player.message_display_id,
         null,
         keyboard,
       );

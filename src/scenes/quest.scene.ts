@@ -47,7 +47,7 @@ export class QuestScene {
           Markup.button.callback('✋🏻Уйти', 'leave'),
         ]).reply_markup;
         await this.appService.updateDisplay(
-          playerData.playerProgress,
+          playerData.player,
           keyboard,
           `${chapter?.character}`,
           chapter?.image?.length
@@ -59,7 +59,7 @@ export class QuestScene {
           Markup.button.callback('✋🏻Уйти', 'leave'),
         ]).reply_markup;
         await this.appService.updateDisplay(
-          playerData.playerProgress,
+          playerData.player,
           keyboard,
           `Здесь не с кем взаимодействовать`,
           chapter?.image?.length
@@ -101,7 +101,7 @@ export class QuestScene {
           Markup.button.callback('✋🏻Уйти', 'leave'),
         ]).reply_markup;
         await this.appService.updateDisplay(
-          playerData.playerProgress,
+          playerData.player,
           keyboard,
           `Здесь не с кем взаимодействовать`,
           nextChapter?.image?.length
@@ -143,7 +143,7 @@ export class QuestScene {
           },
         ).reply_markup;
         await this.appService.updateDisplay(
-          playerData.playerProgress,
+          playerData.player,
           keyboard,
           `${nextChapter?.character}: ` + nextChapter.content,
           nextChapter?.image?.length

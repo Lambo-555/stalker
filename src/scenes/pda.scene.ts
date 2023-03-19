@@ -50,7 +50,7 @@ export class PdaScene {
 Текущая локация: ${playerData.playerLocation.location}
 Целевая локация: ${nextLocation.location}`;
     await this.appService.updateDisplay(
-      playerData.playerProgress,
+      playerData.player,
       keyboard,
       pdaMenu,
       playerData.playerLocation.image,

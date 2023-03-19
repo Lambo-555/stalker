@@ -43,7 +43,7 @@ let PdaScene = PdaScene_1 = class PdaScene {
 
 Текущая локация: ${playerData.playerLocation.location}
 Целевая локация: ${nextLocation.location}`;
-        await this.appService.updateDisplay(playerData.playerProgress, keyboard, pdaMenu, playerData.playerLocation.image);
+        await this.appService.updateDisplay(playerData.player, keyboard, pdaMenu, playerData.playerLocation.image);
     }
     handleCallbackQuery(ctx) {
         ctx.answerCbQuery('Response message', {

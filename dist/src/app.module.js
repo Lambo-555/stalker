@@ -35,6 +35,7 @@ const quests_entity_1 = require("./database/entities/quests.entity");
 const battle_scene_1 = require("./scenes/battle.scene");
 const guns_entity_1 = require("./database/entities/guns.entity");
 const npcs_entity_1 = require("./database/entities/npcs.entity");
+const stories_entity_1 = require("./database/entities/stories.entity");
 const scenes = [
     registration_wizzard_1.TestWizard,
     anomaly_scene_1.AnomalyRoadScene,
@@ -72,6 +73,7 @@ AppModule = __decorate([
                     quests_entity_1.QuestsEntity,
                     npcs_entity_1.NpcEntity,
                     guns_entity_1.GunsEntity,
+                    stories_entity_1.StoriesEntity,
                 ],
                 synchronize: false,
             }),
@@ -89,6 +91,7 @@ AppModule = __decorate([
                 quests_entity_1.QuestsEntity,
                 npcs_entity_1.NpcEntity,
                 guns_entity_1.GunsEntity,
+                stories_entity_1.StoriesEntity,
             ]),
             nestjs_telegraf_1.TelegrafModule.forRoot({
                 token: '6159975411:AAEOyCa4O_FqV8dIougNxOo-9g9ZdEGx-vY',
