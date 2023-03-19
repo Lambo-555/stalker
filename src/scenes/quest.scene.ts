@@ -185,7 +185,7 @@ export class QuestScene {
         },
       ).reply_markup;
       this.appService.updateDisplay(
-        playerData?.playerProgress,
+        playerData?.player,
         keyboard,
         this.appService.escapeText(
           `Вы на локации: ${playerData?.playerLocation?.location}.`,

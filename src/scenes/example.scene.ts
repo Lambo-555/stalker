@@ -181,8 +181,6 @@
 //         }
 //     }
 
-
-
 //     @Action('mystats')
 //     async mystats(@Ctx() ctx: Scenes.SceneContext) {
 //         const player: Player = await this.getOrCreateUser(ctx);

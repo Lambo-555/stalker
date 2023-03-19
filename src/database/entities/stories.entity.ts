@@ -7,5 +7,4 @@ export class StoriesEntity {
 
   @Column()
   cost?: number;
-
 }

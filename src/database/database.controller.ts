@@ -30,7 +30,10 @@ export class DatabaseController {
   }
 
   @Put(':id')
-  async update(@Param('id') id: number, @Body() user: UsersEntity): Promise<void> {
+  async update(
+    @Param('id') id: number,
+    @Body() user: UsersEntity,
+  ): Promise<void> {
     return this.userService.update(id, user);
   }
 

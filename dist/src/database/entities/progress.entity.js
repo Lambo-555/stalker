@@ -27,12 +27,8 @@ __decorate([
 ], ProgressEntity.prototype, "chapter_code", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
-    __metadata("design:type", Number)
-], ProgressEntity.prototype, "chat_id", void 0);
-__decorate([
-    (0, typeorm_1.Column)(),
-    __metadata("design:type", Number)
-], ProgressEntity.prototype, "message_display_id", void 0);
+    __metadata("design:type", String)
+], ProgressEntity.prototype, "story", void 0);
 ProgressEntity = __decorate([
     (0, typeorm_1.Entity)('progress')
 ], ProgressEntity);

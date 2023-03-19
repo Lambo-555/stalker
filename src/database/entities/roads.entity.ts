@@ -10,5 +10,4 @@ export class RoadsEntity {
 
   @Column()
   to?: string;
-
 }

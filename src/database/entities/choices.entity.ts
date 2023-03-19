@@ -16,5 +16,4 @@ export class ChoicesEntity {
 
   @Column()
   will?: number;
-
 }

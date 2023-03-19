@@ -94,7 +94,7 @@ AppModule = __decorate([
                 stories_entity_1.StoriesEntity,
             ]),
             nestjs_telegraf_1.TelegrafModule.forRoot({
-                token: '6159975411:AAEOyCa4O_FqV8dIougNxOo-9g9ZdEGx-vY',
+                token: '5943057211:AAHh26OWDRO1fYtaGJtpL_lTSSTB-foTQWM',
                 middlewares: [(0, telegraf_1.session)()],
             }),
         ],

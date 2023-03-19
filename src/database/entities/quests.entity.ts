@@ -10,5 +10,4 @@ export class QuestsEntity {
 
   @Column()
   description?: string;
-
 }

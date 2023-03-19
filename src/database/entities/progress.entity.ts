@@ -12,8 +12,6 @@ export class ProgressEntity {
   chapter_code: string;
 
   @Column()
-  chat_id: number;
+  story: string;
 
-  @Column()
-  message_display_id: number;
 }
